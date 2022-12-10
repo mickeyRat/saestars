@@ -312,14 +312,21 @@ exit;
         }
     sub loadTeamGTV (){
         my $teamIDX= $q->param('teamIDX');
+        my $Team = new SAE::TEAM($teamIDX);
+        my %TEAM = %{$Team->_getTeamData()};
         my $Advanced = new SAE::ADV_SCORE();
-        my ($total, $effWater) = $Advanced->_getEffectiveWater($teamIDX);
+        my ($effWater) = $Advanced->_getEffectiveWater($teamIDX);
         # my %DATA = %{decode_json($q->param('jsonData'))};
         print $q->header();
         my $str;
         $str = '<div class="w3-container w3-margin">';
-        $str .= '<label>Amount of water transsported:</label>';
-        $str .= sprintf '<input type="number" class="w3-input w3-border w3-round w3-light-grey" style="width: 20%" placeholder="Max = %2.2f">', $effWater;
+        $str .= sprintf '<label>Amount of water transsported: ( <i>Maximum Allowed = <b>%2.2f</b> </i>)</label>', $effWater;
+        my $data = sprintf 'data-table="TB_TEAM" data-key="PK_TEAM_IDX" data-index="%d" data-field="%s"', $teamIDX, 'IN_WATER';
+        $str .= sprintf '<input type="number" '.$data.' class="w3-input w3-border w3-round w3-light-grey" style="width: 20%" value="%2.2f" data-max="%2.2f" placeholder="Max = %2.2f" max="%2.2f" onchange="updateField(this);">', $TEAM{IN_WATER}, $effWater, $effWater, $effWater;
+        my $data    = sprintf 'data-table="TB_TEAM" data-key="PK_TEAM_IDX" data-index="%d" data-field="%s"', $teamIDX, 'BO_AUTO';
+        my $checked = 'checked';
+        if ($TEAM{BO_AUTO} == 0){$checked = ''} 
+        $str .= '<br><input ID="BO_AUTO" class="w3-check" '.$data.' type="checkbox" '.$checked.' onclick="updateCheckItems(this);"><label class="w3-margin-left">Water was transported <i>autonomously</i></label>';
         $str .= $total.'</div>';
 
         # $str .= $teamIDX;;

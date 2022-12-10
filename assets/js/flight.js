@@ -514,6 +514,16 @@ function updateField(o){
     $('#savedMessage').fadeIn();
     var data = {};
     var field = $(o).data('field');
+    if (field == 'IN_WATER'){
+        var maxValue = parseFloat($(o).data('max'));
+        var inWaterValue = parseFloat($(o).val());
+        console.log("water Analysis");
+        console.log('water = '+ $(o).val() +'; max=' + maxValue);
+        if (inWaterValue > maxValue){
+            alert("Warning\n\nThe value you've enter ["+inWaterValue+"]  exceeds the maximum ["+maxValue+"] effective water to transport.");
+            $(o).val(maxValue);
+        }
+    }
     if (field == 'IN_DISTANCE'){
         var distance = $(o).val();
         if (distance > maxDistance){
@@ -522,7 +532,6 @@ function updateField(o){
             $(o).val(15);
             // return
         }
-
     }
     // console.log($(o).data('field'));
     if ($(o).data('field') == 'TX_DATE_TIME'){
@@ -587,11 +596,6 @@ function updateCheckItems(o){
                 }
             }
         });
-        // console.log('length = ' + $('.inStaticCount').length);
-        // console.log('staticCount = ' + staticCount);
-        // console.log('elementField === ' + elementField);
-
-
     }
     if ($(o).is(':checked')){
         data[$(o).data('field')] = 1;

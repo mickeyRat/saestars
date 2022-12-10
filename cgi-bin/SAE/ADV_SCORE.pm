@@ -100,22 +100,19 @@ sub _getTeamScores (){
     }
 sub _getEffectiveWater (){
     my ($self, $teamIDX) = @_;
-    my $SQL = "SELECT PK_FLIGHT_IDX, IN_WATER_FLT, IN_PEN_MINOR, IN_PEN_LANDING AS IN_TOTAL FROM TB_FLIGHT WHERE (FK_TEAM_IDX=? AND IN_STATUS=?)";
+    my $SQL = "SELECT PK_FLIGHT_IDX, IN_ROUND, IN_WATER_FLT, IN_PEN_MINOR, IN_PEN_LANDING FROM TB_FLIGHT WHERE (FK_TEAM_IDX=? AND IN_STATUS=?)";
     my $select = $dbi->prepare($SQL);
        $select->execute($teamIDX, 1);
     my %HASH = %{$select->fetchall_hashref('PK_FLIGHT_IDX')}; 
     my $effectiveWater = 0;
     my $totalWater = 0;
     foreach $flightIDX (keys %HASH){
-    	my $minor = $HASH{$flightIDX}{IN_PEN_MINOR};
-    	my $major = $HASH{$flightIDX}{IN_PEN_LANDING};
-    	my $water = $HASH{$flightIDX}{IN_WATER_FLT} * (1-($minor * 0.25)) * (1-($major* 0.5));
-    	# my $fs = $water*  (1-($FLIGHT{IN_PEN_MINOR} * 0.25)) * (1-($FLIGHT{IN_PEN_LANDING}* 0.5));
-    	# print "WATER = $water<br>"; 
-    	$totalWater += $water;
-    	$effectiveWater += $water *  (1-($minor * 0.25)) * (1-($major* 0.5));
+    	my $minor = (1-($HASH{$flightIDX}{IN_PEN_MINOR}   * 0.25));
+    	my $major = (1-($HASH{$flightIDX}{IN_PEN_LANDING} * 0.50));
+    	my $water = $HASH{$flightIDX}{IN_WATER_FLT};
+    	$effectiveWater += $water *  $minor * $major;
     	}
-    return ($totalWater, $effectiveWater);
+    return ($effectiveWater);
     }
 sub getFlightLogs (){
     my ($teamIDX) = @_;

@@ -1,0 +1,55 @@
+================================================================================
+File: SV/ADV.pm 
+--------------------------------------------------------------------------------
+Object: new()
+Inputs: None.
+Output: Defined a new Object
+Comment: none.
+
+================================================================================
+File: SV/CONNECT.pm 
+--------------------------------------------------------------------------------
+Object: new()
+Inputs: None.
+Output: Defined a new Object and returns he database handle and the database Name
+Comment: none.
+
+================================================================================
+File: SV/LOGIN.pm 
+--------------------------------------------------------------------------------
+Object: new()
+Inputs: None.
+Output: Defined a new Object
+Comment: none.
+--------------------------------------------------------------------------------
+Object: _getDatabase()
+Inputs: None.  Syntax: my $dbName = $obj->_getDatabase();
+Output: Name of the Database.
+Comment: none.
+--------------------------------------------------------------------------------
+Object: _getTempPassword()
+Inputs: my ($password, $cryptPassword) = $obj->_getTempPassword();
+Output: returns password generated and the encrypted Password to be stored in the user password field.
+Comment: The returned password can be use to send to the user if they decided to have their password reset.
+--------------------------------------------------------------------------------
+Object: _login()
+Inputs: User's Email and the password. Syntax: my $json = $obj->_login();
+Output: returns json format. PK_USER_IDX, SESSION_ID, BO_RESET, TX_FIRST, TX_LAST
+Comment: none.
+
+================================================================================
+File: SV/MIC.pm 
+--------------------------------------------------------------------------------
+Object: new()
+Inputs: None.
+Output: Defined a new Object
+Comment: none.
+
+================================================================================
+File: SV/REG.pm 
+--------------------------------------------------------------------------------
+Object: new()
+Inputs: None.
+Output: Defined a new Object
+Comment: none.
+

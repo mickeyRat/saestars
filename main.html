@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html style="background: #ffffff!important;">
+<title>STARS - Score Tracking and Recording System</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="images/stars_2.png">
+<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto">
+<!-- <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons"> -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+<link href="assets/css/style.css" rel="stylesheet" />
+<link href="assets/css/tags.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://unicons.iconscout.com/release/v4.0.0/css/thinline.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<style>
+html,body,h1,h2,h3,h4,h5 {font-family: "Roboto", sans-serif}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="assets/js/skel.min.js"></script>
+<script src="assets/js/util.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/main2_menu.js"></script>
+<script src="assets/js/main2.js"></script>
+<script src="assets/js/rubric.js"></script>
+<script src="assets/js/grade.js"></script>
+<script src="assets/js/preso.js"></script>
+<script src="assets/js/tech.js"></script>
+<script src="assets/js/ecr.js"></script>
+<script src="assets/js/demo.js"></script>
+<script src="assets/js/flight.js"></script>
+<script src="assets/js/publish.js"></script>
+<script src="assets/js/results.js"></script>
+<script src="assets/js/user.js"></script>
+<script src="assets/js/team.js"></script>
+<script src="assets/js/airboss.js"></script>
+<script src="//cdn.ably.io/lib/ably.min-1.js"></script>
+<script src="assets/js/pubsub.js"></script>
+<script src="assets/js/tablesort.js"></script>
+<style>
+    
+</style>
+<!--<body class="w3-white">-->
+<body class="w3-grey">
+
+<!-- Top container -->
+<div ID="savedMessage" class="w3-display-container" style="display: none; z-index: 100000;">
+    <div class="w3-green w3-card-4 w3-border w3-round w3-display-topmiddle w3-margin-top" style="z-index: 100000; padding: 16px; margin-top: 2px; position: fixed">All data auto-saved.</div>
+</div>
+<div class="w3-bar w3-top w3-blue-grey w3-large" style="z-index:4">
+  <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i> &nbsp;Menu</button>
+  <span class="w3-bar-item w3-right w3-hide-small w3-large">Score Tracking and Recording System</span>
+  <span class="w3-bar-item w3-left w3-hide-small w3-large DB_event" onclick="sae_showModalEventSelection();" style="cursor: pointer;">Event</span>
+  <span class="w3-bar-item w3-right w3-hide-large w3-hide-medium w3-large">STARS (<span class="DB_event" onclick="sae_showModalEventSelection();"></span>)</span>
+
+</div>
+
+<!-- Sidebar/menu -->
+<nav class="w3-sidebar w3-collapse w3-white w3-animate-left" style="z-index:3;width:270px;" id="mySidebar"><br>
+  <!--<div class="w3-container w3-row">-->
+    <!--<div class="w3-col s4">-->
+    <!--  <img src="images/Student.png" class="w3-circle w3-margin-right" style="width:46px">-->
+    <!--</div>-->
+    <!--<div class="w3-col s8 w3-bar">-->
+      <!--<span>Welcome, <strong id="userName_LoggedInAs"></strong></span><br>-->
+      <!-- <a href="mailto:test1@saestars.com?Subject=Test" class="w3-bar-item w3-button"><i class="fa fa-envelope"></i></a> -->
+      <!--<a href="#" class="w3-bar-item w3-button" onclick="sae_showUserProfile();w3_close();"><i class="fa fa-user"></i></a>-->
+      <!--<a href="javascript:void(0);" class="w3-bar-item w3-button" onclick="sae_showSetEventLocationFromMain();w3_close();"><i class="fa fa-flag-checkered fa-fw"></i></a>-->
+      <!--<a href="javascript:void(0);" class="w3-bar-item w3-button" onclick="sae_showModalEventSelection();w3_close();"><i class="fa fa-cog" aria-hidden="true"></i></a>-->
+    <!--</div>-->
+  <!--</div>-->
+  <!--<hr>-->
+  <div class="w3-container"><h6>Menu - <a  href="javascript:void(0);" onclick="sae_showUserProfile();" id="userName_LoggedInAs" ></a></h6></div>
+  <div ID="menuItem" class="w3-bar-block"></div>
+</nav>
+<!-- !PAGE OVERLAY! -->
+<div class="w3-overlay w3-hide-large w3-animate-opacity" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
+<!-- !PAGE CONTENT! -->
+<div id="mainPageContent" class="w3-main w3-light-grey w3-bottombar w3-border-grey " style="margin-left:270px; margin-top:20px; padding-bottom: 16px;">
+
+</div>
+
+</body>
+</html>

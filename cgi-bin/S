@@ -1,0 +1,627 @@
+package SAE::FLIGHT;
+
+use DBI;
+use SAE::SDB;
+use URI::Escape;
+use SAE::TB_TEAM;
+use SAE::TEAM;
+# use DateTime;
+
+my $dbi = new SAE::Db();
+my %FLIGHT;
+
+sub new{
+	$className = shift;
+	my $self = {};
+	my $flightIDX = shift;
+    my $SQL = "SELECT * FROM TB_FLIGHT WHERE PK_FLIGHT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($flightIDX);
+    %FLIGHT = %{$select->fetchrow_hashref()}; 
+
+	bless($self, $className);
+	return $self;
+}
+sub _getFlightData(){
+    my $self = shift;
+    return (\%FLIGHT);
+}
+# ===============================================================
+# TEMPLATES
+# ===============================================================
+sub _tempRegOutBtn(){
+    my ($self, $flightIDX, $teamIDX, $inRound, $inStatus) = @_;
+    my $Team = new SAE::TEAM($teamIDX);
+    my %TEAM = %{$Team->_getTeamData()};
+    my $height = 45;
+    my %STATUS = (1=>'w3-green', 2=>'w3-yellow', 3=>'w3-red', ''=>'w3-green', 0=>'w3-green');
+    my $str = sprintf '<li ID="TEAM_%d" class="w3-bar w3-button w3-card-2 w3-margin-bottom w3-border w3-round w3-white w3-display-container" onclick="sae_recordFlightCard(this, %d, %d, \'%03d\', %d);" >', $flightIDX, $teamIDX, $TEAM{IN_NUMBER}, $inRound;
+    $str .= '<i class="fa fa-chevron-right fa-2x w3-display-right  w3-text-grey w3-margin-right" aria-hidden="true"></i>';
+    $str .= sprintf '<span class="w3-bar-item w3-circle w3-border w3-blue-grey w3-display-left w3-margin-left w3-center %s" style="height: %dpx; width: %dpx;">', $STATUS{$inStatus}, $height, $height;
+    $str .= sprintf '<div style="margin-left: -7px; margin-top: 4px;">%03d</div>', $TEAM{IN_NUMBER};
+    $str .= '</span>';
+    $str .= '<div class="w3-bar-item w3-small" style="margin-left: 35px; text-align: left; padding-right: 100px;">';
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_SCHOOL};
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_COUNTRY};
+    $str .= sprintf '<span>Checked-Out: <b class="w3-yellow">Round %d</b></span><br>', $inRound;
+    $str .= '</div>';
+    $str .= '</li>';
+    return ($str);
+
+}
+sub _templateCheckInButton_Reg(){
+    my ($self, $flightIDX, $teamIDX, $inRound, $inStatus) = @_;
+    my $Team = new SAE::TEAM($teamIDX);
+    my %TEAM = %{$Team->_getTeamData()};
+    my $height = 45;
+    my %STATUS = (1=>'w3-green', 2=>'w3-yellow', 3=>'w3-red', ''=>'w3-green', 0=>'w3-green');
+    my $str = sprintf '<li ID="TEAM_%d" class="w3-bar w3-button w3-card-2 w3-margin-bottom w3-border w3-round w3-white w3-display-container" onclick="sae_recordFlightCard(this, %d, %d, \'%03d\', %d);" >', $teamIDX, $flightIDX, $teamIDX, $TEAM{IN_NUMBER}, $inRound;
+    $str .= '<i class="fa fa-chevron-right fa-2x w3-display-right w3-text-grey  w3-margin-right" aria-hidden="true"></i>';
+    $str .= sprintf '<span class="w3-bar-item w3-circle w3-border w3-display-left w3-margin-left w3-center %s" style="height: %dpx; width: %dpx;">', $STATUS{$inStatus}, $height, $height;
+    $str .= sprintf '<div style="margin-left: -7px; margin-top: 4px;">%03d</div>', $TEAM{IN_NUMBER};
+    $str .= '</span>';
+    $str .= '<div class="w3-bar-item w3-small" style="margin-left: 35px; text-align: left; padding-right: 100px;">';
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_SCHOOL};
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_COUNTRY};
+    $str .= sprintf '<span>Checked-Out: <b class="w3-yellow">Attempt #:%d</b></span><br>', $inRound;
+    $str .= '</div>';
+    $str .= '</li>';
+    return ($str);
+
+}
+sub _templateCheckInButton_Adv(){
+    my ($self, $flightIDX, $teamIDX, $inRound, $inStatus) = @_;
+    my $Team = new SAE::TEAM($teamIDX);
+    my %TEAM = %{$Team->_getTeamData()};
+    my $height = 45;
+    my %STATUS = (1=>'w3-green', 2=>'w3-yellow', 3=>'w3-red', ''=>'w3-green', 0=>'w3-green');
+    my $str = sprintf '<li ID="TEAM_%d" class="w3-bar w3-button w3-card-2 w3-margin-bottom w3-border w3-round w3-white w3-display-container" onclick="sae_recordFlightCard_Adv(this, %d, %d, \'%03d\', %d);" >', $teamIDX, $flightIDX, $teamIDX, $TEAM{IN_NUMBER}, $inRound;
+    $str .= '<i class="fa fa-chevron-right fa-2x w3-display-right w3-text-grey  w3-margin-right" aria-hidden="true"></i>';
+    $str .= sprintf '<span class="w3-bar-item w3-circle w3-border w3-display-left w3-margin-left w3-center %s" style="height: %dpx; width: %dpx;">', $STATUS{$inStatus}, $height, $height;
+    $str .= sprintf '<div style="margin-left: -7px; margin-top: 4px;">%03d</div>', $TEAM{IN_NUMBER};
+    $str .= '</span>';
+    $str .= '<div class="w3-bar-item w3-small" style="margin-left: 35px; text-align: left; padding-right: 100px;">';
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_SCHOOL};
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_COUNTRY};
+    $str .= sprintf '<span>Checked-Out: <b class="w3-yellow">Attempt #:%d</b></span><br>', $inRound;
+    $str .= '</div>';
+    $str .= '</li>';
+    return ($str);
+
+}
+sub _templateCheckInButton_Mic(){
+    my ($self, $flightIDX, $teamIDX, $inRound, $inStatus) = @_;
+    my $Team = new SAE::TEAM($teamIDX);
+    my %TEAM = %{$Team->_getTeamData()};
+    my $height = 45;
+    my %STATUS = (1=>'w3-green', 2=>'w3-yellow', 3=>'w3-red', ''=>'w3-green', 0=>'w3-green');
+    my $str = sprintf '<li ID="TEAM_%d" class="w3-bar w3-button w3-card-2 w3-margin-bottom w3-border w3-round w3-white w3-display-container" onclick="sae_recordFlightCard_Mic(this, %d, %d, \'%03d\', %d);" >', $teamIDX, $flightIDX, $teamIDX, $TEAM{IN_NUMBER}, $inRound;
+    $str .= '<i class="fa fa-chevron-right fa-2x w3-display-right w3-text-grey  w3-margin-right" aria-hidden="true"></i>';
+    $str .= sprintf '<span class="w3-bar-item w3-circle w3-border w3-display-left w3-margin-left w3-center %s" style="height: %dpx; width: %dpx;">', $STATUS{$inStatus}, $height, $height;
+    $str .= sprintf '<div style="margin-left: -7px; margin-top: 4px;">%03d</div>', $TEAM{IN_NUMBER};
+    $str .= '</span>';
+    $str .= '<div class="w3-bar-item w3-small" style="margin-left: 35px; text-align: left; padding-right: 100px;">';
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_SCHOOL};
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_COUNTRY};
+    $str .= sprintf '<span>Checked-Out: <b class="w3-yellow">Attempt #:%d</b></span><br>', $inRound;
+    $str .= '</div>';
+    $str .= '</li>';
+    return ($str);
+
+}
+sub _tempFlightLogButton(){
+    my ($self, $teamIDX, $inNumber, $txSchool, $txName, $txCountry, $classIDX, $inStatus) = @_;
+    
+    my $height = 45;
+    my %STATUS = (1=>'w3-green', 2=>'w3-yellow', 3=>'w3-red', ''=>'w3-green', 0=>'w3-green');
+    my $str = sprintf '<li ID="TEAM_%d" class="w3-bar w3-button w3-card-2 w3-margin-bottom w3-border w3-round w3-white w3-display-container" onclick="sae_openCheckoutCard(%d, \'%03d\', %d);" >', $teamIDX, $teamIDX, $inNumber, $classIDX;
+    $str .= '<i class="fa fa-chevron-right fa-2x w3-display-right w3-text-grey  w3-margin-right" aria-hidden="true"></i>';
+    $str .= sprintf '<span class="w3-bar-item w3-circle w3-border  w3-display-left w3-margin-left w3-center %s" style="height: %dpx; width: %dpx;">', $STATUS{$inStatus}, $height, $height;
+    $str .= sprintf '<div style="margin-left: -7px; margin-top: 4px;">%03d</div>', $inNumber;
+    $str .= '</span>';
+    $str .= '<div class="w3-bar-item w3-small" style="margin-left: 35px; text-align: left; padding-right: 100px;">';
+    $str .= sprintf '<span>%s</span><br>', $txSchool;
+    $str .= sprintf '<span>%s</span><br>', $txName;
+    $str .= sprintf '<span>%s</span><br>', $txCountry;
+    $str .= '</div>';
+    $str .= '</li>';
+    return ($str);
+}
+sub makeButton(){
+    my ($teamIDX, $inStatus) = @_;
+    my $Team = new SAE::TEAM($teamIDX);
+    my %TEAM = %{$Team->_getTeamData()};
+    my $height = 45;
+    my %STATUS = (1=>'w3-green', 2=>'w3-yellow', 3=>'w3-red', ''=>'w3-green', 0=>'w3-green');
+    my $str = sprintf '<li ID="TEAM_%d" class="w3-bar w3-button w3-card-2 w3-margin-bottom w3-border w3-round w3-white w3-display-container" onclick="sae_openCheckoutCard(%d, \'%03d\', %d);" >', $teamIDX, $teamIDX, $TEAM{IN_NUMBER}, $TEAM{FK_CLASS_IDX};
+    $str .= '<i class="fa fa-chevron-right fa-2x w3-display-right w3-text-grey  w3-margin-right" aria-hidden="true"></i>';
+    $str .= sprintf '<span class="w3-bar-item w3-circle w3-border w3-blue-grey w3-display-left w3-margin-left w3-center %s" style="height: %dpx; width: %dpx;">', $STATUS{$inStatus}, $height, $height;
+    $str .= sprintf '<div style="margin-left: -7px; margin-top: 4px;">%03d</div>', $TEAM{IN_NUMBER};
+    $str .= '</span>';
+    $str .= '<div class="w3-bar-item w3-small" style="margin-left: 35px; text-align: left; padding-right: 100px;">';
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_SCHOOL};
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_NAME};
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_COUNTRY};
+    $str .= '</div>';
+    $str .= '</li>';
+}
+sub _tempCheckOutButton(){
+    my ($self, $teamIDX, $inStatus) = @_;
+    my $Team = new SAE::TEAM($teamIDX);
+    my %TEAM = %{$Team->_getTeamData()};
+
+    my $height = 45;
+    my %STATUS = (1=>'w3-green', 2=>'w3-yellow', 3=>'w3-red', ''=>'w3-green', 0=>'w3-green');
+    my $str = sprintf '<li ID="TEAM_%d" class="w3-bar w3-button w3-card-2 w3-margin-bottom w3-border w3-round w3-white w3-display-container" onclick="sae_openCheckoutCard(%d, \'%03d\', %d);" >', $teamIDX, $teamIDX, $TEAM{IN_NUMBER}, $TEAM{FK_CLASS_IDX};
+    $str .= '<i class="fa fa-chevron-right fa-2x w3-display-right w3-text-grey  w3-margin-right" aria-hidden="true"></i>';
+    $str .= sprintf '<span class="w3-bar-item w3-circle w3-border w3-blue-grey w3-display-left w3-margin-left w3-center %s" style="height: %dpx; width: %dpx;">', $STATUS{$inStatus}, $height, $height;
+    $str .= sprintf '<div style="margin-left: -7px; margin-top: 4px;">%03d</div>', $TEAM{IN_NUMBER};
+    $str .= '</span>';
+    $str .= '<div class="w3-bar-item w3-small" style="margin-left: 35px; text-align: left; padding-right: 100px;">';
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_SCHOOL};
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_NAME};
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_COUNTRY};
+    $str .= '</div>';
+    $str .= '</li>';
+    return ($str);
+
+}
+sub _templateReinspectionButton(){
+    my ($self, $flightIDX, $teamIDX, $inRound, $inStatus) = @_;
+    my $Team = new SAE::TEAM($teamIDX);
+    my %TEAM = %{$Team->_getTeamData()};
+    my $height = 45;
+    my %STATUS = (1=>'w3-green', 2=>'w3-yellow', 3=>'w3-red', ''=>'w3-green', 0=>'w3-green');
+    my $str = sprintf '<li ID="TEAM_%d" class="w3-bar w3-button w3-card-2 w3-margin-bottom w3-border w3-round w3-display-container w3-white" onclick="sae_openClearCrash(this, %d, \'%03d\', %d, %d);" >', $teamIDX, $teamIDX, $TEAM{IN_NUMBER}, $TEAM{FK_CLASS_IDX}, $flightIDX;
+    $str .= '<i class="fa fa-chevron-right fa-2x w3-display-right w3-text-grey w3-margin-right" aria-hidden="true"></i>';                                                                         #o,  teamIDX, txNumber, classIDX, flightIDX
+    $str .= sprintf '<span class="w3-bar-item w3-circle w3-border w3-display-left w3-margin-left w3-center w3-red" style="height: %dpx; width: %dpx;">', $height, $height;
+    $str .= sprintf '<div style="margin-left: -7px; margin-top: 4px;">%03d</div>', $TEAM{IN_NUMBER};
+    $str .= '</span>';
+    $str .= '<div class="w3-bar-item w3-small" style="margin-left: 35px; text-align: left; padding-right: 100px;">';
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_SCHOOL};
+    $str .= sprintf '<span>%s</span><br>', $TEAM{TX_COUNTRY};
+    $str .= sprintf '<span>Crashed Attpemt #:%d - Reinspection Required</span><br>', $inRound;
+    $str .= '</div>';
+    $str .= '</li>';
+    return ($str);
+}
+
+# ===============================================================
+# GET
+# ===============================================================
+sub _getUsedTicketCount(){
+    my ($self, $eventIDX) = @_;
+    my $SQL = "SELECT FK_TEAM_IDX, COUNT(FK_TEAM_IDX) AS IN_USED FROM TB_FLIGHT where FK_EVENT_IDX=? GROUP BY FK_TEAM_IDX";
+    my $select = $dbi->prepare($SQL);
+        $select->execute( $eventIDX );
+    my %HASH = %{$select->fetchall_hashref('FK_TEAM_IDX')}; 
+    return (\%HASH);
+}
+sub _getTeamsLastRound(){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT MAX(IN_ROUND) AS IN_LAST_ROUND FROM TB_FLIGHT where (FK_TEAM_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($teamIDX);
+    my ($inLast) = $select->fetchrow_array();  
+    return ($inLast);
+}
+sub _getTotalWaterDelivered(){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT sum(IN_WATER_FLT) AS IN_TOTAL FROM `TB_FLIGHT` WHERE (FK_TEAM_IDX=? AND IN_STATUS=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($teamIDX, 1);
+    my ($inTotal) = $select->fetchrow_array();   
+    
+    return($inTotal);
+}
+sub _getCrashInspectionSheet(){
+    my $self = shift;
+    my $flightIDX = shift;
+    my $SQL = "SELECT * FROM TB_TODO WHERE FK_FLIGHT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($flightIDX);
+    my %HASH = %{$select->fetchrow_hashref()}; 
+    return (\%HASH);
+}
+sub _getFlightCardData(){
+    my $self = shift;
+    my $teamIDX = shift;
+    my $SQL = "SELECT * FROM TB_FLIGHT WHERE FK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($teamIDX);
+    my %HASH = %{$select->fetchall_hashref('IN_ROUND')}; 
+    return (\%HASH);
+}
+sub _getTeamByLocation(){
+    my $self = shift;
+    my $location = shift;
+    my $SQL = "SELECT * FROM TB_TEAM WHERE FK_EVENT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($location);
+    my %HASH = %{$select->fetchall_hashref('PK_TEAM_IDX')}; 
+    return (\%HASH);
+}
+sub _getCardStatusByEvent(){
+    my $self = shift;
+    my $location = shift;
+    my $SQL = "SELECT * FROM TB_FLIGHT WHERE FK_EVENT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($location);
+    my %HASH = %{$select->fetchall_hashref(['FK_TEAM_IDX','IN_ROUND'])}; 
+    return (\%HASH);
+}
+sub _getTeamDataById(){
+    my $self = shift;
+    my $teamIDX = shift; 
+    my $SQL = "SELECT * FROM TB_TEAM WHERE PK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($teamIDX);
+    my %HASH = %{$select->fetchall_hashref('PK_TEAM_IDX')}; 
+    return (\%HASH);
+}
+sub _getCardStatusByID(){
+    my $self = shift;
+    my $flightIDX = shift;
+    my $SQL = "SELECT * FROM TB_FLIGHT WHERE PK_FLIGHT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($flightIDX);
+    my %HASH = %{$select->fetchall_hashref('FK_TEAM_IDX')}; 
+    return (\%HASH);
+}
+sub _getInspectionItems(){
+    my $self = shift;
+    my $SQL = "SELECT * FROM TB_INSPECTION";
+    my $select = $dbi->prepare($SQL);
+        $select->execute();
+    my %HASH = %{$select->fetchall_hashref('PK_INSPECTION_IDX')}; 
+    return (\%HASH);
+}
+sub _getCrashDataByEvent(){
+    my $self = shift;
+    my $location = shift;
+    my $SQL = "SELECT TODO.*, FLIGHT.IN_ROUND
+        FROM TB_TODO AS TODO JOIN TB_FLIGHT AS FLIGHT ON TODO.FK_FLIGHT_IDX=FLIGHT.PK_FLIGHT_IDX 
+        WHERE ((TODO.FK_EVENT_IDX=?) AND (TODO.FK_TODO_TYPE_IDX=?) AND (TODO.IN_CLEAR=?))";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($location, 4, 0);
+    my %HASH = %{$select->fetchall_hashref('FK_TEAM_IDX')}; 
+    return (\%HASH);
+}
+sub _getCrashDataByTeamId(){
+    my $self = shift;
+    my $teamIDX = shift;
+    my $SQL = "SELECT TODO.*, FLIGHT.IN_ROUND 
+        FROM TB_TODO AS TODO JOIN TB_FLIGHT AS FLIGHT ON TODO.FK_FLIGHT_IDX=FLIGHT.PK_FLIGHT_IDX 
+        WHERE ((TODO.FK_TEAM_IDX=?) AND (TODO.FK_TODO_TYPE_IDX=?) AND (TODO.IN_CLEAR=?))";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($teamIDX, 4, 0);
+    my %HASH = %{$select->fetchall_hashref('PK_TODO_IDX')}; 
+    return (\%HASH);
+}
+sub _getCrashDataByFlightId(){
+    my $self = shift;
+    my $idx = shift;
+    # my $SQL = "SELECT TODO.*, FLIGHT.IN_ROUND 
+    #     FROM TB_TODO AS TODO JOIN TB_FLIGHT AS FLIGHT ON TODO.FK_FLIGHT_IDX=FLIGHT.PK_FLIGHT_IDX 
+    #     WHERE TODO.FK_FLIGHT_IDX=?";    
+    my $SQL = "SELECT * FROM TB_TODO WHERE FK_FLIGHT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($idx);
+    my %HASH = %{$select->fetchrow_hashref()}; 
+    return (\%HASH);
+}
+sub _getMetricListByStatus(){
+    my $self = shift;
+    my $inStatus = shift;
+    my $location = shift;
+    my $select;
+    if ($inStatus == 0){
+        my $SQL = "SELECT M.*, T.*, F.IN_ROUND FROM TB_METRIC AS M 
+            JOIN TB_TEAM AS T ON M.FK_TEAM_IDX=T.PK_TEAM_IDX 
+            JOIN TB_FLIGHT AS F ON F.PK_FLIGHT_IDX=M.FK_FLIGHT_IDX
+            WHERE M.FK_EVENT_IDX=?";
+        $select = $dbi->prepare($SQL);
+        $select->execute( $location);
+    } else {
+        my $SQL = "SELECT M.*, T.*, F.IN_ROUND  FROM TB_METRIC AS M 
+            JOIN TB_TEAM AS T ON M.FK_TEAM_IDX=T.PK_TEAM_IDX 
+            JOIN TB_FLIGHT AS F ON F.PK_FLIGHT_IDX=M.FK_FLIGHT_IDX
+            WHERE M.IN_STATUS=? AND M.FK_EVENT_IDX=?";
+        $select = $dbi->prepare($SQL);
+        $select->execute($inStatus, $location);
+    }
+    my %HASH = %{$select->fetchall_hashref('FK_FLIGHT_IDX')}; 
+    return (\%HASH);
+}
+sub _getCrashInspectionItems(){
+    my $self = shift;
+	my $flightIDX = shift;
+	my $SQL = "SELECT * FROM TB_CRASH WHERE FK_FLIGHT_IDX=?";
+	my $select = $dbi->prepare($SQL);
+       $select->execute($flightIDX);
+    my %HASH = %{$select->fetchall_hashref('PK_CRASH_IDX')}; 
+    return (\%HASH);
+}
+sub _getCrashNotes(){
+    my $self = shift;
+	my $flightIDX = shift;
+	my $SQL = "SELECT CL_NOTES FROM TB_NOTES WHERE FK_FLIGHT_IDX=?";
+	my $select = $dbi->prepare($SQL);
+       $select->execute($flightIDX);
+    my $notes = $select->fetchrow_array(); 
+    return ($notes);
+}
+sub _getCrashHistory(){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT F.IN_ROUND, TD.PK_TODO_IDX, TD.CL_DESCRIPTION, TD.IN_CLEAR, TD.BO_ARCHIVE, TD.FK_FLIGHT_IDX 
+        FROM TB_TODO AS TD JOIN TB_FLIGHT AS F ON TD.FK_FLIGHT_IDX=F.PK_FLIGHT_IDX 
+        WHERE TD.FK_TEAM_IDX=? AND TD.FK_TODO_TYPE_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($teamIDX, 4);
+    my %HASH = %{$select->fetchall_hashref('PK_TODO_IDX')}; 
+    return (\%HASH);
+}
+# ===============================================================
+# INSERT
+# ===============================================================
+sub _createFlightCard(){
+    my $self = shift;
+    my $teamIDX = shift;
+    my $inRound = shift;
+    my $location = shift;
+    my $inFlightStatus = shift;
+    my $Team = new SAE::TB_TEAM();
+    $Team->getRecordById($teamIDX);
+    my $lCargo = $Team->getInLcargo();
+    
+    my $SQLs = "SELECT IN_SPAN FROM TB_FLIGHT WHERE FK_TEAM_IDX=? ORDER BY IN_ROUND DESC LIMIT 1";
+    my $select = $dbi->prepare($SQLs);
+       $select->execute($teamIDX);
+    my $inSpan = $select->fetchrow_array();
+    if (!$inSpan){$inSpan=0}
+    # my $SQL = "INSERT INTO TB_FLIGHT (FK_TEAM_IDX, IN_ROUND, FK_EVENT_IDX, TX_STATUS, TX_COLOR) VALUES (?,?,?,?,?)";
+    my $SQL = "INSERT INTO TB_FLIGHT (FK_TEAM_IDX, IN_ROUND, FK_EVENT_IDX, IN_LCARGO, IN_SPAN) VALUES (?,?,?,?,?)";
+    my $insert = $dbi->prepare($SQL);
+    # $insert->execute($teamIDX , $inRound , $location, 'Out-'.$inRound, 'w3-yellow');
+    $insert->execute($teamIDX , $inRound , $location, $lCargo, $inSpan);
+    my $flightIDX = $insert->{q{mysql_insertid}};
+    
+    $SQL = "UPDATE TB_TEAM SET IN_FLIGHT_STATUS=? WHERE PK_TEAM_IDX=?";
+    my $update = $dbi->prepare($SQL);
+       $update->execute($inFlightStatus, $teamIDX);
+       
+    return($flightIDX);
+}
+sub _submitCrashReport(){
+	my $self = shift;
+	my $flightIDX = shift;
+    my $hashData = shift;
+	my $FIELDS = join(", ", keys %$hashData);
+	my @VALUES = uri_unescape(values %$hashData);
+	my $value = join ', ', (split(/ /, "? " x (scalar(keys %$hashData))));
+	my $SQL = "INSERT INTO TB_TODO ($FIELDS) VALUES ($value);";
+	my $insert = $dbi->prepare($SQL);
+	for ($i=1; $i <= scalar(@VALUES); $i++) {
+		$insert->bind_param($i ,$VALUES[$i-1]);
+	}
+	$insert->execute();
+	my $todoIDX = $insert->{q{mysql_insertid}};
+	
+    # print $SQL;
+	return ( $todoIDX );
+}
+sub _recordInspectionItem(){
+    my $self = shift;
+    my $txItem = shift;
+    my $teamIDX = shift;
+    my $flightIDX = shift;
+    my $SQL = "INSERT INTO TB_CRASH (TX_ITEM, FK_TEAM_IDX, FK_FLIGHT_IDX) VAlUES (?, ?, ?)";
+    my $insert = $dbi->prepare($SQL);
+       $insert->execute($txItem, $teamIDX, $flightIDX);
+    return();
+}
+sub _recordInspectionNotes(){
+    my $self = shift;
+    my $txItem = shift;
+    my $teamIDX = shift;
+    my $flightIDX = shift;
+    my $eventIDX = shift;
+    my $SQL = "INSERT INTO TB_NOTES (TX_TYPE, CL_NOTES, FK_TEAM_IDX, FK_FLIGHT_IDX, FK_EVENT_IDX) VAlUES (?, ?, ?, ?, ?)";
+    my $insert = $dbi->prepare($SQL);
+       $insert->execute('Crash', uri_unescape($txItem), $teamIDX, $flightIDX, $eventIDX);
+    return();
+}
+sub _addNewInspectionItem(){
+    my $self = shift;
+    my $txItem = shift;
+    my $SQL = "INSERT INTO TB_INSPECTION (TX_ITEM) VALUES (?)";
+    my $insert = $dbi->prepare($SQL);
+    $insert->execute($txItem);
+    # my $flightIDX = $insert->{q{mysql_insertid}};
+    return();
+}
+
+# ===============================================================
+# UPDATES
+# ===============================================================
+sub _updateTeamInfo(){
+    my $self = shift;
+    my $txField = shift;
+    my $inValue = shift;
+    my $teamIDX = shift;
+    my $SQL = "UPDATE TB_TEAM SET $txField=? WHERE PK_TEAM_IDX=?";
+    my $update = $dbi->prepare($SQL);
+       $update->execute($inValue, $teamIDX);
+}
+sub _updateFlightField(){
+    my $self = shift;
+    my $flightIDX = shift;
+    my $txField = shift;
+    my $inValue = shift;
+    my $teamIDX = shift;
+    my %STATUS = (0=>'Out',1=>'<i class="fa fa-thumbs-o-up"></i> Good',2=>'DNF',3=>'Crash');
+    my %COLOR = (0=>'w3-yellow',1=>'w3-green',2=>'w3-grey', 3=>'w3-red');
+    my $SQL = "UPDATE TB_FLIGHT SET $txField=?, TX_STATUS=?, TX_COLOR=? WHERE PK_FLIGHT_IDX=?";
+    $update = $dbi->prepare($SQL);
+    $update->execute($inValue, $STATUS{$inValue}, $COLOR{$inValue}, $flightIDX);
+    if ($txField eq "IN_LCARGO") {
+        my $SQL_CARGO = "UPDATE TB_TEAM SET IN_LCARGO=? WHERE PK_TEAM_IDX=?";
+        my $updateCargo = $dbi->prepare($SQL_CARGO);
+            $updateCargo->execute($inValue, $teamIDX);
+    }
+    return ("$inValue, $flightIDX");
+
+}
+sub _updateFlightButton(){
+    my $self = shift;
+    my $teamIDX = shift;
+    my $inFlightStatus = shift;
+    my $txFlightButton = shift;
+    my $SQL = "UPDATE TB_TEAM SET TX_FLIGHT_BUTTON=?, IN_FLIGHT_STATUS=? WHERE PK_TEAM_IDX=?";
+    $update = $dbi->prepare($SQL);
+    $update->execute($txFlightButton, $inFlightStatus, $teamIDX);
+    return;
+}
+sub _updateMetric(){
+    my $self = shift;
+    my $inStatus = shift;
+    my $flightIDX = shift;
+    my $final = shift;
+    my $SQL;
+    my $inSuccess = 0;
+    if ($inStatus==2) {
+        $SQL="UPDATE TB_METRIC SET IN_STATUS=?, TS_INLINE=CURRENT_TIMESTAMP, BO_SUCCESS=? WHERE FK_FLIGHT_IDX=?";
+    } elsif($inStatus==3) {
+        $SQL="UPDATE TB_METRIC SET IN_STATUS=?, TS_READY=CURRENT_TIMESTAMP, BO_SUCCESS=? WHERE FK_FLIGHT_IDX=?";
+    } elsif($inStatus==4) {
+        $SQL="UPDATE TB_METRIC SET IN_STATUS=?, TS_START=CURRENT_TIMESTAMP, BO_SUCCESS=? WHERE FK_FLIGHT_IDX=?";
+    } elsif($inStatus==5) {
+        $inSuccess=1;
+        $SQL="UPDATE TB_METRIC SET IN_STATUS=?, TS_COMPLETE=CURRENT_TIMESTAMP, BO_SUCCESS=? WHERE FK_FLIGHT_IDX=?";
+    } elsif($inStatus==6) {
+        $inSuccess=0;
+        $SQL="UPDATE TB_METRIC SET IN_STATUS=?, TS_WEIGH_IN=CURRENT_TIMESTAMP, BO_SUCCESS=? WHERE FK_FLIGHT_IDX=?";
+    } elsif($inStatus==7) {
+        $inSuccess=0;
+        $SQL="UPDATE TB_METRIC SET IN_STATUS=?, TS_WEIGH_IN=CURRENT_TIMESTAMP, BO_SUCCESS=? WHERE FK_FLIGHT_IDX=?";
+    } elsif($inStatus==8) {
+        $inSuccess=1;
+        $SQL="UPDATE TB_METRIC SET IN_STATUS=?, TS_WEIGH_IN=CURRENT_TIMESTAMP, BO_SUCCESS=? WHERE FK_FLIGHT_IDX=?";
+    } else {
+        $inSuccess = $final;
+        $SQL="UPDATE TB_METRIC SET IN_STATUS=?, TS_LOGIN=CURRENT_TIMESTAMP, BO_SUCCESS=? WHERE FK_FLIGHT_IDX=?";
+    }
+    $update = $dbi->prepare($SQL);
+    $update->execute($inStatus, $inSuccess, $flightIDX);
+    # print "\$inStatus=$inStatus, \$inSuccess=$inSuccess, \$flightIDX=$flightIDX\n";
+    return;
+}
+sub _updateFlightCardStatus(){
+    my $self = shift;
+    my $flightIDX = shift;
+    my $inStatus = shift;
+    my $inRound = shift;
+
+    my %COLOR = (0=>'w3-yellow',1=>'w3-green',2=>'w3-grey',3=>'w3-red');
+    my %STATUS = (0=>'Out-'.$inRound,1=>'Good',2=>'DNF',3=>'Crash');
+    # 0 = out, 1 = success, 2 = DNF, 3 = Crashed
+    if ($inStatus > 1){
+        my $SQL = "UPDATE TB_FLIGHT SET IN_STATUS=?, TX_STATUS=?, TX_COLOR=?, IN_LCARGO=?, IN_SPHERE=?, IN_WEIGHT=?, IN_SPAN=?, IN_DENSITY=?, TX_TIME=?, FK_WEATHER_IDX=?, IN_COLONIST=?, IN_HABITAT=?, IN_WATER=?, IN_EMPTY=?, IN_PEN_MINOR=?, IN_PEN_LANDING=? WHERE PK_FLIGHT_IDX=?";
+        my $update = $dbi->prepare($SQL);
+        $update->execute($inStatus, $STATUS{$inStatus}, $COLOR{$inStatus}, 0,0,0,0,0,0,0,0,0,0,0,0,0, $flightIDX);
+    } else {
+        my $SQL = "UPDATE TB_FLIGHT SET IN_STATUS=?, TX_STATUS=?, TX_COLOR=? WHERE PK_FLIGHT_IDX=?";
+        my $update = $dbi->prepare($SQL);
+        $update->execute($inStatus, $STATUS{$inStatus}, $COLOR{$inStatus}, $flightIDX);
+    }
+    
+    return;
+}
+sub _updateToDoFlightCard(){
+    my $self = shift;
+    my $flightIDX = shift;
+    my $todoIDX = shift;
+    my $SQL = "UPDATE TB_FLIGHT SET FK_TODO_IDX=?, TX_COLOR WHERE PK_FLIGHT_IDX=?";
+    my $update = $dbi->prepare($SQL);
+       $update->execute( $todoIDX , 'w3-purple' , $flightIDX );
+    return;
+}
+sub _updateReinspectionItems(){
+    my $self = shift;
+    my $teamIDX = shift;
+    my $flightIDX = shift;
+    my $status = shift;
+    my $btn = shift;
+    my $SQL = "UPDATE TB_TODO SET IN_CLEAR=?, BO_ARCHIVE=? WHERE FK_FLIGHT_IDX=?";
+    my $update = $dbi->prepare($SQL);
+       $update->execute( $status, $status, $flightIDX);
+      $SQL = "UPDATE TB_TEAM SET TX_FLIGHT_BUTTON=? WHERE PK_TEAM_IDX=?";
+    my $updateTeam = $dbi->prepare($SQL);
+      $updateTeam->execute( $btn , $teamIDX);
+    return;
+}
+sub _updateReinspectionItemsFailed(){
+    my $self = shift;
+    my $teamIDX = shift;
+    my $flightIDX = shift;
+    my $btn = shift;
+    my $SQL = "UPDATE TB_TODO SET IN_CLEAR=?, BO_ARCHIVE=? WHERE FK_FLIGHT_IDX=?";
+    my $update = $dbi->prepare($SQL);
+       $update->execute( 0, 0, $flightIDX);
+       $SQL = "UPDATE TB_TEAM SET TX_FLIGHT_BUTTON=? WHERE PK_TEAM_IDX=?";
+    my $updateTeam = $dbi->prepare($SQL);
+       $updateTeam->execute( $btn, $teamIDX);
+    return;
+}
+sub _updateSuccessFlight(){
+	my $self = shift;
+	my $flightIDX = shift;
+    my $hashData = shift;
+	my $FIELDS = join("=?, ", keys %$hashData)."=? ";
+	my @VALUES = uri_unescape(values %$hashData);
+	my $value = join ', ', (split(/ /, "? " x (scalar(keys %$hashData))));
+	my $SQL = "UPDATE TB_FLIGHT SET $FIELDS WHERE PK_FLIGHT_IDX=?";
+	my $insert = $dbi->prepare($SQL);
+	for ($i=1; $i <= scalar(@VALUES); $i++) {
+		$insert->bind_param($i ,$VALUES[$i-1]) || die "$!";
+	}
+	$insert->bind_param($i,$flightIDX) ;
+	$insert->execute();
+	return ($SQL);
+}
+# ===============================================================
+# DELETES
+# ===============================================================
+sub _deleteCrashReport(){
+    my $self = shift;
+    my $flightIDX = shift;
+    my $SQL = "DELETE FROM TB_TODO WHERE FK_FLIGHT_IDX=?";
+    my $delete = $dbi->prepare($SQL);
+       $delete -> execute($flightIDX);
+    return;
+}
+sub _deleteCrashReportCard(){
+    my $self = shift;
+    my $todoIDX = shift;
+    my $SQL = "DELETE FROM TB_TODO WHERE PK_TODO_IDX=?";
+    my $delete = $dbi->prepare($SQL);
+       $delete -> execute($todoIDX);
+    return;
+}
+sub _deleteCrashNotes(){
+    my $self = shift;
+    my $flightIDX = shift;
+    my $SQL = "DELETE FROM TB_NOTES WHERE FK_FLIGHT_IDX=?";
+    my $delete = $dbi->prepare($SQL);
+       $delete -> execute($flightIDX);
+    return;
+}
+sub _deleteFlightCardById(){
+    my $self = shift;
+    my $flightIDX = shift;
+    my $SQL = "DELETE FROM TB_FLIGHT WHERE PK_FLIGHT_IDX=?";
+    my $delete = $dbi->prepare($SQL);
+       $delete -> execute($flightIDX);
+    return;
+}
+return (1);

@@ -1,0 +1,67 @@
+<!DOCTYPE HTML>
+<html lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta http-equiv="X-UA-Compatible" content="ie=edge">   
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>SAE-STAR Admin</title>
+        <link rel="icon" href="images/stars_2.png">
+        <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+        <link rel="stylesheet" href="https://www.w3schools.com/lib/w3-theme-black.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css">
+        <link rel="stylesheet" href="assets/css/index.css" />
+        
+    </head>
+
+<body class="w3-white">
+<!-- Side Navigation -->
+<nav ID="mySidebar" class="w3-sidebar w3-bar-block w3-card w3-animate-left w3-center" style="display: none; width: 90%; ">
+  <h1 class="w3-xxxlarge w3-text-theme">Menu</h1>
+  <button class="w3-bar-item w3-button" onclick="w3_close()">Close Menu <i class="fa fa-remove"></i></button>
+  <a href="javascript:void(0)" class="w3-bar-item w3-button">Sign Out</a>
+</nav>
+<!-- Header --> 
+<header class="w3-container w3-blue-grey " id="myHeader">
+<!--   <i onclick="w3_open()" class="fa fa-bars w3-xlarge w3-button"></i> -->
+  <div class="w3-center">
+    <h4>Score Tracking and Recording System</h4>
+    <h1 class="w3-xxlarge w3-animate-right">S.T.A.R.S.</h1>
+  </div>
+</header>
+<!-- Modal -->
+<div ID="id01" class="w3-modal">
+   <div id="id01_content" class="w3-modal-content w3-card-4 w3-animate-right">
+   </div>
+</div>
+<div ID="id02" class="w3-modal">
+   <div id="id02_content" class="w3-modal-content w3-card-4 w3-animate-top">
+   </div>
+</div>
+<!-- Tiles -->
+<div ID="tileWrapper">
+    <div ID="main" class="w3-container w3-row-padding w3-margin-top "></div>
+</div>
+	<div ID="DIV_FINAL" class="w3-modal" style="display: none; z-index: 200000;">
+        <div ID="DIV_FINAL_CONTENT" class="w3-modal-content w3-white w3-card-4" style="padding: 20px; margin-bottom: 3.5em;"></div>
+    </div>
+        <script src="assets/js/jquery.min.js"></script>
+    	<script src="assets/js/skel.min.js"></script>
+    	<script src="assets/js/util.js"></script>
+    	<!--<script src="assets/js/main.js"></script>-->
+        <script src="assets/js/common.js"></script>
+        <script src="assets/js/stars.js"></script>
+
+
+<script>
+// Side navigation
+function w3_open() {
+    $('#mySidebar').show(100);;
+}
+function w3_close() {
+    $('#mySidebar').hide(100);;
+}
+
+
+</script>
+</body>
+</html>

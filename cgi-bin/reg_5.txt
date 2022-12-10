@@ -1,0 +1,30 @@
+[H[2J
+***********************************
+Checking reg Class Class
+***********************************
+
+
+
+(Round 5) - SUMMARY VIEW
+No.  Team School                                          Country       FFS
+---------------------------------------------------------------------------
+17   Univ of Puerto Rico-Mayaquez                   United States   81.8833
+18   Texas A & M Univ - College Station             United States   81.8182
+14   Alexandria Univ                                        Egypt   72.6912
+22   Univ of Calif - Irvine                         United States    0.0000
+46   Univ of West Florida                           United States    0.0000
+30   Polytechnic Univ of Puerto Rico                United States    0.0000
+23   Univ of Virginia                               United States    0.0000
+21   Florida International Univ                     United States    0.0000
+51   Univ of Texas - El Paso                        United States    0.0000
+28   Louisiana State Univ                           United States    0.0000
+34   Lawrence Technological Univ                    United States    0.0000
+20   M. S. Ramaiah Institute of Technology                  India    0.0000
+45   Harding Univ                                   United States    0.0000
+19   Dwarkadas J Sanghvi College of Engrg                   India    0.0000
+26   Warsaw University of Technology                       Poland    0.0000
+50   West Virginia Univ Inst of Tech                United States    0.0000
+33   Politechnika Poznanska                                Poland    0.0000
+41   North Carolina A & T State Univ                United States    0.0000
+
+

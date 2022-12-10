@@ -1,0 +1,2560 @@
+
+
+==============================================================================================================
+File: TB_ACCESS.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_CARDTYPE.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_CARD.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_CLASS.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_COMMENTS.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_COUNTRY.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_DEMO.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_DESIGN.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_ECR.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_EVENT.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_FLIGHTA.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_FLIGHTM.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_FLIGHTR.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_FLIGHT.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_GROUP_ACCESS.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_GROUP.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_INSPECTION.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_LATE.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_PAPER.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_PREF.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_PUBLISH.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_PWD.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_QUESTION.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_RSECTION.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_RUBRIC_QUESTION.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_RUBRIC_SECTION.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_RUBRIC.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_SECTION.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_SETUP.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_SUBSECTION.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_TEAM.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_TEMPLATE.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_TILES.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_TODO_ROOM.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_TODO_TYPE.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_TODO.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_UPLOAD.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_USER_TEAM.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_USER.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.
+
+
+==============================================================================================================
+File: TB_WEATHER.pm
+--------------------------------------------------------------------------------------------------------------
+Object: new()
+Expected Inputs: None.
+Expected Output: Defined a new Object
+Comment: ---
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted the record where the fieldName = value Defined.  Syntax: ->_deleteRow(fieldName,value).
+Output: none
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: deleteRow()
+Inputs: Deleted ALL records in the Table. Syntax: ->_deleteAll().
+Output: none
+Comment: Extremely Dangerous!!! It will clear all Data from the Table.
+--------------------------------------------------------------------------------------------------------------
+Object: _fetchData(FieldName, Value)
+Expected Inputs: Pass in the Record Index.
+Comment: Once Executed, user can use _getData(TX_FIELDNAME) to return the data from the desired field.
+--------------------------------------------------------------------------------------------------------------
+Object: _getData()
+Inputs: Syntax: $fieldName = $obj->_getData(fieldName)
+Output: returns the value of the field requestedComment: Can only be run after _fetchData().
+
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_array()
+Inputs: Pass in an array of fieldNames.  Syntax: my ($field1, $field2) =  (['field1','fields']);
+Output: Returns a list assigned to the Variable Array ($field1 & $field2) 
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hash()
+Inputs: None.
+Output: Returns a HASH with the fieldNames as the key to the hash. Returns ALL fields
+Comment: Can only be run after _fetchData().
+--------------------------------------------------------------------------------------------------------------
+Object: _getData_hashref()
+Inputs: 3 variables.  The first is an array, last two are optional, but if the 2nd variable is used,
+	you must have a 3rd variable defined.
+	Array is a list of keys to return Hash.  Must put in ['Key1','keys2', 'key3']
+	The last two variable defines the where key and value
+Output: Returns a HASH with the array as the keys to the hash.
+	If array more than 1 key, it will return a nested HASH
+Comment: none
+--------------------------------------------------------------------------------------------------------------
+Object: _setField_json()
+Inputs: pass in the json field/value for the table to be updated.
+Comment: After _setField_json() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _setField()
+Inputs: Field Name and the value for the field to be set. Syntax: $Object-_setField(TX_FIELD, Values).
+Comment: After _setField() complete, run either _saveUpdate(idx) or _saveNew() to commit the fields to the Database.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveUpdate()
+Inputs: Primary key of the Record to be updated with new values defined by _setField().
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveUpdate(idx)
+	to update the Record with new values defined by the _setField() Method.
+--------------------------------------------------------------------------------------------------------------
+Object: _saveNew()
+Expected Inputs: None.
+Comment: After all the _setField(TX_FIELD, Values) are defined, run $Obj->_saveNew() to create a new Record.

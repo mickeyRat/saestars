@@ -1,0 +1,101 @@
+<?php
+// Connecting to the Database;
+$servername = "localhost";
+$dbName = "saestars_DEV2";
+// $dbName = "saestars_PROD";
+$username = "saestars_admin";
+$password = "admin@saestars.com";
+
+try {
+    $dbi = new PDO("mysql:host=$servername;dbname=$dbName", $username, $password);
+    // set the PDO error mode to exception
+    $dbi->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    }
+catch(PDOException $e)
+    {
+        echo "Connection failed: " . $e->getMessage();
+    }
+// A list of permitted file extensions
+$allowed = array('png', 'jpg', 'gif','zip','pdf');
+$allowed_tds = array('tds', 'technical_data_sheet', 'tech_data_sheet', 'data_sheet');
+$allowed_drawing= array('drawing', 'drawing', 'drw', '2D-drawing', '2D_drawing', '2D_drawings');
+$allowed_report = array('design_report', 'design');
+
+// Getting Event Location from selection
+$eventIDX=$_REQUEST['EVENT_LOCATION'];
+
+// Building Team Number and Team IDX Reference
+$SQL = "SELECT PK_TEAM_IDX, IN_NUMBER FROM TB_TEAM WHERE FK_EVENT_IDX=:eventIDX";
+$select = $dbi->prepare($SQL);
+$select->bindValue(':eventIDX', $eventIDX);
+$select->execute();
+$TEAM = array();
+foreach ($select as $team){
+    $TEAM[$team['IN_NUMBER']] = $team['PK_TEAM_IDX'];
+}
+
+// Deleting the previously uploaded Document
+$SQL = "DELETE FROM TB_UPLOAD WHERE (FK_TEAM_IDX=:eTeamIDX AND TX_PAPER=:ePaper)";
+$delete = $dbi->prepare( $SQL );
+
+// $SQL = "INSERT INTO TB_UPLOAD ( FK_TEAM_IDX, FK_EVENT_IDX, TX_FILENAME) VALUES (?, ?, ?)";
+$SQL = "INSERT INTO TB_UPLOAD ( FK_TEAM_IDX, FK_EVENT_IDX, TX_KEYS, TX_FILENAME, TX_TYPE, TX_PAPER, IN_PAPER, BL_FILE ) 
+    VALUES (:eTeamIDX, :eEventIDX, :eKeys, :eFileName, :eType, :ePaper, :eInPaper, :eFile)";
+$insert = $dbi->prepare( $SQL );
+
+if(isset($_FILES['upl']) && $_FILES['upl']['error'] == 0){
+    
+	$extension = pathinfo($_FILES['upl']['name'], PATHINFO_EXTENSION);
+
+	if(!in_array(strtolower($extension), $allowed)){
+		echo '{"status":"error"}';
+		exit;
+	}
+    $name = $_FILES['upl']['name'];
+    $type = $_FILES['upl']['type'];
+
+    // Geting the Team IDX from the team Number
+    // preg_match('/\(#(\d+)\)/', $name, $inNumber);
+    preg_match('/\#(\d+)/', $name, $inNumber);
+    $teamNumber = $inNumber[1] * 1;
+    $teamIDX = $TEAM[$teamNumber];
+    // $teamIDX =1;
+    $sourcePath = $_FILES['upl']['tmp_name'];
+    if (strpos(strtolower($name), 'design_report') ){
+        $PAPER = "Design Report";
+        $inPaper = 1;
+    } else if ( strpos(strtolower($name), 'tech_data_sheet') || strpos(strtolower($name), 'data_sheet')) {
+        $PAPER = "TDS";
+        $inPaper = 2;
+    } else if ( strpos(strtolower($name), 'drawings') ) {
+        $PAPER = "Drawing";
+        $inPaper = 3;
+    } else {
+        $PAPER = "Unknown";
+        $inPaper = 0;
+    }
+    $data = file_get_contents($_FILES['upl']['tmp_name']);
+    
+    $delete->bindParam(':eTeamIDX', $teamIDX );
+    $delete->bindParam(':ePaper', $PAPER );
+    $delete->execute();
+    
+    // Saving files to Database
+    $permitted_chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    $keys = substr(str_shuffle($permitted_chars), 0, 32);
+    // :eEventIDX, :eKeys, :eFileName, :eType, :ePaper, :eFile
+    $insert->bindParam(':eTeamIDX',$teamIDX);
+    $insert->bindParam(':eEventIDX',$eventIDX);
+    $insert->bindParam(':eKeys',$keys);
+    $insert->bindParam(':eFileName',$name);
+    $insert->bindParam(':eType',$type);
+    $insert->bindParam(':ePaper',$PAPER);
+    $insert->bindParam(':eInPaper',$inPaper);
+    $insert->bindParam(':eFile',$data);
+    $insert->execute()  || die ("could not execute");
+}
+
+echo '{"status":"error"}';
+exit;
+
+?>

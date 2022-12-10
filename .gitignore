@@ -1,4 +1,7 @@
-cgi-bin/SAE/
-SDB.pm
+.DS_Store
+sae_git_key
+sae_git_key.pub
 uploads/
+cgi-bin/test.pl
+cgi-bin/SAE/SDB.pm
 

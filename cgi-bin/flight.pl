@@ -250,7 +250,7 @@ exit;
         my $Score = new SAE::REG_SCORE();
         $str = $Score->_getTeamScores($teamIDX);
         }
-## Advancec Class
+## Advanced Class
     sub AdvancedClassTicketLog (){
         my ($eventIDX, $teamIDX, $inRound) = @_;
         my $Flight = new SAE::FLIGHT();
@@ -309,6 +309,21 @@ exit;
         print $q->header();
         my $Score = new SAE::ADV_SCORE();
         $str = $Score->_getTeamScores($teamIDX);
+        }
+    sub loadTeamGTV (){
+        my $teamIDX= $q->param('teamIDX');
+        my $Advanced = new SAE::ADV_SCORE();
+        my ($total, $effWater) = $Advanced->_getEffectiveWater($teamIDX);
+        # my %DATA = %{decode_json($q->param('jsonData'))};
+        print $q->header();
+        my $str;
+        $str = '<div class="w3-container w3-margin">';
+        $str .= '<label>Amount of water transsported:</label>';
+        $str .= sprintf '<input type="number" class="w3-input w3-border w3-round w3-light-grey" style="width: 20%" placeholder="Max = %2.2f">', $effWater;
+        $str .= $total.'</div>';
+
+        # $str .= $teamIDX;;
+        return ($str);
         }
 ## Micro Class
     sub MicroClassTicketLog (){
@@ -839,6 +854,9 @@ exit;
             $str .= '<div class="w3-white w3-container w3-threequarter"  style="padding: 0px;">';
                 $str .= '<div class="w3-bar w3-black">';
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink w3-border-left w3-white" onclick="openTab(this,\'ticketLog\', %d, %d)">Ticket Logs</button>', $teamIDX, $classIDX ;
+                    if ($classIDX==2){
+                        $str .= sprintf '<button class="w3-bar-item w3-button tablink w3-border-left" onclick="openTab(this,\'advancedGTV\', %d, %d)">GTV</button>', $teamIDX, $classIDX ;
+                    }
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="openTab(this,\'inspectionLog\', %d, %d)">Inspection Logs</button>', $teamIDX, $classIDX ;
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="openTab(this,\'teamData\', %d, %d)">Team Data</button>', $teamIDX, $classIDX;
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="openTab(this,\'teamDocuments\', %d, %d)">Team Documents</button>', $teamIDX, $classIDX ;
@@ -856,6 +874,11 @@ exit;
                     }
                     $str .= '<br><br>';
 
+                $str .= '</div>';
+
+                $str .= '<div id="advancedGTV" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="border-top: none; display: none;">';
+                    $str .= '<h2 class="w3-margin-left">Ground Transport Vehicle</h2>';
+                    $str .= '<div id="advancedGTV_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';
 
                 $str .= '<div id="inspectionLog" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="border-top: none; display: none;">';
@@ -1176,18 +1199,18 @@ exit;
         $str .= '<t/body>';
         $str .= '</table>';
 
-        # $str .= '<ul class="w3-ul">';
-        # foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS){
-        #     if ($TEAMS{$teamIDX}{IN_NUMBER} < 200) {next}
-        #     my $txFlightStatus = $TEAMS{$teamIDX}{TX_FLIGHT_BUTTON};
-        #     # my $btn = $Flight->_tempFlightLogButton($teamIDX, $TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL}, $TEAMS{$teamIDX}{TX_NAME}, $TEAMS{$teamIDX}{TX_COUNTRY}, $TEAMS{$teamIDX}{FK_CLASS_IDX}, $TEAMS{$teamIDX}{IN_FLIGHT_STATUS});
-        #     if ($TEAMS{$teamIDX}{TX_FLIGHT_BUTTON}) {
-        #         $str .=  $txFlightStatus;
-        #     } else {
-        #         $str .= $Flight->_tempCheckOutButton($teamIDX, 1);
-        #     }
-        # }
-        # $str .= '</ul>';
+        $str .= '<ul class="w3-ul">';
+        foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS){
+            if ($TEAMS{$teamIDX}{IN_NUMBER} < 200) {next}
+            my $txFlightStatus = $TEAMS{$teamIDX}{TX_FLIGHT_BUTTON};
+            # my $btn = $Flight->_tempFlightLogButton($teamIDX, $TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL}, $TEAMS{$teamIDX}{TX_NAME}, $TEAMS{$teamIDX}{TX_COUNTRY}, $TEAMS{$teamIDX}{FK_CLASS_IDX}, $TEAMS{$teamIDX}{IN_FLIGHT_STATUS});
+            if ($TEAMS{$teamIDX}{TX_FLIGHT_BUTTON}) {
+                $str .=  $txFlightStatus;
+            } else {
+                $str .= $Flight->_tempCheckOutButton($teamIDX, 1);
+            }
+        }
+        $str .= '</ul>';
         $str .= '</div>';
         return ($str);
         }

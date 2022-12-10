@@ -340,6 +340,22 @@
             }
         });
     }
+    function loadTeamGTV(tabName, teamIDX) {
+        var ajxData = {};
+        ajxData['do'] = 'loadTeamGTV';
+        ajxData['act'] = 'print';
+        ajxData.teamIDX = teamIDX;
+        // ajxData['jsonData'] = jsonData;
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/flight.pl',
+            data: ajxData,
+            success: function(str){
+                $('#'+tabName+'_content').html(str);
+                // channel.publish('sae_ps_addTicket', str);
+            }
+        });
+    }
     function openTab(o, tabName, teamIDX, classIDX){
         var activeTab = "w3-white w3-border-left w3-border-top w3-border-right";
         $('.tablink').removeClass('w3-white');
@@ -354,6 +370,8 @@
             loadTeamDocuments(tabName, teamIDX);
         } else if (tabName == "teamScore") {
             loadTeamScores(tabName, teamIDX, classIDX);
+        } else if (tabName == "advancedGTV") {
+            loadTeamGTV(tabName, teamIDX);
         }
 
     }

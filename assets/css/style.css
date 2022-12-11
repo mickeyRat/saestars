@@ -374,7 +374,7 @@ footer h2 i{
 .tag-container .tag{
     display: flex;
     padding: 5px 10px;
-    border: 1px solid red;
+    border: 1px solid #ccc;
     margin: 5px;
     align-items: center;
     border-radius: 4px;
@@ -434,7 +434,7 @@ footer h2 i{
 .tag-container_log .tag_log{
     display: flex;
     padding: 5px 10px;
-    border: 1px solid red;
+    border: 1px solid #ccc;
     margin: 5px;
     align-items: center;
     border-radius: 4px;
@@ -460,7 +460,7 @@ footer h2 i{
 .item-container .item{
     display: flex;
     padding: 5px 10px;
-    border: 1px solid red;
+    border: 1px solid #ccc;
     margin: 5px;
     align-items: center;
     border-radius: 4px;
@@ -520,7 +520,7 @@ footer h2 i{
 .item-container_log .tag_log{
     display: flex;
     padding: 5px 10px;
-    border: 1px solid red;
+    border: 1px solid #ccc;
     margin: 5px;
     align-items: center;
     border-radius: 4px;

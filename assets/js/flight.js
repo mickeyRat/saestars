@@ -527,7 +527,7 @@ function updateField(o){
     if (field == 'IN_DISTANCE'){
         var distance = $(o).val();
         if (distance > maxDistance){
-            console.log(distance + ' > ' + maxDistance);
+            // console.log(distance + ' > ' + maxDistance);
             alert("Warning: The distance entered [ " + $(o).val() + " ] is greater than allowed.");
             $(o).val(15);
             // return

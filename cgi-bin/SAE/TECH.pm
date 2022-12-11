@@ -20,6 +20,11 @@ sub new{
     }
 
 # -------------- 2023 --------------
+sub _getMyReinspection (){
+    my ($self, $teamIDX) = @_;
+    my $str = &getMyReinspection($teamIDX);
+    return ($str);
+    }
 sub getInspectionItemDetails (){
     my ($inspectIDX) = @_;
     my $SQL = "SELECT FLIGHT.CL_NOTES AS ATTEMPT_NOTES, TEAM.TX_SCHOOL, TEAM.TX_NAME, TEAM.TX_COUNTRY, TEAM.FK_CLASS_IDX, INSPECT.* FROM TB_REINSPECT AS INSPECT 
@@ -31,31 +36,30 @@ sub getInspectionItemDetails (){
     my %HASH = %{$select->fetchrow_hashref()}; 
     return (\%HASH);
     }
-
 sub _getInspectionItemDetails (){
     my ($self, $inspectIDX) = @_;
     my %HASH = %{&getInspectionItemDetails($inspectIDX)}; 
     return (\%HASH);
-}
+    }
 sub _getTechButton(){
     my ($self, $inspectIDX) = @_;
     my %TECH = %{&getInspectionItemDetails($inspectIDX)}; 
     my $cleared = $TECH{BO_STATUS};
     my $str;
     if ($cleared == 0){ # 1=Not cleared; 0=Cleared
-            $str = sprintf '<li ID="REINSPECT_%d" class="w3-bar w3-margin-top w3-card w3-button w3-round w3-border w3-hide w3-green inspectionItem inspectionItemCleared" onclick="reviewClearedInspectionDetails(this, %d);">', $inspectIDX, $inspectIDX;
+            $str = sprintf '<li ID="REINSPECT_%d" class="w3-bar w3-margin-top w3-card w3-round w3-border w3-hide w3-green inspectionItem inspectionItemCleared" onclick="reviewClearedInspectionDetails(this, %d);">', $inspectIDX, $inspectIDX;
         } else {
-            $str = sprintf '<li ID="REINSPECT_%d" class="w3-bar w3-white w3-margin-top w3-card w3-button w3-round w3-border inspectionItem" onclick="reviewInspectionDetails(this, %d);">', $inspectIDX, $inspectIDX;
+            $str = sprintf '<li ID="REINSPECT_%d" class="w3-bar w3-white w3-margin-top w3-card w3-round w3-border inspectionItem" onclick="reviewInspectionDetails(this, %d);">', $inspectIDX, $inspectIDX;
         }
-    $str .= '<div class="w3-bar-item w3-padding" style="text-align: left">'; 
+    $str .= '<div class="w3-bar-item">';
     $str .= sprintf '<span class="w3-large">%03d - <b>%s</b></span><br>', $TECH{IN_NUMBER}, $TECH{TX_SCHOOL};
-    $str .= sprintf '<div style="margin-left: 40px !important;">';
     $str .= sprintf '<i>Reinspection requested after Attempt <span class="w3-yellow w3-border w3-padding-left w3-padding-right">';
-    $str .= sprintf '&nbsp;&nbsp;#%s&nbsp;&nbsp;</span></i></div>', $TECH{IN_ROUND};
+    $str .= sprintf '&nbsp;&nbsp;#%s&nbsp;&nbsp;</span></i>', $TECH{IN_ROUND};
     $str .= '</div>';
     $str .= '</li>';
+
     return ($str);
-}
+    }
 sub _getListToBeReinspected (){
     my ($self, $eventIDX) = @_;
     # my $SQL = "SELECT TEAM.TX_SCHOOL, 
@@ -67,7 +71,21 @@ sub _getListToBeReinspected (){
         my %HASH = %{$select->fetchall_hashref('PK_REINSPECT_IDX')}; 
         return (\%HASH);
     }
+sub getMyReinspection (){
+    my ($teamIDX) = @_;
+    my $SQL = "SELECT * FROM TB_REINSPECT where (FK_TEAM_IDX=? AND BO_STATUS=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $teamIDX );
+    my %TECH = %{$select->fetchall_hashref('PK_REINSPECT_IDX')}; 
+    my $str;
+    $str .= 'Hello World';
 
+
+    return ($str);
+
+
+
+    }
 # -------------- 2023 --------------
 
 

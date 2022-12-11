@@ -320,7 +320,7 @@ exit;
         print $q->header();
         my $str;
         $str = '<div class="w3-container w3-margin">';
-        $str .= sprintf '<label>Amount of water transsported: ( <i>Maximum Allowed = <b>%2.2f</b> </i>)</label>', $effWater;
+        $str .= sprintf '<label>Amount of water transported: ( <i>Maximum Allowed = <b>%2.2f</b> </i>)</label>', $effWater;
         my $data = sprintf 'data-table="TB_TEAM" data-key="PK_TEAM_IDX" data-index="%d" data-field="%s"', $teamIDX, 'IN_WATER';
         $str .= sprintf '<input type="number" '.$data.' class="w3-input w3-border w3-round w3-light-grey" style="width: 20%" value="%2.2f" data-max="%2.2f" placeholder="Max = %2.2f" max="%2.2f" onchange="updateField(this);">', $TEAM{IN_WATER}, $effWater, $effWater, $effWater;
         my $data    = sprintf 'data-table="TB_TEAM" data-key="PK_TEAM_IDX" data-index="%d" data-field="%s"', $teamIDX, 'BO_AUTO';
@@ -589,7 +589,7 @@ exit;
         if ($ticketStatus == 2){$checkedNotForScore = 'checked'}
         if ($reinspect == 1){$checkedOutDisabled = 'disabled'}
         my $str;
-        $str = '<div class="w3-container w3-quarter w3-light-grey w3-card-4 w3-border w3-round-large w3-padding-small">';
+        $str = '<div class="w3-container w3-quarter w3-light-grey w3-border w3-card-4 w3-padding-small" style="min-height: 638px;">';
             $str .= '<header class="w3-container w3-grey w3-round">';
             $str .= sprintf '<h3>Ticket # %03d-<b>%02d</b></h3>', $inNumber, $inRound;
             $str .= '</header>';    
@@ -862,14 +862,14 @@ exit;
                 $str .= '<div class="w3-bar w3-black">';
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink w3-border-left w3-white" onclick="openTab(this,\'ticketLog\', %d, %d)">Ticket Logs</button>', $teamIDX, $classIDX ;
                     if ($classIDX==2){
-                        $str .= sprintf '<button class="w3-bar-item w3-button tablink w3-border-left" onclick="openTab(this,\'advancedGTV\', %d, %d)">GTV</button>', $teamIDX, $classIDX ;
+                        $str .= sprintf '<button class="w3-bar-item w3-button tablink w3-border-left" onclick="openTab(this,\'advancedGTV\', %d, %d)">Ground Transport Vehicle (GTV)</button>', $teamIDX, $classIDX ;
                     }
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="openTab(this,\'inspectionLog\', %d, %d)">Inspection Logs</button>', $teamIDX, $classIDX ;
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="openTab(this,\'teamData\', %d, %d)">Team Data</button>', $teamIDX, $classIDX;
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="openTab(this,\'teamDocuments\', %d, %d)">Team Documents</button>', $teamIDX, $classIDX ;
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="openTab(this,\'teamScore\', %d, %d)">Team Scoring</button>', $teamIDX, $classIDX ;
                 $str .= '</div>';
-                $str .= '<div id="ticketLog" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-padding-bottom tabContent">';
+                $str .= '<div id="ticketLog" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-padding-bottom tabContent" style="min-height: 600px;">';
                     $str .= '<h2 class="w3-margin-left">Ticket Logs</h2>';
 
                     if ($classIDX==3){ # Micro Class Ticket Logs
@@ -883,27 +883,27 @@ exit;
 
                 $str .= '</div>';
 
-                $str .= '<div id="advancedGTV" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="border-top: none; display: none;">';
+                $str .= '<div id="advancedGTV" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="min-height: 600px;border-top: none; display: none;">';
                     $str .= '<h2 class="w3-margin-left">Ground Transport Vehicle</h2>';
                     $str .= '<div id="advancedGTV_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';
 
-                $str .= '<div id="inspectionLog" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="border-top: none; display: none;">';
+                $str .= '<div id="inspectionLog" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="min-height: 600px;border-top: none; display: none;">';
                     $str .= '<h2 class="w3-margin-left">Inspection Logs</h2>';
                     $str .= '<div id="inspectionLog_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';
 
-                $str .= '<div id="teamData" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="border-top: none; display: none;">';
+                $str .= '<div id="teamData" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="min-height: 600px;border-top: none; display: none;">';
                     $str .= '<h2 class="w3-margin-left">Team Data</h2>';
                     $str .= '<div id="teamData_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';
 
-                $str .= '<div id="teamDocuments" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="border-top: none; display: none;">';
+                $str .= '<div id="teamDocuments" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="min-height: 600px;border-top: none; display: none;">';
                     $str .= '<h2 class="w3-margin-left">Team Documents</h2>';
                     $str .= '<div id="teamDocuments_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';
 
-                $str .= '<div id="teamScore" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="border-top: none; display: none;">';
+                $str .= '<div id="teamScore" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="min-height: 600px;border-top: none; display: none;">';
                     $str .= '<h2 class="w3-margin-left">Team Scoring</h2>';
                     $str .= '<div id="teamScore_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';

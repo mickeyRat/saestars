@@ -50,7 +50,7 @@ sub sae_unsubscribeToTeam(){
 }
 sub sae_loadHomePage(){
     print $q->header();
-    my %PANEL = (1=>'Design Scores',2=>'Presentation Scores' ,3=>'Penalties',4=>'Flights',5=>'Results');
+    my %PANEL = (1=>'Design',2=>'Presentation' ,3=>'Penalties',4=>'Flights',5=>'Results');
     my %COLOR = (1=>'w3-pale-green',2=>'w3-pale-blue',3=>'w3-pale-red',4=>'w3-light-grey', 5=>'w3-sand');
     my %ICON = (1=>'fa-paperclip', 2=>'fa-line-chart', 3=>'fa-exclamation-triangle', 4=>'fa-plane', 5=>'fa-trophy');
     my $userIDX = $q->param('userIDX');
@@ -68,14 +68,18 @@ sub sae_loadHomePage(){
     $str .= '</header>';
 
     foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS ) {
-        $str .= $Tech->_getMyReinspection();
-        $str .= '<div class="w3-row-padding w3-padding w3-border w3-round">';
+        $str .= '<div class="w3-row-padding w3-padding w3-border w3-round w3-margin-top w3-card-4 w3-light-grey">';
+        $str .= sprintf '<header class="w3-container w3-light-grey"><span class="w3-xxlarge">%03d</span><br><h3 style="padding: 0; margin: 0;">%s</h3></header>', $TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL};
+        $str .= sprintf '<div ID="TeamReinspectionNotification_%d" class="w3-quarter w3-margin-bottom">', $teamIDX;
+        $str .= $Tech->_getMyReinspection($teamIDX);
+        $str .= '</div>';
+        $str .= '<div class="w3-clear"></div>';
         foreach $panelIDX (sort {$a <=> $b} keys %PANEL) {
             $str .= '<div class="w3-quarter w3-margin-top">';
                 $str .= sprintf '<div class="w3-container %s w3-padding-16 w3-border w3-card-2 w3-round">', $COLOR{$panelIDX};
                 $str .= '<div class="w3-left">';
                 $str .= sprintf '<i class="fa %s w3-xxlarge"></i>', $ICON{$panelIDX};
-                    $str .= '</div>';
+                $str .= '</div>';
                 $str .= sprintf '<div class="w3-right"><h3>%2.4f</h3></div>', 0;
                 $str .= '<div class="w3-clear"></div>';
                 $str .= sprintf '<h4>%s</h4>', $PANEL{$panelIDX};

@@ -73,18 +73,24 @@ sub _getListToBeReinspected (){
     }
 sub getMyReinspection (){
     my ($teamIDX) = @_;
-    my $SQL = "SELECT * FROM TB_REINSPECT where (FK_TEAM_IDX=? AND BO_STATUS=?)";
+    my $SQL = "SELECT * FROM TB_REINSPECT WHERE (FK_TEAM_IDX=? AND BO_STATUS=?)";
     my $select = $dbi->prepare($SQL);
-       $select->execute( $teamIDX );
+       $select->execute( $teamIDX , 1);
     my %TECH = %{$select->fetchall_hashref('PK_REINSPECT_IDX')}; 
     my $str;
-    $str .= 'Hello World';
-
-
+    if (keys %TECH){   
+        foreach $inspectIDX (keys %TECH) {
+            $str .= sprintf '<div ID="TeamReInspection_%d" class="w3-container w3-red w3-padding-16 w3-border w3-card-2 w3-round" style="cursor: pointer" onclick="viewTeamReinspection(this, %d);">', $teamIDX, $inspectIDX;
+            $str .= '<div class="w3-left">';
+            $str .= sprintf '<i class="fa fa-minus-circle w3-xxlarge"></i>';
+            $str .= '</div>';
+            $str .= sprintf '<div class="w3-right"><i class="fa fa-chevron-right fa-3x w3-margin-left" aria-hidden="true"></i></div>';
+            $str .= '<div class="w3-clear"></div>';
+            $str .= sprintf '<h4>Re-Inspection Required after flight attempt # %02d</h4>', $TECH{$inspectIDX}{IN_ROUND};
+            $str .= '</div>';
+            }
+        }
     return ($str);
-
-
-
     }
 # -------------- 2023 --------------
 

@@ -4,6 +4,20 @@
 
 
 //------ 2023 ---------------------------------------------------
+function viewTeamReinspection (o, inspectIDX) {
+    var eventIDX = $.cookie('LOCATION');
+    console.log(inspectIDX);
+    $.modal('Reinspection Summary', '50%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'viewTeamReinspection','act':'print','eventIDX':eventIDX, 'inspectIDX':inspectIDX},
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+        }
+    });
+}
 function reviewInspectionDetails (o, inspectIDX) {
     var eventIDX = $.cookie('FK_EVENT_IDX');
     var ajxData       = {};
@@ -18,6 +32,7 @@ function reviewInspectionDetails (o, inspectIDX) {
         url: '../cgi-bin/tech.pl',
         data: ajxData,
         success: function(str){
+
             $('#modal_content').html(str);
         }
     });
@@ -42,30 +57,38 @@ function reviewClearedInspectionDetails (o, inspectIDX) {
         }
     });
 }
-function unclearReinpsectionByTech(o, inspectIDX) {
-    
-    // $(o).close();
-    // reviewInspectionDetails
+function unclearReinpsectionByTech(o, inspectIDX, teamIDX) {
+    var notify = {};
+    notify.NOTIFY            = 1;
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/tech.pl',
         data: {'do':'unclearReinpsectionByTech','act':'print','inspectIDX':inspectIDX,'userIDX':$.cookie('PK_USER_IDX')},
         success: function(str){
+            var obj = JSON.parse(str);
+            notify.FK_TEAM_IDX       = obj.FK_TEAM_IDX;
             $(o).close();
             channel.publish('sae_ps_unclearInspectionTicket', str);
+            channel.publish('sae_ps_notifyTeamsOfReinspection', JSON.stringify(notify));
+            console.log(notify);
         }
     });
 }
 function clearReinspectionByTech (o, inspectIDX) {
+    var notify = {};
+    notify.NOTIFY            = 0;
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/tech.pl',
         data: {'do':'clearReinspectionByTech','act':'print','inspectIDX':inspectIDX,'userIDX':$.cookie('PK_USER_IDX')},
         success: function(str){
+            var obj = JSON.parse(str);
+            notify.FK_TEAM_IDX       = obj.FK_TEAM_IDX;
             $(o).close();
             // $('#REINSPECT_' + inspectIDX).removeClass('w3-white').addClass('w3-hide w3-green inspectionItemCleared');
             // $('#REINSPECT_' + inspectIDX).attr('onclick','reviewClearedInspectionDetails(this, '+inspectIDX+');');
             channel.publish('sae_ps_clearInspection', str);
+            channel.publish('sae_ps_notifyTeamsOfReinspection', JSON.stringify(notify));
         }
     });
 }

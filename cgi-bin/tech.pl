@@ -46,6 +46,43 @@ if ($act eq "print"){
 }
 exit;
 ### --------------- 2023 ------------------------------------------------------
+sub viewTeamReinspection (){
+    my $eventIDX= $q->param('eventIDX');
+    my $inspectIDX= $q->param('inspectIDX');
+    my $Tech = new SAE::TECH();
+    my %TECH = %{$Tech->_getInspectionItemDetails($inspectIDX)};
+    print $q->header();
+    my $str = '<div class="w3-container">';
+    $str .= '<div class="w3-card-4">';
+    $str .= '<header class="w3-container w3-red">';
+    $str .= sprintf '<h3>%03d - %s</h3>', $TECH{IN_NUMBER}, $TECH{TX_SCHOOL};
+    $str .= '</header>';
+    my @ITEMS = split(";", $TECH{CL_ITEMS});
+    $str .= '<ul class="w3-ul w3-border w3-round">';
+    $str .= '<div class="w3-container w3-padding w3-large w3-pale-red">Requesting the following items be re-inspected and cleared for future flight attempts</div>';
+    foreach $item (sort {$a cmp $b} @ITEMS){
+        $str .= sprintf '<li class="w3-margin-left"><i class="fa fa-bug w3-margin-right" aria-hidden="true"></i>%s</li>', $item;
+    }
+    $str .= '</ul>';
+    $str .= '</div>';
+    $str .= '<div class="w3-container w3-border w3-round">';
+        $str .= sprintf '<h5>Attempt #%02d</h5>', $TECH{IN_ROUND};
+        $str .= '<div class="w3-panel w3-margin-top w3-padding w3-leftbar w3-border-orange">';
+    if ($TECH{ATTEMPT_NOTES}) {
+        $str .= sprintf '%s', $TECH{ATTEMPT_NOTES};
+        } else {
+            $str .= '<i>No notes provided at this time</i>';
+        }
+        $str .= '</div>';
+    # $str .= '<div class="w3-container w3-padding-large w3-margin-top w3-center">';
+    # $str .= sprintf '<button class="w3-button w3-border w3-round w3-card-2 w3-green w3-margin-right" style="width: 270px;" onclick="clearReinspectionByTech(this, %d);">Cleared to Attempt Next Flight</button>', $inspectIDX;
+    # $str .= '<button class="w3-button w3-margin-left w3-border w3-round w3-pale-red" style="width: 200px;" onclick="$(this).close();">Not Cleared</button>';
+    # $str .= '</div>';
+    $str .= '</div>';
+    $str .= '</div>';
+
+    return ($str);
+    }
 sub openCrashReinspection(){
     print $q->header();
     my $eventIDX = $q->param('location');

@@ -720,7 +720,18 @@ exit;
         my $json = encode_json \%OBJ;
         return ($json);
         }
-
+    sub sae_ps_notifyTeamsOfReinspection (){
+        my $teamIDX= $q->param('FK_TEAM_IDX');
+        my $Tech = new SAE::TECH();
+        my %OBJ;
+        print $q->header();
+        my $tickets = $Tech->_getMyReinspection($teamIDX);
+        
+        $OBJ{FK_TEAM_IDX} = $teamIDX;
+        $OBJ{NOTIFY_BUTTON} = $tickets;
+        my $json = encode_json \%OBJ;
+        return ($json);
+        }
 ## 2023 code
     sub updateInspectionTags (){
         my $inspectIDX= $q->param('inspectIDX');

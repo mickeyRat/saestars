@@ -23,8 +23,39 @@ channel.subscribe('sae_ps_cancelInspection', function(message) {sae_ps_cancelIns
 channel.subscribe('sae_ps_clearInspection', function(message) {sae_ps_clearInspection(message.data);});
 channel.subscribe('sae_ps_updateTicketStatus', function(message) {sae_ps_updateTicketStatus(message.data);});
 channel.subscribe('sae_ps_unclearInspectionTicket', function(message) {sae_ps_unclearInspectionTicket(message.data);});
+channel.subscribe('sae_ps_notifyTeamsOfReinspection', function(message) {sae_ps_notifyTeamsOfReinspection(message.data);});
 
 {
+    
+    function sae_ps_notifyTeamsOfReinspection (argument) {
+        
+        var o = JSON.parse(argument);
+        if (o.NOTIFY == 0){
+            $('#TeamReInspection_'+o.FK_TEAM_IDX).remove();
+            return;
+        }
+        var ajxData = {};
+        ajxData['do'] = 'sae_ps_notifyTeamsOfReinspection';
+        ajxData['act'] = 'print';
+        ajxData.FK_EVENT_IDX = $.cookie('FK_EVENT_IDX');
+        ajxData.FK_TEAM_IDX = o.FK_TEAM_IDX;
+        // ajxData['jsonData'] = argument;
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/flight.pl',
+            data: ajxData,
+            success: function(str){
+
+                var obj = JSON.parse(str);
+                $('#TeamReinspectionNotification_' + o.FK_TEAM_IDX).prepend(obj.NOTIFY_BUTTON);
+                console.log(str);
+                console.log(argument);
+                console.log(obj.FK_TEAM_IDX);
+            }
+        });
+        
+
+    }
     function sae_ps_unclearInspectionTicket(argument) {
         var o = JSON.parse(argument);
         var ajxData = {};
@@ -64,7 +95,6 @@ channel.subscribe('sae_ps_unclearInspectionTicket', function(message) {sae_ps_un
                 $('#TICKET_' + flightIDX).replaceWith(obj.TICKET);
             }
         });
-
     }
     function sae_ps_clearInspection (argument) {
         // console.log('clearedInspections = ' + argument);
@@ -164,7 +194,7 @@ channel.subscribe('sae_ps_unclearInspectionTicket', function(message) {sae_ps_un
                 // $('#TICKET_' + obj.FK_FLIGHT_IDX).removeClass('w3-sand w3-disabled').addClass('w3-pale-red').attr("disabled", false);
                 $('#TICKET_' + obj.FK_FLIGHT_IDX).replaceWith(obj.TICKET);
                 $('#UL_ReinspectionList').prepend(obj.INSPECT_BUTTON);
-                console.log("Button for the Inspection Page = \n" + obj.INSPECT_BUTTON);
+                // console.log("Button for the Inspection Page = \n" + obj.INSPECT_BUTTON);
             }
 
         });
@@ -227,10 +257,6 @@ function ps_crash(str){
     } else {
         $('#TODO_IDX_'+obj.flightIDX).replaceWith(obj.techBtn);
     }
-    // console.log('teamIDX = '+obj.idx);
-    // console.log('\nflightIDX = '+obj.flightIDX);
-    // console.log('\ntechBtn = '+obj.techBtn);
-    // console.log('\nlogBtn = '+obj.logBtn);
 }
 function ps_noFly(status){
     var obj = JSON.parse(status);

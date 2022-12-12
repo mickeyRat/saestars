@@ -757,6 +757,7 @@ function clearReinspection(o, flightIDX, inNumber, inspectIDX) {
     var data = {};
     var data2 = {};
     var ajxData = {};
+    var notify = {};
     data.BO_REINSPECT        = 0;
     data2.BO_STATUS          = 0;
     data2.IN_CLEARED_BY      = $.cookie('PK_USER_IDX');;
@@ -772,6 +773,8 @@ function clearReinspection(o, flightIDX, inNumber, inspectIDX) {
     ajxData.teamIDX          = $(o).data('fk_team_idx');
     ajxData.BO_REINSPECT     = JSON.stringify(data);
     ajxData.BO_STATUS        = JSON.stringify(data2);
+    notify.FK_TEAM_IDX       = $(o).data('fk_team_idx');
+    notify.NOTIFY            = 0;
     // console.log(ajxData);
     $.ajax({
         type: 'POST',
@@ -785,6 +788,7 @@ function clearReinspection(o, flightIDX, inNumber, inspectIDX) {
             $('#Inspection').prop("checked",false);
             setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 400);
             channel.publish('sae_ps_clearInspection', JSON.stringify(ajxData));
+            channel.publish('sae_ps_notifyTeamsOfReinspection', JSON.stringify(notify));
             $(o).replaceWith('<i class="fa fa-check-square-o w3-text-green" aria-hidden="true"></i>');
         }
     });
@@ -792,6 +796,7 @@ function clearReinspection(o, flightIDX, inNumber, inspectIDX) {
 function openReInspectionStatus(o, flightIDX) {
     var data = {};
     var ajxData = {};
+    var notify = {};
     // var obj = {};
     var addBtn = $('#TEAM_TICKET_ADDER_'+$(o).data('team'));
     data.FK_FLIGHT_IDX = flightIDX;
@@ -800,6 +805,7 @@ function openReInspectionStatus(o, flightIDX) {
     data.IN_ROUND      = $(o).data('round');
     data.IN_NUMBER     = $(o).data('number');
     data.FK_EVENT_IDX  = $.cookie('FK_EVENT_IDX');
+    notify.FK_TEAM_IDX = $(o).data('team');
     // obj = {...data};
     if ($(o).is(':checked')){
         $('#reinspectionChecklist').slideDown();
@@ -808,6 +814,7 @@ function openReInspectionStatus(o, flightIDX) {
         tags = [];
         $('#checkedOut_'+flightIDX).prop('disabled','disabled');
         $('#checkedOut_'+flightIDX).prop('checked','');
+        notify.NOTIFY = 1;
     } else {
         $('#reinspectionChecklist').slideUp();
         ajxData.do      = 'cancelReinspection';
@@ -815,19 +822,22 @@ function openReInspectionStatus(o, flightIDX) {
         resetTags('tag');
         data['BO_STATUS'] = 0;
         $('#checkedOut_'+flightIDX).prop('disabled','');
-        
+        notify.NOTIFY = 0;
     }
     var jsonData = JSON.stringify(data);
     ajxData.act       = 'print';
     ajxData.eventIDX  = $.cookie('FK_EVENT_IDX');
     ajxData.flightIDX = flightIDX;
     ajxData.jsonData  = jsonData;
-    // console.log(ajxData);
+    channel.publish('sae_ps_notifyTeamsOfReinspection', JSON.stringify(notify));
+    console.log(notify);
+    // console.log("something");
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/flight.pl',
         data: ajxData,
         success: function(inspectIDX){
+
             resetTags('tag');
             tags = [];
             if ($(o).is(':checked')){
@@ -835,12 +845,14 @@ function openReInspectionStatus(o, flightIDX) {
                 data.PK_REINSPECT_IDX = inspectIDX;
                 $('#Inspection').val(inspectIDX);
                 channel.publish('sae_ps_reinspectionRequired', JSON.stringify(data));
+                
             } else {
                 data.inspectIDX = $('#Inspection').val();
                 data.PK_REINSPECT_IDX = $('#Inspection').val();
                 channel.publish('sae_ps_cancelInspection', JSON.stringify(data));
                 $('#Inspection').val('');
             }
+
         }
     });
 }

@@ -31,6 +31,7 @@ sub new{
 	bless($self, $className);
 	return $self;
 }
+
 sub _getTeamData(){
     my $self = shift;
     return (\%TEAM);

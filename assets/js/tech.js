@@ -4,9 +4,277 @@
 
 
 //------ 2023 ---------------------------------------------------
+function tech_addCheckItem (o, sectionIDX, secNumber) {
+    console.log('section number = ' + secNumber);
+    var itemCount = $('.itemGroup_'+sectionIDX).length + 1;
+
+    var eventIDX = $.cookie('LOCATION');
+    // ajxData.itemCount       ÷      = itemCount;
+    $.modal('Add Check Item', '50%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_addCheckItem','act':'print','eventIDX':eventIDX,'sectionIDX':sectionIDX,'secNumber':secNumber,'itemCount':itemCount},
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+
+        }
+    });
+    }
+function tech_updateField(o){
+    var maxDistance = 15;
+    $('#savedMessage').show();
+    var data          = {};
+    var field         = $(o).data('field');
+    data[field]       = $(o).val();
+    var ajxData       = {};
+    ajxData['do']     = 'tech_updateField';
+    ajxData['act']    = 'print';
+    ajxData.eventIDX  = $.cookie('FK_EVENT_IDX');
+    ajxData.FIELD_IDX = $(o).data('key');
+    ajxData.VALUE_IDX = $(o).data('index'); 
+    ajxData.TABLE     = $(o).data('table'); 
+    ajxData.jsonData  = JSON.stringify(data);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str); 
+            setTimeout(function(){ $('#savedMessage').fadeOut(150); }, 500);
+            // $('#modal_content').html(str);
+        }
+    });
+    }
+function tech_deleteItem (o, itemIDX) {
+    var jsYes = confirm("Are you sure?");
+    if (!jsYes){return}
+    var ajxData = {};
+    ajxData['do'] = 'tech_deleteItem';
+    ajxData['act'] = 'print';
+    ajxData.itemIDX = itemIDX;
+    $('#ITEM_'+itemIDX).remove();
+    console.log(ajxData);
+    // return    // console.log(txItem)
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: ajxData,
+        success: function(str){
+            console.log(str);
+            // $('#ITEM_'+itemIDX).remove();
+        }
+    });   
+    }
+function tech_toggleSelectAll (argument) {
+    const max = $('.sectionClass').length;
+    var count = 0;
+    $('.sectionClass').each(function(){
+        if ($(this).is(':checked')) {
+            count ++;
+        }
+    });
+    // console.log('count = ' + count);
+    // console.log('max = ' + max);
+    if (count < max){
+        $('#applicableToAll').prop('checked', false);
+    } else {
+        $('#applicableToAll').prop('checked', true);
+    }
+    }
+function tech_toggleChecks (o) {
+    if ($(o).is(':checked')){
+        $('.sectionClass').prop('checked',true);
+    } else {
+        $('.sectionClass').prop('checked',false);
+    }
+    }
+function tech_editItem (o, itemIDX, secNumber) {
+    var eventIDX = $.cookie('LOCATION');
+    // ajxData.itemCount       ÷      = itemCount;
+    $.modal('Edit Check Item', '50%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_editItem','act':'print','eventIDX':eventIDX,'itemIDX':itemIDX, 'secNumber':secNumber},
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+
+        }
+    });
+    }
+function tech_updateItem (o, itemIDX, sectionIDX) {
+    var ajxData       = {};
+    var data          = {};
+    // var itemCount = $('.itemGroup_'+sectionIDX).length + 1;
+
+    if ($('#IN_SECTION').val() == '' || $('#IN_SECTION').val() == 0 || !$('#IN_SECTION').val()){
+        data.IN_SECTION   = $('#IN_SECTION').prop('placeholder')
+    } else {
+        data.IN_SECTION   = $('#IN_SECTION').val();
+    }
+    data.TX_SECTION   = $('#TX_SECTION').val();
+    data.FK_TECH_REQ_SECTION_IDX  = sectionIDX;
+    data.TX_REQUIREMENT  = $('#TX_REQUIREMENT').val();;
+    data.IN_POINTS  = $('#IN_POINTS').val();;
+    $('.sectionClass').each(function(){
+        if ($(this).is(':checked')){
+            // console.log($(this).data('field'))
+            data[$(this).data('field')] = 1;
+        } else {
+            data[$(this).data('field')] = 0;
+        }
+    });
+    ajxData['do']                 = 'tech_updateItem';
+    ajxData['act']                = 'print';
+    ajxData.eventIDX              = $.cookie('FK_EVENT_IDX');
+    ajxData.sectionIDX            = sectionIDX;
+    ajxData.itemIDX               = itemIDX;
+    ajxData.TABLE                 = 'TB_TECH_REQ';
+    ajxData.jsonData              = JSON.stringify(data);
+    console.log(ajxData);
+    // return;
+    // tech_updateField
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: ajxData,
+        success: function(str){
+            console.log(str); 
+            $(o).close();
+            $('#ITEM_'+itemIDX).replaceWith(str);
+            // $('#tableSection_'+sectionIDX).append(str);
+            // setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 1000);
+            // $('#modal_content').html(str);
+        }
+    });
+    }
+function tech_addItem(o, sectionIDX) {
+    var ajxData       = {};
+    var data          = {};
+    var itemCount = $('.itemGroup_'+sectionIDX).length + 1;
+
+    if ($('#IN_SECTION').val() == '' || $('#IN_SECTION').val() == 0 || !$('#IN_SECTION').val()){
+        data.IN_SECTION   = $('#IN_SECTION').prop('placeholder')
+    } else {
+        data.IN_SECTION   = $('#IN_SECTION').val();
+    }
+    data.TX_SECTION   = $('#TX_SECTION').val();
+    data.FK_TECH_REQ_SECTION_IDX  = sectionIDX;
+    data.TX_REQUIREMENT  = $('#TX_REQUIREMENT').val();;
+    data.IN_POINTS  = $('#IN_POINTS').val();;
+    // data.TX_TYPE      = txType;
+
+    $('.sectionClass').each(function(){
+        if ($(this).is(':checked')){
+            // console.log($(this).data('field'))
+            data[$(this).data('field')] = 1;
+        } else {
+            data[$(this).data('field')] = 0;
+        }
+    });
+    ajxData['do']                 = 'tech_addItem';
+    ajxData['act']                = 'print';
+    ajxData.eventIDX              = $.cookie('FK_EVENT_IDX');
+    ajxData.sectionIDX            = sectionIDX;
+    ajxData.jsonData              = JSON.stringify(data);
+    console.log(ajxData);
+    // return;
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str); 
+            $(o).close();
+            $('#tableSection_'+sectionIDX).append(str);
+            // setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 1000);
+            // $('#modal_content').html(str);
+        }
+    });
+
+    return;
+    }
+function tech_addSection (o, txType) {
+    var ajxData       = {};
+    var data          = {};
+    if ($('#IN_SECTION').val() == '' || $('#IN_SECTION').val() == 0 || !$('#IN_SECTION').val()){
+        data.IN_SECTION   = $('#IN_SECTION').prop('placeholder')
+    } else {
+        data.IN_SECTION   = $('#IN_SECTION').val();
+    }
+    data.TX_SECTION   = $('#TX_SECTION').val();
+    data.TX_TYPE      = txType;
+    ajxData['do']     = 'tech_addSection';
+    ajxData['act']    = 'print';
+    ajxData.eventIDX  = $.cookie('FK_EVENT_IDX');
+    ajxData.jsonData  = JSON.stringify(data);
+    // console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: ajxData,
+        success: function(str){
+            $(o).close();
+            $('#'+txType+'_content').append(str);
+        }
+    });
+    }
+function tech_openAddSection (txType) {
+    var secCount = $('.'+txType).length + 1;
+    var eventIDX = $.cookie('LOCATION');
+    $.modal('Add Section', '50%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_openAddSection','act':'print','eventIDX':eventIDX,'txType':txType,'secCount':secCount},
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+
+        }
+    });
+    }
+function tech_openSetup () {
+    var eventIDX = $.cookie('LOCATION');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_openSetup','act':'print','eventIDX':eventIDX},
+        success: function(str){
+            $('#mainPageContent').html(str);
+        }
+    });
+    }
+function tech_deleteSection (o, sectionIDX) {
+    var jsYes = confirm("are you sure?");
+    if (!jsYes){return}
+    var ajxData = {};
+    ajxData['do'] = 'tech_deleteSection';
+    ajxData['act'] = 'print';
+    ajxData['sectionIDX'] = sectionIDX;
+    // console.log(txItem)
+    $(o).parent().remove();
+    // return
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: ajxData,
+        success: function(str){
+            $(o).parent().remove();
+        }
+    });
+    }
+function tech_expandSection(obj, section){
+    $('#'+section).toggleClass('w3-hide');
+    $(obj).children('.fa').toggleClass('fa-chevron-right fa-chevron-down');
+    }
+// ------ TECH -
 function viewTeamReinspection (o, inspectIDX) {
     var eventIDX = $.cookie('LOCATION');
-    console.log(inspectIDX);
+    // console.log(inspectIDX);
     $.modal('Reinspection Summary', '50%');
     $.ajax({
         type: 'POST',
@@ -15,9 +283,10 @@ function viewTeamReinspection (o, inspectIDX) {
         success: function(str){
             // console.log(str);
             $('#modal_content').html(str);
+
         }
     });
-}
+    }
 function reviewInspectionDetails (o, inspectIDX) {
     var eventIDX = $.cookie('FK_EVENT_IDX');
     var ajxData       = {};
@@ -36,8 +305,7 @@ function reviewInspectionDetails (o, inspectIDX) {
             $('#modal_content').html(str);
         }
     });
-}
-
+    }
 function reviewClearedInspectionDetails (o, inspectIDX) {
     // console.log(inspectIDX);
     var eventIDX = $.cookie('FK_EVENT_IDX');
@@ -56,7 +324,7 @@ function reviewClearedInspectionDetails (o, inspectIDX) {
             $('#modal_content').html(str);
         }
     });
-}
+    }
 function unclearReinpsectionByTech(o, inspectIDX, teamIDX) {
     var notify = {};
     notify.NOTIFY            = 1;
@@ -73,7 +341,7 @@ function unclearReinpsectionByTech(o, inspectIDX, teamIDX) {
             console.log(notify);
         }
     });
-}
+    }
 function clearReinspectionByTech (o, inspectIDX) {
     var notify = {};
     notify.NOTIFY            = 0;
@@ -91,8 +359,7 @@ function clearReinspectionByTech (o, inspectIDX) {
             channel.publish('sae_ps_notifyTeamsOfReinspection', JSON.stringify(notify));
         }
     });
-}
-
+    }
 function toggleShowAllReinspectionTasks(o){
     // console.log($(o).is(':checked'));
     if ($(o).is(':checked')){
@@ -102,10 +369,7 @@ function toggleShowAllReinspectionTasks(o){
         // $.cookie('showAllInspection', 0);
         $('.inspectionItemCleared').addClass('w3-hide');
     }
-}
-
-
-
+    }
 //------ 2023 ---------------------------------------------------
 function showListOfTeam_Tech(){
     $('#mainPageContent').html(loading);
@@ -118,7 +382,7 @@ function showListOfTeam_Tech(){
             $('#mainPageContent').html(str);
         }
     });
-}
+    }
 function sae_showUpdateInspectionStatus(teamIDX){
     var divName = 'TEMP_DIV_EDIT_NEW_ECR';
     var location = $.cookie('LOCATION');
@@ -134,7 +398,7 @@ function sae_showUpdateInspectionStatus(teamIDX){
             $('#x_modal_Content').html(str);
         }
     });
-}
+    }
 function sae_submitInspectionStatus(teamIDX, status, classIDX, divName){
     var location = $.cookie('LOCATION');
     var inPipes = $('#IN_PIPES').val();
@@ -190,7 +454,7 @@ function sae_submitInspectionStatus(teamIDX, status, classIDX, divName){
             $('#'+divName).remove();
         }
     });
-}
+    }
 function sae_showImportTechSchedule(){
     var divName = 'TEMP_DIV_TEAM_SCHEUDLE';
     var location = $.cookie('LOCATION');
@@ -203,7 +467,7 @@ function sae_showImportTechSchedule(){
             $('#x_modal_Content').html(str);
         }
     });
-}
+    }
 function sae_importTechScheduleFile(divName){
     var formData = new FormData();
     var location = $.cookie('LOCATION');
@@ -225,10 +489,10 @@ function sae_importTechScheduleFile(divName){
             showListOfTeam_Tech();
         }
     });
-}
+    }
 function sae_expandNotes(){
     $('.crash-notes').toggle(150);
-}
+    }
 function sae_openReinspectionDetails(todoIDX, teamIDX, flightIDX, color){
     // console.log('inStatus='+inStatus);
     $.modal('Reinspection Details','65%', color);
@@ -246,8 +510,7 @@ function sae_openReinspectionDetails(todoIDX, teamIDX, flightIDX, color){
             $('#modal_content').html(str);
         }
     });
-}
-
+    }
 function sae_showAll(o){
     // console.log($(o).is(':checked'));
     if ($(o).is(':checked')){
@@ -257,8 +520,7 @@ function sae_showAll(o){
         // $.cookie('showAllInspection', 0);
         $('.sae-archive').addClass('w3-hide');
     }
-}
-
+    }
 function sae_clearReinspectionDetails(o, teamIDX, flightIDX, todoIDX, inStatus){
     var location = $.cookie('LOCATION');
     var team = {};
@@ -279,8 +541,7 @@ function sae_clearReinspectionDetails(o, teamIDX, flightIDX, todoIDX, inStatus){
             $(o).close();
         }
     });
-}
-
+    }
 function sae_failedReinspectionDetails(o, teamIDX, todoIDX, inStatus){
     var location = $.cookie('LOCATION');
     // console.log('location='+location+' ,teamIDX = '+teamIDX+', flightIDX='+flightIDX);
@@ -297,8 +558,8 @@ function sae_failedReinspectionDetails(o, teamIDX, todoIDX, inStatus){
             channel.publish('sae_alertStudentOfCrashReport', team);
         }
     });
-}
+    }
 function sae_cancelReinspectionDetailsdivName(divName){
     $('#'+divName).remove();
-}
+    }
 

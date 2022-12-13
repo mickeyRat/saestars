@@ -19,7 +19,33 @@ sub new{
     return $self;
     }
 
+
 # -------------- 2023 --------------
+sub _getTechItemDetails (){
+    my ($self, $itemIDX) = @_;
+    my $SQL = "SELECT * FROM TB_TECH_REQ WHERE PK_TECH_REQ_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $itemIDX );
+    my %HASH = %{$select->fetchrow_hashref()};
+    return (\%HASH);
+
+    }
+sub _getTechSectionCheckItems (){
+    my ($self, $sectionIDX) = @_;
+    my $SQL = "SELECT * FROM TB_TECH_REQ WHERE FK_TECH_REQ_SECTION_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $sectionIDX );
+    my %HASH = %{$select->fetchall_hashref('PK_TECH_REQ_IDX')};
+    return (\%HASH);
+    }
+sub _getTechSection (){
+    my ($self) = @_;
+    my $SQL = "SELECT * FROM TB_TECH_REQ_SECTION";
+    my $select = $dbi->prepare($SQL);
+       $select->execute();
+    my %TECH = %{$select->fetchall_hashref(['TX_TYPE','PK_TECH_REQ_SECTION_IDX'])}; 
+    return (\%TECH);
+    }
 sub _getMyReinspection (){
     my ($self, $teamIDX) = @_;
     my $str = &getMyReinspection($teamIDX);

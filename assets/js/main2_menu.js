@@ -180,9 +180,25 @@ function mainMenuItemClick(menuItem, obj){
             window.open("scan.html");
             // console.log("test");
             break; 
+        case 34: //Open Tech Inspection Module
+            openInspectionModule();
+            // console.log("test");
+            break; 
         default:
           // code block
       }
+}
+function openInspectionModule(){
+    // $('#mainPageContent').html(loading);
+    var eventIDX = $.cookie('FK_EVENT_IDX');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'openInspectionModule','act':'print','eventIDX':eventIDX},
+        success: function(str){
+            $('#mainPageContent').html(str);
+        }
+    });
 }
 function openCrashReinspection(){
     // $('#mainPageContent').html(loading);

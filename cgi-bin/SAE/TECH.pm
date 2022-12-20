@@ -19,8 +19,64 @@ sub new{
     return $self;
     }
 
-
 # -------------- 2023 --------------
+sub _getTechSafetyCheckStatus(){
+    my ($self, $teamIDX, $inSafetyStatus, $classIDX) = @_;
+    my $txSafety = 'Safety Check<br>Not Started';
+    if ($inSafetyStatus == 1) {      # Inspection has begun (no Failed)
+        $colorSafetyStatus = 'w3-yellow';
+        $txSafety = 'Safety Check<br>In-Progress';
+    } elsif ($inSafetyStatus == 2) { # Inspection has begun, and the team needs to be reinspected
+        $colorSafetyStatus = 'w3-pale-red';
+        $txSafety = 'Safety Check: <b class="w3-text-red">Failed</b><br>Re-Check Required';
+    } elsif ($inSafetyStatus == 3) { # Passed
+        $colorSafetyStatus = 'w3-light-blue';
+        $txSafety = 'Safety Check<br>Complete';
+    } else {                           # Have not attempted inspection yet
+        $colorSafetyStatus = 'w3-white';
+        $txSafety = 'Safety Check<br>Not Started';
+    }
+    my $str;
+    $str .= sprintf '<div ID="TeamRequirementsCheck_%d" class="w3-container '.$colorSafetyStatus.' w3-padding-16 w3-border w3-card-2 w3-round" style="cursor: pointer" onclick="student_openSafetyChecks(this, %d, %d)">', $teamIDX, $teamIDX, $classIDX;
+    $str .= '<div class="w3-left">';
+    $str .= sprintf '<i class="fa fa-check-square-o fa-fw fa-2x"><span class="w3-margin-left w3-large">Safety</span></i>';
+    $str .= '</div>';
+    $str .= sprintf '<div class="w3-right"><i class="fa fa-chevron-right fa-3x w3-margin-left" aria-hidden="true"></i></div>';
+    $str .= '<div class="w3-clear"></div>';
+    $str .= sprintf '<h5>%s</h5>', $txSafety;
+    # $str .= sprintf '<h4>Re-Inspection Required after flight attempt # %02d</h4>', $TECH{$inspectIDX}{IN_ROUND};
+    $str .= '</div>';
+    return ($str );
+    }
+sub _getTechRequirementsCheckStatus(){
+    my ($self, $teamIDX, $inspectionStatus, $classIDX) = @_;
+    my $colorReqStatus = 'w3-white';
+    my $txReq = 'Requirements Check<br>Not Started';
+    if ($inspectionStatus == 1) {      # Inspection has begun (no Failed)
+        $colorReqStatus = 'w3-yellow';
+        $txReq = 'Requirements Check<br>in-Progress';
+    } elsif ($inspectionStatus == 2) { # Inspection has begun, and the team needs to be reinspected
+        $colorReqStatus = 'w3-pale-red';
+        $txReq = 'Req. Check: <b class="w3-text-red">Failed</b><br>Re-Check Required';
+    } elsif ($inspectionStatus == 3) { # Passed
+        $colorReqStatus = 'w3-light-blue';
+        $txReq = 'Requirements Check<br>Complete';
+    } else {                           # Have not attempted inspection yet
+        $colorReqStatus = 'w3-white';
+        $txReq = 'Requirements Check<br>Not Started';
+    }
+    my $str;
+    $str .= sprintf '<div ID="TeamRequirementsCheck_%d" class="w3-container '.$colorReqStatus.' w3-padding-16 w3-border w3-card-2 w3-round" style="cursor: pointer" onclick="student_openRequirementsChecks(this, %d, %d)">', $teamIDX, $teamIDX, $classIDX;
+    $str .= '<div class="w3-left">';
+    $str .= sprintf '<i class="fa fa-check-square-o fa-fw fa-2x"><span class="w3-margin-left w3-large">Requirements</span></i>';
+    $str .= '</div>';
+    $str .= sprintf '<div class="w3-right"><i class="fa fa-chevron-right fa-3x w3-margin-left" aria-hidden="true"></i></div>';
+    $str .= '<div class="w3-clear"></div>';
+    $str .= sprintf '<h5>%s</h5>', $txReq;
+    # $str .= sprintf '<h4>Re-Inspection Required after flight attempt # %02d</h4>', $TECH{$inspectIDX}{IN_ROUND};
+    $str .= '</div>';
+    return ($str );
+    }
 sub getInspectionPenalties(){
     my ($teamIDX) = @_;
     my $SQL = "SELECT SUM(REQ.IN_POINTS) AS IN_TOTAL 
@@ -30,12 +86,12 @@ sub getInspectionPenalties(){
        $select->execute( 1, $teamIDX );
     my $inPenalty = $select->fetchrow_array();
     return  ($inPenalty);
-}
+    }   
 sub _getTeamInspectionPenalties (){
     my ($self, $teamIDX) = @_;
     my $str = &getInspectionPenalties($teamIDX);
     return ($str);
-}
+    }
 sub _getTeamInspectionStatus (){
     my ($self, $teamIDX, $classIDX) = @_;
     my $str;
@@ -50,7 +106,6 @@ sub getTeamSafetyStatus(){
        $SQL = "SELECT REQ.* FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.TX_TYPE=? AND REQ.BO_MICRO=?)";
     } elsif ($classIDX == 2) {
        $SQL = "SELECT REQ.* FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.TX_TYPE=? AND REQ.BO_ADVANCE=?)";
-
     } else {
        $SQL = "SELECT REQ.* FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.TX_TYPE=? AND REQ.BO_REGULAR=?)";
     }
@@ -82,7 +137,6 @@ sub getTeamSafetyStatus(){
     }
     return ($inSafetyStatus);
     }
-
 sub _getTeamSafetyStatus(){
     my ($self, $teamIDX, $classIDX) = @_;
     my $str;
@@ -269,8 +323,9 @@ sub _getTechSection (){
     }
 sub _getMyReinspection (){
     my ($self, $teamIDX) = @_;
-    my $str = &getMyReinspection($teamIDX);
-    return ($str);
+    # my $str = &getMyReinspection($teamIDX);
+    # print $teamIDX."\n\n";
+    return (&getMyReinspection($teamIDX));
     }
 sub getInspectionItemDetails (){
     my ($inspectIDX) = @_;

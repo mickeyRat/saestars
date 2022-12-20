@@ -47,6 +47,7 @@ function tech_submitTechStatus (o, teamIDX, itemIDX, headingIDX, classIDX, inSta
             $('#TECH_ITEM_'+teamIDX+'_'+itemIDX).replaceWith(obj.ITEM);
             setTimeout(function(){ $('#savedMessage').fadeOut(150); }, 250);
             channel.publish('sae_ps_updateTeamInspectionStatus', str);
+            channel.publish('sae_ps_alertTeamInspectionStatus', str);
 
         }
     });

@@ -68,9 +68,19 @@ sub sae_loadHomePage(){
     $str .= '</header>';
 
     foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS ) {
+        my $classIDX            = $TEAMS{$teamIDX}{FK_CLASS_IDX};
+        my $inSafetyStatus      = $Tech->_getTeamSafetyStatus($teamIDX, $classIDX);
+        my $inRequirementStatus = $Tech->_getTeamInspectionStatus($teamIDX, $classIDX);
         $str .= '<div class="w3-row-padding w3-padding w3-border w3-round w3-margin-top w3-card-4 w3-light-grey">';
         $str .= sprintf '<header class="w3-container w3-light-grey"><span class="w3-xxlarge">%03d</span><br><h3 style="padding: 0; margin: 0;">%s</h3></header>', $TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL};
-        $str .= sprintf '<div ID="TeamReinspectionNotification_%d" class="w3-quarter w3-margin-bottom">', $teamIDX;
+        $str .= sprintf '<div ID="TeamReuirements_%d" class="w3-half w3-margin-bottom">', $teamIDX;
+        $str .= $Tech->_getTechRequirementsCheckStatus($teamIDX, $inRequirementStatus, $classIDX);
+        $str .= '</div>';
+        $str .= sprintf '<div ID="TeamSafety_%d" class="w3-half w3-margin-bottom">', $teamIDX;
+        $str .= $Tech->_getTechSafetyCheckStatus($teamIDX, $inSafetyStatus, $classIDX);
+        $str .= '</div>';
+        $str .= '<div class="w3-clear"></div>';
+        $str .= sprintf '<div ID="TeamReinspectionNotification_%d" class="w3-half w3-margin-bottom">', $teamIDX;
         $str .= $Tech->_getMyReinspection($teamIDX);
         $str .= '</div>';
         $str .= '<div class="w3-clear"></div>';

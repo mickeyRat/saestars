@@ -726,7 +726,6 @@ exit;
         my %OBJ;
         print $q->header();
         my $tickets = $Tech->_getMyReinspection($teamIDX);
-        
         $OBJ{FK_TEAM_IDX} = $teamIDX;
         $OBJ{NOTIFY_BUTTON} = $tickets;
         my $json = encode_json \%OBJ;

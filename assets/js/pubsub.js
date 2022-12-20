@@ -25,8 +25,16 @@ channel.subscribe('sae_ps_updateTicketStatus', function(message) {sae_ps_updateT
 channel.subscribe('sae_ps_unclearInspectionTicket', function(message) {sae_ps_unclearInspectionTicket(message.data);});
 channel.subscribe('sae_ps_notifyTeamsOfReinspection', function(message) {sae_ps_notifyTeamsOfReinspection(message.data);});
 channel.subscribe('sae_ps_updateTeamInspectionStatus', function(message) {sae_ps_updateTeamInspectionStatus(message.data);});
+channel.subscribe('sae_ps_alertTeamInspectionStatus', function(message) {sae_ps_alertTeamInspectionStatus(message.data);});
 
 {
+    function sae_ps_alertTeamInspectionStatus(argument) {
+        var o = JSON.parse(argument);
+        const teamIDX = o.FK_TEAM_IDX;
+        $('#TeamReuirements_'+teamIDX).html(o.TEAM_REQ_ALERT);
+        $('#TeamSafety_'+teamIDX).html(o.TEAM_SAFETY_ALERT);
+        // console.log(argument);
+    }
     function sae_ps_updateTeamInspectionStatus (argument) {
         var o = JSON.parse(argument);
         console.log(o)
@@ -47,16 +55,16 @@ channel.subscribe('sae_ps_updateTeamInspectionStatus', function(message) {sae_ps
         ajxData['act'] = 'print';
         ajxData.FK_EVENT_IDX = $.cookie('FK_EVENT_IDX');
         ajxData.FK_TEAM_IDX = o.FK_TEAM_IDX;
+        console.log('from Argument FK_TEAM_IDX = ' +o.FK_TEAM_IDX);
         // ajxData['jsonData'] = argument;
         $.ajax({
             type: 'POST',
             url: '../cgi-bin/flight.pl',
             data: ajxData,
             success: function(str){
-
+                console.log(str);
                 var obj = JSON.parse(str);
                 $('#TeamReinspectionNotification_' + o.FK_TEAM_IDX).prepend(obj.NOTIFY_BUTTON);
-                console.log(str);
                 console.log(argument);
                 console.log(obj.FK_TEAM_IDX);
             }

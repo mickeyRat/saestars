@@ -49,7 +49,7 @@ jQuery.modal = function(title, width, color, height){
     if (color === null){color='w3-light-grey '}
     if (width === null ){width='75%'}
     var div = '<div ID="'+idName+'" class="w3-modal sae-top" style="display: block; z-index: 5001;">';
-        div += '<div class="w3-modal-content w3-card-4 '+color+'  w3-round-large" style="width: '+width+'; min-height: 300px; top: 10px; position: fixed; top: 0%; left: 50%; -webkit-transform: translate(-50%, 0%); transform: traslate(-50%,0%);">';
+        div += '<div class="w3-modal-content w3-card-4 '+color+'  w3-round-large" style="width: '+width+'; min-height: 300px; top: 10px; position: relative; top: 0%; margin-right: auto; margin-left: auto; -webkit-transform: translate(auto, 0%); transform: traslate(auto,0%);">';
             div += '<div class="w3-display-container">';
             div += '<div class="w3-bar w3-round-xlarge"><h3 style="padding: 5px 40px">'+title+'</h3>';
             div += '<span id="modal_x1" onclick="$(\'#'+idName+'\').remove();" class="w3-button w3-display-topright w3-hover-red w3-round" style="margin-right: 4px; margin-top: 4px;"><i class="fa fa-times fa-lg" aria-hidden="true"></i></span>';

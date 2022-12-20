@@ -81,15 +81,17 @@ sub tech_submitTechStatus (){
     }
     my %DATA;
         $DATA{ITEM} = $str;
-        my $inspectionStatus = $Tech->_getTeamInspectionStatus($teamIDX, $classIDX );
-        my $inSafetyStatus   = $Tech->_getTeamSafetyStatus($teamIDX, $classIDX );
-        my $inNumber         = $TEAMS{$teamIDX}{IN_NUMBER};
-        my $classIDX         = $TEAMS{$teamIDX}{FK_CLASS_IDX};
-        my $txSchool         = $TEAMS{$teamIDX}{TX_SCHOOL};
-        $DATA{TEAM_BAR} = &t_teamInspectionBar($teamIDX, $inspectionStatus, $inSafetyStatus, $classIDX, $inNumber, $txSchool);
-        $DATA{FK_ITEM_IDX}  = $itemIDX;
-        $DATA{FK_TEAM_IDX}  = $teamIDX;
-        $DATA{BO_INSPECTED} = $inspectionStatus;
+        my $inspectionStatus     = $Tech->_getTeamInspectionStatus($teamIDX, $classIDX );
+        my $inSafetyStatus       = $Tech->_getTeamSafetyStatus($teamIDX, $classIDX );
+        my $inNumber             = $TEAMS{$teamIDX}{IN_NUMBER};
+        my $classIDX             = $TEAMS{$teamIDX}{FK_CLASS_IDX};
+        my $txSchool             = $TEAMS{$teamIDX}{TX_SCHOOL};
+        $DATA{TEAM_BAR}          = &t_teamInspectionBar($teamIDX, $inspectionStatus, $inSafetyStatus, $classIDX, $inNumber, $txSchool);
+        $DATA{FK_ITEM_IDX}       = $itemIDX;
+        $DATA{FK_TEAM_IDX}       = $teamIDX;
+        $DATA{BO_INSPECTED}      = $inspectionStatus;
+        $DATA{TEAM_REQ_ALERT}    = $Tech->_getTechRequirementsCheckStatus($teamIDX, $inspectionStatus); 
+        $DATA{TEAM_SAFETY_ALERT} = $Tech->_getTechSafetyCheckStatus($teamIDX, $inSafetyStatus); 
     my $json = encode_json \%DATA;
     return ($json);
     # return ($str);
@@ -647,33 +649,33 @@ sub t_teamInspectionBar(){
     my $str;
     my $colorReqStatus = 'w3-white';
     my $colorSafetyStatus = 'w3-white';
-    my $txReq = 'Requirements Check';
+    my $txReq = 'Requirements Check<br>Not Started';
     if ($inspectionStatus == 1) {      # Inspection has begun (no Failed)
         $colorReqStatus = 'w3-yellow';
         $txReq = 'Req. Check in-Progress';
     } elsif ($inspectionStatus == 2) { # Inspection has begun, and the team needs to be reinspected
         $colorReqStatus = 'w3-pale-red';
-        $txReq = 'Failed Requirements Check<br>Re-Check Required';
+        $txReq = 'Req. Check: <b class="w3-text-red">Failed</b><br>Re-Check Required';
     } elsif ($inspectionStatus == 3) { # Passed
         $colorReqStatus = 'w3-light-blue';
         $txReq = 'Requirements Check Complete';
     } else {                           # Have not attempted inspection yet
         $colorReqStatus = 'w3-white';
-        $txReq = 'Requirements Check';
+        $txReq = 'Requirements Check<br>Not Started';
     }
-    my $txSafety = 'Safety Check';
+    my $txSafety = 'Safety Check<br>Not Started';
     if ($inSafetyStatus == 1) {      # Inspection has begun (no Failed)
         $colorSafetyStatus = 'w3-yellow';
         $txSafety = 'Safety Check In-Progress';
     } elsif ($inSafetyStatus == 2) { # Inspection has begun, and the team needs to be reinspected
         $colorSafetyStatus = 'w3-pale-red';
-        $txSafety = 'Failed Safety Check<br>Re-check Required';
+        $txSafety = 'Safety Check: <b class="w3-text-red">Failed</b><br>Re-Check Required';
     } elsif ($inSafetyStatus == 3) { # Passed
         $colorSafetyStatus = 'w3-light-blue';
         $txSafety = 'Safety Check Complete';
     } else {                           # Have not attempted inspection yet
         $colorSafetyStatus = 'w3-white';
-        $txSafety = 'Safety Check';
+        $txSafety = 'Safety Check<br>Not Started';
     }
     $str = sprintf '<li ID="TECH_INSPECTION_%d" class="w3-bar w3-border w3-white w3-round w3-card-2 w3-margin-bottom">', $teamIDX;
     $str .= '<div class="w3-bar-item">'.$teamIDX.' - ';

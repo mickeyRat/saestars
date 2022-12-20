@@ -830,7 +830,7 @@ function openReInspectionStatus(o, flightIDX) {
     ajxData.flightIDX = flightIDX;
     ajxData.jsonData  = jsonData;
     channel.publish('sae_ps_notifyTeamsOfReinspection', JSON.stringify(notify));
-    console.log(notify);
+    // console.log(notify);
     // console.log("something");
     $.ajax({
         type: 'POST',

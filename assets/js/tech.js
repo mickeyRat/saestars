@@ -4,8 +4,103 @@
 
 
 //------ 2023 ---------------------------------------------------
+function tech_updateCheckItem(o) {
+    var ajxData = {};
+    var data = {};
+        data[$(o).data('field')] = 0;
+    if ($(o).is(':checked')){data[$(o).data('field')] = 1} 
+    ajxData['do'] = 'tech_updateCheckItem';
+    ajxData['act'] = 'print';
+    ajxData['eventIDX'] = $.cookie('FK_EVENT_IDX');
+    ajxData['FIELD_IDX'] = $(o).data('key');
+    ajxData['FIELD'] = $(o).data('primekey');
+    ajxData['TABLE'] = $(o).data('table'); 
+    ajxData['jsonData'] = JSON.stringify(data);
+    console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log('#TECH_ITEM_'+teamIDX+'_'+itemIDX);
+            // console.log(str);
+            // $('#TECH_ITEM_'+teamIDX+'_'+itemIDX).replaceWith(str);
+            // $('#modal_content').html(str);
+
+        }
+    });
+}
+function tech_submitTechStatus (o, teamIDX, itemIDX, headingIDX, classIDX, inStatus) {
+    if (inStatus ==0){
+        var jsYes = confirm("Are you sure?");
+        if (!jsYes){return}
+    }
+    $('#savedMessage').show();
+    var eventIDX = $.cookie('LOCATION');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_submitTechStatus','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'itemIDX':itemIDX,'inStatus':inStatus,'headingIDX':headingIDX,'classIDX':classIDX},
+        success: function(str){
+            var obj = JSON.parse(str);
+            // console.log(obj.TEAM_BAR);
+            $('#TECH_ITEM_'+teamIDX+'_'+itemIDX).replaceWith(obj.ITEM);
+            setTimeout(function(){ $('#savedMessage').fadeOut(150); }, 250);
+            channel.publish('sae_ps_updateTeamInspectionStatus', str);
+
+        }
+    });
+}
+function tech_openSafetyCheck (o, teamIDX, inNumber, classIDX) {
+    var eventIDX = $.cookie('LOCATION');
+    // ajxData.itemCount       ÷      = itemCount;
+    $.modal('Team #:' + pad(inNumber,3), '90%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_openSafetyCheck','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'classIDX':classIDX},
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+
+        }
+    });
+}
+function tech_openRequirementsCheck (o, teamIDX, inNumber, classIDX) {
+    // console.log('section number = ' + secNumber);
+    // var itemCount = $('.itemGroup_'+sectionIDX).length + 1;
+
+    var eventIDX = $.cookie('LOCATION');
+    // ajxData.itemCount       ÷      = itemCount;
+    $.modal('Team #:' + pad(inNumber,3), '90%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_openRequirementsCheck','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'classIDX':classIDX},
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+
+        }
+    });
+}
+function tech_openTechInspectionTeamList (o) {
+    var eventIDX = $.cookie('LOCATION');
+    // $.modal('Add Section', '50%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_openTechInspectionTeamList','act':'print','eventIDX':eventIDX},
+        success: function(str){
+            // console.log(str);
+            // $('#modal_content').html(str);
+            $('#mainPageContent').html(str);
+
+        }
+    });
+}
 function tech_addCheckItem (o, sectionIDX, secNumber) {
-    console.log('section number = ' + secNumber);
+    // console.log('section number = ' + secNumber);
     var itemCount = $('.itemGroup_'+sectionIDX).length + 1;
 
     var eventIDX = $.cookie('LOCATION');
@@ -47,7 +142,7 @@ function tech_updateField(o){
         }
     });
     }
-function tech_deleteItem (o, itemIDX) {
+function tech_deleteItem (o, itemIDX, sectionIDX) {
     var jsYes = confirm("Are you sure?");
     if (!jsYes){return}
     var ajxData = {};
@@ -64,6 +159,13 @@ function tech_deleteItem (o, itemIDX) {
         success: function(str){
             console.log(str);
             // $('#ITEM_'+itemIDX).remove();
+        },
+        complete: function(){
+            var inPoints = 0;
+            $('.pointsFor_'+sectionIDX).each(function(o) {
+                    inPoints += parseFloat($(this).html());
+                });
+            $('.sectionPoints_'+sectionIDX).html(inPoints + ' Points');  
         }
     });   
     }
@@ -135,8 +237,6 @@ function tech_updateItem (o, itemIDX, sectionIDX) {
     ajxData.TABLE                 = 'TB_TECH_REQ';
     ajxData.jsonData              = JSON.stringify(data);
     console.log(ajxData);
-    // return;
-    // tech_updateField
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/tech.pl',
@@ -145,9 +245,14 @@ function tech_updateItem (o, itemIDX, sectionIDX) {
             console.log(str); 
             $(o).close();
             $('#ITEM_'+itemIDX).replaceWith(str);
-            // $('#tableSection_'+sectionIDX).append(str);
-            // setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 1000);
-            // $('#modal_content').html(str);
+        },
+        complete: function(){
+            // console.log('sectionIDX = ' + sectionIDX);
+            var inPoints = 0;
+            $('.pointsFor_'+sectionIDX).each(function(o) {
+                    inPoints += parseFloat($(this).html());
+                });
+            $('.sectionPoints_'+sectionIDX).html(inPoints + ' Points');  
         }
     });
     }
@@ -190,12 +295,15 @@ function tech_addItem(o, sectionIDX) {
             // console.log(str); 
             $(o).close();
             $('#tableSection_'+sectionIDX).append(str);
-            // setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 1000);
-            // $('#modal_content').html(str);
+        },
+        complete: function(){
+            var inPoints = 0;
+            $('.pointsFor_'+sectionIDX).each(function(o) {
+                    inPoints += parseFloat($(this).html());
+                });
+            $('.sectionPoints_'+sectionIDX).html(inPoints + ' Points');  
         }
     });
-
-    return;
     }
 function tech_addSection (o, txType) {
     var ajxData       = {};
@@ -239,15 +347,32 @@ function tech_openAddSection (txType) {
     }
 function tech_openSetup () {
     var eventIDX = $.cookie('LOCATION');
+    var obj = {};
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/tech.pl',
         data: {'do':'tech_openSetup','act':'print','eventIDX':eventIDX},
         success: function(str){
-            $('#mainPageContent').html(str);
+            // var obj = 
+            obj = JSON.parse(str);
+            $('#mainPageContent').html(obj.html);
+            // console.log(obj.REQ);
+        },
+        complete: function(){
+            var section = obj.REQ.split(";");
+            section.forEach(function(item, index) {
+                var inPoints = 0;
+                $('.pointsFor_'+item).each(function(o) {
+                    inPoints += parseFloat($(this).html());
+                });
+                console.log('Total pts for this section is '+inPoints);
+                $('.sectionPoints_'+item).html(inPoints + ' Points');            
+            })
+
         }
     });
     }
+
 function tech_deleteSection (o, sectionIDX) {
     var jsYes = confirm("are you sure?");
     if (!jsYes){return}

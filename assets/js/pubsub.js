@@ -24,9 +24,17 @@ channel.subscribe('sae_ps_clearInspection', function(message) {sae_ps_clearInspe
 channel.subscribe('sae_ps_updateTicketStatus', function(message) {sae_ps_updateTicketStatus(message.data);});
 channel.subscribe('sae_ps_unclearInspectionTicket', function(message) {sae_ps_unclearInspectionTicket(message.data);});
 channel.subscribe('sae_ps_notifyTeamsOfReinspection', function(message) {sae_ps_notifyTeamsOfReinspection(message.data);});
+channel.subscribe('sae_ps_updateTeamInspectionStatus', function(message) {sae_ps_updateTeamInspectionStatus(message.data);});
 
 {
-    
+    function sae_ps_updateTeamInspectionStatus (argument) {
+        var o = JSON.parse(argument);
+        console.log(o)
+        const teamIDX = o.FK_TEAM_IDX;
+        const itemIDX = o.FK_ITEM_IDX;
+        $('#TECH_ITEM_'+teamIDX+'_'+itemIDX).replaceWith(o.ITEM);
+        $('#TECH_INSPECTION_'+teamIDX).replaceWith(o.TEAM_BAR);
+    }
     function sae_ps_notifyTeamsOfReinspection (argument) {
         
         var o = JSON.parse(argument);

@@ -46,6 +46,151 @@ if ($act eq "print"){
 }
 exit;
 ### --------------- 2023 ------------------------------------------------------
+sub tech_updateCheckItem (){
+        my $eventIDX = $q->param('eventIDX');
+        my $index = $q->param('FIELD_IDX');
+        my $field = $q->param('FIELD');
+        my $table = $q->param('TABLE');
+        my %DATA = %{decode_json($q->param('jsonData'))};
+        my $JsonDB = new SAE::JSONDB();
+        print $q->header();        
+        my $str;
+        $str =   $JsonDB->_update($table, \%DATA, qq($field=$index));
+        # $str .= join("|", values %DATA);
+        return ("$field=$index");
+        }
+sub tech_submitTechStatus (){
+    my $eventIDX   = $q->param('eventIDX');
+    my $itemIDX    = $q->param('itemIDX');
+    my $teamIDX    = $q->param('teamIDX');  
+    my $inStatus   = $q->param('inStatus');
+    my $classIDX   = $q->param('classIDX');
+    my $headingIDX   = $q->param('headingIDX');
+    my $Tech       = new SAE::TECH();
+    $Tech->_submitTechInspectionStatus($teamIDX, $itemIDX, $inStatus, $eventIDX);
+    my %TECH = %{$Tech->_getItemDetails( $teamIDX, $itemIDX )};
+    my %TEAMS      = %{$Tech->_getTeamList($eventIDX)};
+    print $q->header();
+    my $str;
+    if ($inStatus>0) {
+        $str = &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $TECH{TX_REQUIREMENT},$TECH{IN_HEAD},$TECH{IN_SECTION},$TECH{TX_SECTION},$TECH{IN_STATUS});
+    } else {
+        my %REQ = %{$Tech->_getReqList()};
+        $str = &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $REQ{$headingIDX}{$itemIDX}{TX_REQUIREMENT},$REQ{$headingIDX}{$itemIDX}{IN_HEAD},$REQ{$headingIDX}{$itemIDX}{IN_SECTION},$REQ{$headingIDX}{$itemIDX}{TX_SECTION},0);
+
+    }
+    my %DATA;
+        $DATA{ITEM} = $str;
+        my $inspectionStatus = $Tech->_getTeamInspectionStatus($teamIDX, $classIDX );
+        my $inSafetyStatus   = $Tech->_getTeamSafetyStatus($teamIDX, $classIDX );
+        my $inNumber         = $TEAMS{$teamIDX}{IN_NUMBER};
+        my $classIDX         = $TEAMS{$teamIDX}{FK_CLASS_IDX};
+        my $txSchool         = $TEAMS{$teamIDX}{TX_SCHOOL};
+        $DATA{TEAM_BAR} = &t_teamInspectionBar($teamIDX, $inspectionStatus, $inSafetyStatus, $classIDX, $inNumber, $txSchool);
+        $DATA{FK_ITEM_IDX}  = $itemIDX;
+        $DATA{FK_TEAM_IDX}  = $teamIDX;
+        $DATA{BO_INSPECTED} = $inspectionStatus;
+    my $json = encode_json \%DATA;
+    return ($json);
+    # return ($str);
+    }
+sub tech_openSafetyCheck  (){
+    my $teamIDX    = $q->param('teamIDX');
+    my $eventIDX   = $q->param('eventIDX');
+    my $classIDX   = $q->param('classIDX');
+    my $txType     = 'safetySectionNumber';
+    my $Tech       = new SAE::TECH();
+    my %TECH       = %{$Tech->_getTeamTechList($teamIDX)};
+    my %HEAD       = %{$Tech->_getSectionHeading($txType)};
+    my %REQ        = %{$Tech->_getReqList($classIDX)};
+
+    print $q->header();
+    my $str;
+    $str .= '<div class="w3-container w3-padding-16 w3-border w3-round w3-card-4" style=" height: 700px; overflow-y: scroll;">';
+    foreach $headingIDX (sort {$HEAD{$a}{IN_SECTION} <=> $HEAD{$b}{IN_SECTION}} keys %HEAD) {
+        if (exists $REQ{$headingIDX}) {
+            my $inHeading = $HEAD{$headingIDX}{IN_SECTION};
+            $str .= sprintf '<h4 class="w3-strong">';
+            $str .= sprintf '<b>%d - %s</b>', $HEAD{$headingIDX}{IN_SECTION}, $HEAD{$headingIDX}{TX_SECTION};
+            $str .= '</h4>';
+            $str .= '<ul class="w3-ul">';
+            foreach $itemIDX (sort keys %{$REQ{$headingIDX}}) {
+                my $inStatus = $TECH{$itemIDX}{IN_STATUS};
+                $str .= &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $REQ{$headingIDX}{$itemIDX}{TX_REQUIREMENT}, $inHeading, $REQ{$headingIDX}{$itemIDX}{IN_SECTION}, $REQ{$headingIDX}{$itemIDX}{TX_SECTION}, $inStatus);
+            }
+            $str .= '</ul>';
+        }
+    }
+    $str .= '</div>';
+    return ($str);
+    }
+sub tech_openRequirementsCheck  (){
+    my $teamIDX    = $q->param('teamIDX');
+    my $eventIDX   = $q->param('eventIDX');
+    my $classIDX   = $q->param('classIDX');
+    my $txType     = 'reqSectionNumber';
+    my $Tech       = new SAE::TECH();
+    my %TECH        = %{$Tech->_getTeamTechList($teamIDX)};
+    my %HEAD       = %{$Tech->_getSectionHeading($txType)};
+    my %REQ       = %{$Tech->_getReqList($classIDX )};
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    print $q->header();
+    my $str;
+    $str .= '<div class="w3-container w3-padding-16 w3-border w3-round w3-card-4" style=" height: 700px; overflow-y: scroll;">';
+    foreach $headingIDX (sort {$HEAD{$a}{IN_SECTION} <=> $HEAD{$b}{IN_SECTION}} keys %HEAD) {
+        if (exists $REQ{$headingIDX}) {
+            my $inHeading = $HEAD{$headingIDX}{IN_SECTION};
+            $str .= sprintf '<h4 class="w3-strong">';
+            if ($HEAD{$headingIDX}{BO_CHECK} == 1) {
+                # $str .= '<i class="fa fa-heart w3-text-red w3-margin-right" aria-hidden="true"></i>';
+                $str .= sprintf '<b class="w3-text-red">%d - %s</b>', $HEAD{$headingIDX}{IN_SECTION}, $HEAD{$headingIDX}{TX_SECTION};
+            } else {
+                $str .= sprintf '<b>%d - %s</b>', $HEAD{$headingIDX}{IN_SECTION}, $HEAD{$headingIDX}{TX_SECTION};
+            }
+            
+            $str .= '</h4>';
+                $str .= '<ul class="w3-ul">';
+            foreach $itemIDX (sort keys %{$REQ{$headingIDX}}) {
+                my $inStatus = $TECH{$itemIDX}{IN_STATUS};
+                $str .= &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $REQ{$headingIDX}{$itemIDX}{TX_REQUIREMENT}, $inHeading, $REQ{$headingIDX}{$itemIDX}{IN_SECTION}, $REQ{$headingIDX}{$itemIDX}{TX_SECTION}, $inStatus);
+            }
+            $str .= '</ul>';
+        }
+    }
+    $str .= '</div>';
+    return ($str);
+    }
+sub tech_openTechInspectionTeamList (){
+    my $eventIDX   = $q->param('eventIDX');
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my $Tech       = new SAE::TECH();
+    my %TEAMS      = %{$Tech->_getTeamList($eventIDX)};
+    my %TECH       = %{$Tech->_getInsptectionStatus(\%TEAMS)};
+
+    print $q->header();
+    my $str;
+    my %STATUS = (0=>'Not Started', 
+            1=>'In-Progress', 
+            2=>'Completed');
+    my %STATUS_COLOR = (0=>'w3-white', 1=>'w3-pale-yellow', 2=>'w3-pale-blue');
+    $str .= '<div class="w3-container w3-margin-top">';
+    $str .= '<header class="w3-container"  style="padding-top:22px"><h3>Technical Inspection</h3></header>';
+    $str .= '</div>';
+    $str .= '<div class="w3-container">';
+    $str .= '<ul class="w3-ul">';
+    foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS) {
+        my $inNumber         = $TEAMS{$teamIDX}{IN_NUMBER};
+        my $classIDX         = $TEAMS{$teamIDX}{FK_CLASS_IDX};
+        my $inspectionStatus = $TECH{$teamIDX}{BO_INSPECTED};
+        my $txSchool         = $TEAMS{$teamIDX}{TX_SCHOOL};
+        my $inSafetyStatus   = $Tech->_getTeamSafetyStatus($teamIDX, $classIDX);
+        $str .= &t_teamInspectionBar($teamIDX, $inspectionStatus, $inSafetyStatus, $classIDX, $inNumber, $txSchool);
+    }
+    $str .= '</ul>';
+    $str .= '</div>';
+    return ($str);
+    }
+    # .container
 sub tech_updateItem (){
         my $eventIDX = $q->param('eventIDX');
         my $itemIDX = $q->param('itemIDX');
@@ -66,17 +211,18 @@ sub tech_editItem (){
     my %ITEM      = %{$Tech->_getTechItemDetails($itemIDX)};
 
     # my %DATA = %{decode_json($q->param('jsonData'))};
+    my $sectionIDX = $ITEM{FK_TECH_REQ_SECTION_IDX};
     print $q->header();
     my $str;
-    $str = '<div class="w3-container w3-round w3-margin-bottom w3-light-grey">';
+    $str = '<div class="w3-container w3-round w3-margin-bottom w3-light-grey w3-card-4">';
     $str .= '<div class="w3-container" >';
     $str .= '<div class="w3-container w3-white w3-round w3-border w3-margin-top" style="display: flex !important; width: 100%;">';
     $str .= sprintf '<label class="w3-large" style="margin-top: 10px; flex: 0 1 auto;">Item #: %d.</label>',$secNumber;
-    $str .= sprintf '<input type="number" ID="IN_SECTION" class="w3-input w3-round w3-large w3-text-blue" value="%d" style="flex: 1; padding: 10px 10px 5px 2px; " >', $ITEM{IN_SECTION};
+    $str .= sprintf '<input type="number" ID="IN_SECTION" class="w3-input w3-round w3-border-0 w3-large w3-text-blue" value="%d" style="flex: 1; padding: 10px 10px 5px 2px; " >', $ITEM{IN_SECTION};
     $str .= '</div>';
     $str .= '<div class="w3-container w3-white w3-margin-top w3-border w3-round" style="display: flex !important; width: 100%;">';
     $str .= '<label class="w3-large" style="margin-top: 10px; flex: 0 1 auto;">Rule\'s Reference: </label>';
-    $str .= sprintf '<input type="text" ID="TX_REQUIREMENT" class="w3-input w3-round w3-large w3-text-blue w3-margin-left " value="%s" style="flex: 1; padding: 10px; " >',$ITEM{TX_REQUIREMENT};
+    $str .= sprintf '<input type="text" ID="TX_REQUIREMENT" class="w3-input w3-border-0 w3-round w3-large w3-text-blue w3-margin-left " value="%s" style="flex: 1; padding: 10px; " >',$ITEM{TX_REQUIREMENT};
     $str .= '</div>';
     $str .= '</div>';
     $str .= '<div class="w3-container ">';
@@ -90,18 +236,18 @@ sub tech_editItem (){
     if ($ITEM{BO_ADVANCE} == 1) {$adv = 'checked'}
     if ($ITEM{BO_MICRO}   == 1) {$mic = 'checked'}
     $str .= '<input type="checkbox" ID="applicableToAll" class="w3-check             " onclick="tech_toggleChecks(this);"><label class="w3-margin-left w3-margin-right">Applicable to all classes</label><br>';
-    $str .= '<input type="checkbox" class="w3-check sectionClass w3-margin-left" value="1" data-field="BO_REGULAR" '.$reg.' onclick="tech_toggleSelectAll(this);" placeholder="Title"><label class="w3-margin-left w3-margin-right">Regular Class</label><br>';
-    $str .= '<input type="checkbox" class="w3-check sectionClass w3-margin-left" value="2" data-field="BO_ADVANCE" '.$adv.' onclick="tech_toggleSelectAll(this);" placeholder="Title"><label class="w3-margin-left w3-margin-right">Advanced Class</label><br>';
-    $str .= '<input type="checkbox" class="w3-check sectionClass w3-margin-left" value="3" data-field="BO_MICRO"   '.$mic.' onclick="tech_toggleSelectAll(this);" placeholder="Title"><label class="w3-margin-left w3-margin-right">Micro Class</label><br>';
+    $str .= '<input type="checkbox" ID="REG_CHECK" class="w3-check sectionClass w3-margin-left" value="1" data-field="BO_REGULAR" '.$reg.' onclick="tech_toggleSelectAll(this);" placeholder="Title"><label for="REG_CHECK" class="w3-margin-left w3-margin-right">Regular Class</label><br>';
+    $str .= '<input type="checkbox" ID="ADV_CHECK" class="w3-check sectionClass w3-margin-left" value="2" data-field="BO_ADVANCE" '.$adv.' onclick="tech_toggleSelectAll(this);" placeholder="Title"><label for="ADV_CHECK" class="w3-margin-left w3-margin-right">Advanced Class</label><br>';
+    $str .= '<input type="checkbox" ID="MIC_CHECK" class="w3-check sectionClass w3-margin-left" value="3" data-field="BO_MICRO"   '.$mic.' onclick="tech_toggleSelectAll(this);" placeholder="Title"><label for="MIC_CHECK" class="w3-margin-left w3-margin-right">Micro Class</label><br>';
     $str .= '</div>';
     $str .= '<div class="w3-container w3-white w3-margin-top w3-border w3-round w3-margin-bottom" style="display: flex !important; width: 100%;">';
     $str .= '<label class="w3-large" style="margin-top: 10px; flex: 0 1 auto;">Point Value: </label>';
-    $str .= sprintf '<input type="number" ID="IN_POINTS" class="w3-input w3-round w3-large w3-text-blue w3-margin-left"style="flex: 1; padding: 10px; " >';
+    $str .= sprintf '<input type="number" ID="IN_POINTS" class="w3-input w3-border-0 w3-round w3-large w3-text-blue w3-margin-left"style="flex: 1; padding: 10px;" value="%4.2f" >', $ITEM{IN_POINTS};
     $str .= '</div>';
     $str .= '</div>';
     $str .= '<div class="w3-container w3-center w3-padding">';
     $str .= '<button class="w3-button w3-border w3-round w3-margin-right" onclick="$(this).close();">Cancel</button>';
-    $str .= sprintf '<button class="w3-button w3-border w3-round w3-card-2 w3-margin-left w3-green" onclick="tech_updateItem(this, %d);">Update Item</button>', $itemIDX;
+    $str .= sprintf '<button class="w3-button w3-border w3-round w3-card-2 w3-margin-left w3-green" onclick="tech_updateItem(this, %d, %d);">Update Item</button>', $itemIDX, $sectionIDX;
     $str .= '</div>';
     return ($str);
     # return ($str);
@@ -114,15 +260,15 @@ sub tech_addCheckItem (){
     # my %DATA = %{decode_json($q->param('jsonData'))};
     print $q->header();
     my $str;
-    $str = '<div class="w3-container w3-round w3-margin-bottom w3-light-grey">';
+    $str = '<div class="w3-container w3-round w3-margin-bottom w3-light-grey w3-card-4">';
     $str .= '<div class="w3-container" >';
     $str .= '<div class="w3-container w3-white w3-round w3-border w3-margin-top" style="display: flex !important; width: 100%;">';
     $str .= '<label class="w3-large" style="margin-top: 10px; flex: 0 1 auto;">Item #: '.$secNumber.'.</label>';
-    $str .= sprintf '<input type="number" ID="IN_SECTION" class="w3-input w3-round w3-large w3-text-blue" placeholder="'.$itemCount.'" value="%d" style="flex: 1; padding: 10px 10px 5px 2px; " >', $itemCount;
+    $str .= sprintf '<input type="number" ID="IN_SECTION" class="w3-input w3-border-0 w3-round w3-large w3-text-blue" placeholder="'.$itemCount.'" value="%d" style="flex: 1; padding: 10px 10px 5px 2px; " >', $itemCount;
     $str .= '</div>';
     $str .= '<div class="w3-container w3-white w3-margin-top w3-border w3-round" style="display: flex !important; width: 100%;">';
     $str .= '<label class="w3-large" style="margin-top: 10px; flex: 0 1 auto;">Rule\'s Reference: </label>';
-    $str .= sprintf '<input type="text" ID="TX_REQUIREMENT" class="w3-input w3-round w3-large w3-text-blue w3-margin-left " placeholder="x.xx" style="flex: 1; padding: 10px; " >';
+    $str .= sprintf '<input type="text" ID="TX_REQUIREMENT" class="w3-input w3-border-0 w3-round w3-large w3-text-blue w3-margin-left " placeholder="x.xx" style="flex: 1; padding: 10px;" >';
     $str .= '</div>';
     $str .= '</div>';
     $str .= '<div class="w3-container ">';
@@ -130,13 +276,13 @@ sub tech_addCheckItem (){
     $str .= '<input type="text" ID="TX_SECTION" class="w3-input w3-border w3-round"><br>';
     $str .= '<label style="margin-left: 5px;">This check-item applies to the following classes</label><br>';
     $str .= '<input type="checkbox" ID="applicableToAll" class="w3-check             " onclick="tech_toggleChecks(this);"><label class="w3-margin-left w3-margin-right">Applicable to all classes</label><br>';
-    $str .= '<input type="checkbox" class="w3-check sectionClass w3-margin-left" value="1" data-field="BO_REGULAR" onclick="tech_toggleSelectAll(this);" placeholder="Title"><label class="w3-margin-left w3-margin-right">Regular Class</label><br>';
-    $str .= '<input type="checkbox" class="w3-check sectionClass w3-margin-left" value="2" data-field="BO_ADVANCE" onclick="tech_toggleSelectAll(this);" placeholder="Title"><label class="w3-margin-left w3-margin-right">Advanced Class</label><br>';
-    $str .= '<input type="checkbox" class="w3-check sectionClass w3-margin-left" value="3" data-field="BO_MICRO"   onclick="tech_toggleSelectAll(this);" placeholder="Title"><label class="w3-margin-left w3-margin-right">Micro Class</label><br>';
+    $str .= '<input type="checkbox" ID="REG_CHECK" class="w3-check sectionClass w3-margin-left" value="1" data-field="BO_REGULAR" onclick="tech_toggleSelectAll(this);" placeholder="Title"><label for="REG_CHECK" class="w3-margin-left w3-margin-right">Regular Class</label><br>';
+    $str .= '<input type="checkbox" ID="ADV_CHECK" class="w3-check sectionClass w3-margin-left" value="2" data-field="BO_ADVANCE" onclick="tech_toggleSelectAll(this);" placeholder="Title"><label for="ADV_CHECK" class="w3-margin-left w3-margin-right">Advanced Class</label><br>';
+    $str .= '<input type="checkbox" ID="MIC_CHECK" class="w3-check sectionClass w3-margin-left" value="3" data-field="BO_MICRO"   onclick="tech_toggleSelectAll(this);" placeholder="Title"><label for="MIC_CHECK" class="w3-margin-left w3-margin-right">Micro Class</label><br>';
     $str .= '</div>';
     $str .= '<div class="w3-container w3-white w3-margin-top w3-border w3-round w3-margin-bottom" style="display: flex !important; width: 100%;">';
     $str .= '<label class="w3-large" style="margin-top: 10px; flex: 0 1 auto;">Point Value: </label>';
-    $str .= sprintf '<input type="number" ID="IN_POINTS" class="w3-input w3-round w3-large w3-text-blue w3-margin-left"style="flex: 1; padding: 10px; " value="0">';
+    $str .= sprintf '<input type="number" ID="IN_POINTS" class="w3-input w3-border-0 w3-round w3-large w3-text-blue w3-margin-left"style="flex: 1; padding: 10px; " value="0">';
     $str .= '</div>';
     $str .= '</div>';
     $str .= '<div class="w3-container w3-center w3-padding">';
@@ -177,7 +323,6 @@ sub tech_addItem (){
     my $str;
     my $JsonDB = new SAE::JSONDB();
     my $newIDX = $JsonDB->_insert('TB_TECH_REQ', \%DATA);
-    # $str = &t_section($newIDX, $DATA{IN_SECTION},$DATA{TX_SECTION}, $DATA{TX_TYPE});
     $str .= &t_itemRow($sectionIDX, $newIDX, $DATA{IN_SECTION}, $DATA{TX_REQUIREMENT}, $DATA{TX_SECTION},$DATA{BO_REGULAR}, $DATA{BO_ADVANCE},$DATA{BO_MICRO}, $DATA{IN_POINTS});
     return ($str);
     }
@@ -198,7 +343,11 @@ sub tech_addSection (){
     my $str;
     my $JsonDB = new SAE::JSONDB();
     my $newIDX = $JsonDB->_insert('TB_TECH_REQ_SECTION', \%DATA);
-    $str = &t_section($newIDX, $DATA{IN_SECTION},$DATA{TX_SECTION}, $DATA{TX_TYPE});
+    my $inType = 0;
+    if ($DATA{TX_TYPE} == 'reqSectionNumber') {
+        $inType = 1;
+    }
+    $str = &t_section($newIDX, $DATA{IN_SECTION},$DATA{TX_SECTION}, $DATA{TX_TYPE}, 0, $inType);
     return ($str);
     }
 sub tech_openAddSection (){
@@ -254,12 +403,10 @@ sub tech_openSetup (){
     $str .= '<div id="reqSectionNumber_content" class="w3-container w3-border w3-padding w3-pale-yellow">';
 
     foreach $sectionIDX (sort {$TECH{reqSectionNumber}{$a}{IN_SECTION} <=> $TECH{reqSectionNumber}{$b}{IN_SECTION}} keys %{$TECH{reqSectionNumber}}) {
-        $str .= &t_section($sectionIDX , $TECH{reqSectionNumber}{$sectionIDX}{IN_SECTION},$TECH{reqSectionNumber}{$sectionIDX}{TX_SECTION}, $TECH{reqSectionNumber}{$sectionIDX}{TX_TYPE});
+        $str .= &t_section($sectionIDX , $TECH{reqSectionNumber}{$sectionIDX}{IN_SECTION},$TECH{reqSectionNumber}{$sectionIDX}{TX_SECTION}, $TECH{reqSectionNumber}{$sectionIDX}{TX_TYPE}, $TECH{reqSectionNumber}{$sectionIDX}{BO_CHECK}, 1);
     }
-
     $str .= '</div>';
     $str .= '</div>'; 
-
     # Safety Section 
     $str .= sprintf '<button onclick="tech_expandSection(this, \'%s\')" class="w3-button w3-block w3-light-blue w3-left-align w3-padding-16">', 'safetyRubric';
     $str .= '<i class="fa fa-chevron-right fa-all w3-left"></i>';
@@ -270,21 +417,20 @@ sub tech_openSetup (){
     $str .= sprintf '<button data-class="" class="w3-button w3-border w3-round w3-card-2 w3-hover-green" onclick="tech_openAddSection(\'%s\');">Add Requirements</button>','safetySectionNumber';
     $str .= '</div>';
     $str .= '<div id="safetySectionNumber_content" class="w3-container w3-border w3-padding w3-pale-yellow">';
-
     foreach $sectionIDX (sort {$TECH{safetySectionNumber}{$a}{IN_SECTION} <=> $TECH{safetySectionNumber}{$b}{IN_SECTION}} keys %{$TECH{safetySectionNumber}}) {
-        $str .= &t_section($sectionIDX , $TECH{safetySectionNumber}{$sectionIDX}{IN_SECTION},$TECH{safetySectionNumber}{$sectionIDX}{TX_SECTION}, $TECH{safetySectionNumber}{$sectionIDX}{TX_TYPE});
+        $str .= &t_section($sectionIDX , $TECH{safetySectionNumber}{$sectionIDX}{IN_SECTION},$TECH{safetySectionNumber}{$sectionIDX}{TX_SECTION}, $TECH{safetySectionNumber}{$sectionIDX}{TX_TYPE}, $TECH{safetySectionNumber}{$sectionIDX}{BO_CHECK}, 0);
     }
-
-
     $str .= '</div>';
     $str .= '</div>';
-
-
     $str .= '</div>';
     $str .= '</div>';
-
-
-    return ($str);
+    # return ($str);
+    my  %DATA;
+        $DATA{html} = $str;
+        $DATA{REQ} = join(";", keys %{$TECH{reqSectionNumber}});
+        $DATA{SAFETY} = join(";", keys %{$TECH{safetySectionNumber}});
+    my $json = encode_json \%DATA;
+    return ($json);
     }
 sub openInspectionModule (){
     my $eventIDX= $q->param('eventIDX');
@@ -302,19 +448,19 @@ sub openInspectionModule (){
                 $str .= '<h4 class="w3-left">Setup Inspection Rubric</h4>';
                 $str .= '</div>';
             $str .= '</div>';
-        $str .= '<div class="w3-clear"></div><hr>';
-        $str .= '<div class="w3-quarter">';
+        # $str .= '<div class="w3-clear"></div><hr>';
+        $str .= '<div class="w3-quarter" onClick="tech_openTechInspectionTeamList();" style="cursor: pointer">';
             $str .= '<div class="w3-container w3-light-blue w3-padding-16 w3-border w3-round w3-margin-bottom w3-card-4">';
                 $str .= '<i class="fa fa-check-square-o fa-3x w3-right" aria-hidden="true"></i>';
-                $str .= '<h4 class="w3-left">Requirements</h4>';
+                $str .= '<h4 class="w3-left">Perform Tech Inspection</h4>';
                 $str .= '</div>';
             $str .= '</div>';
-        $str .= '<div class="w3-quarter">';
-            $str .= '<div class="w3-container w3-pale-red w3-padding-16 w3-border w3-round w3-margin-bottom w3-card-4">';
-                $str .= '<i class="fa fa-check-square-o fa-3x w3-right" aria-hidden="true"></i>';
-                $str .= '<h4 class="w3-left">Safety/Airworthy</h4>';
-                $str .= '</div>';
-            $str .= '</div>';
+        # $str .= '<div class="w3-quarter">';
+        #     $str .= '<div class="w3-container w3-pale-red w3-padding-16 w3-border w3-round w3-margin-bottom w3-card-4">';
+        #         $str .= '<i class="fa fa-check-square-o fa-3x w3-right" aria-hidden="true"></i>';
+        #         $str .= '<h4 class="w3-left">Safety/Airworthy</h4>';
+        #         $str .= '</div>';
+        #     $str .= '</div>';
         $str .= '</div>';
     return ($str);
     }
@@ -496,7 +642,75 @@ sub unclearReinpsectionByTech (){
     my $json = encode_json \%TECH;
     return ($json);
     }
-
+sub t_teamInspectionBar(){
+    my ($teamIDX, $inspectionStatus, $inSafetyStatus, $classIDX, $inNumber, $txSchool) = @_;
+    my $str;
+    my $colorReqStatus = 'w3-white';
+    my $colorSafetyStatus = 'w3-white';
+    my $txReq = 'Requirements Check';
+    if ($inspectionStatus == 1) {      # Inspection has begun (no Failed)
+        $colorReqStatus = 'w3-yellow';
+        $txReq = 'Req. Check in-Progress';
+    } elsif ($inspectionStatus == 2) { # Inspection has begun, and the team needs to be reinspected
+        $colorReqStatus = 'w3-pale-red';
+        $txReq = 'Failed Requirements Check<br>Re-Check Required';
+    } elsif ($inspectionStatus == 3) { # Passed
+        $colorReqStatus = 'w3-light-blue';
+        $txReq = 'Requirements Check Complete';
+    } else {                           # Have not attempted inspection yet
+        $colorReqStatus = 'w3-white';
+        $txReq = 'Requirements Check';
+    }
+    my $txSafety = 'Safety Check';
+    if ($inSafetyStatus == 1) {      # Inspection has begun (no Failed)
+        $colorSafetyStatus = 'w3-yellow';
+        $txSafety = 'Safety Check In-Progress';
+    } elsif ($inSafetyStatus == 2) { # Inspection has begun, and the team needs to be reinspected
+        $colorSafetyStatus = 'w3-pale-red';
+        $txSafety = 'Failed Safety Check<br>Re-check Required';
+    } elsif ($inSafetyStatus == 3) { # Passed
+        $colorSafetyStatus = 'w3-light-blue';
+        $txSafety = 'Safety Check Complete';
+    } else {                           # Have not attempted inspection yet
+        $colorSafetyStatus = 'w3-white';
+        $txSafety = 'Safety Check';
+    }
+    $str = sprintf '<li ID="TECH_INSPECTION_%d" class="w3-bar w3-border w3-white w3-round w3-card-2 w3-margin-bottom">', $teamIDX;
+    $str .= '<div class="w3-bar-item">'.$teamIDX.' - ';
+    $str .= sprintf '<span class="w3-xlarge">Team #: %03d</span><br>', $inNumber;
+    $str .= sprintf '<span>%s</span>', $txSchool;
+    $str .= '</div>';
+    $str .= '<div class="w3-bar-item  w3-right">';
+    # $str .= sprintf '%s', $STATUS{$TEAMS{$teamIDX}{IN_TECH_STATUS}};
+    $str .= '<button class="w3-border '.$colorReqStatus .' w3-round w3-button w3-margin-right w3-hover-green w3-margin-top" style="width: 200px;" onclick="tech_openRequirementsCheck(this, '.$teamIDX.','.$inNumber.','.$classIDX.');">'.$txReq.'</button>';
+    $str .= '<button class="w3-border '.$colorSafetyStatus.' w3-round w3-button w3-margin-right w3-hover-orange w3-margin-top" style="width: 200px;" onclick="tech_openSafetyCheck(this, '.$teamIDX.','.$inNumber.','.$classIDX.');">'.$txSafety.'</button>';
+    $str .= '</div>';
+    $str .= '</li>';
+    return($str);
+    }
+sub t_inspectionItem (){
+    my ($classIDX, $teamIDX, $itemIDX, $headingIDX, $txRequirement, $inHeading, $inSection, $txSection, $inStatus) = @_;
+    my $str;
+    my %COLOR = (0=>'w3-light-grey', 1=>'w3-pale-green',2=>'w3-pale-red',3=>'w3-blue',);
+    $str = sprintf '<li ID="TECH_ITEM_%d_%d" class="w3-bar %s w3-border w3-round w3-padding-small w3-card-2 w3-margin-bottom" >', $teamIDX, $itemIDX, $COLOR{$inStatus};
+    $str .= '<div class="w3-bar-item w3-left" style="width: 70%">';
+    $str .= sprintf '<span>Rule Reference: <b>%s</b></span><br>', $txRequirement;
+    $str .= sprintf '<span>%d.%d - %s</span>', $inHeading, $inSection, $txSection;
+    $str .= '</div>';
+    $str .= '<div class="w3-bar-item w3-right">';
+    if ($inStatus <1){
+        $str .= sprintf '<button class="w3-border w3-round w3-button w3-red w3-hover-red"  style="width: 110px" onclick="tech_submitTechStatus(this, %d, %d, %d, %d, 2);">Failed</button>', $teamIDX, $itemIDX, $headingIDX, $classIDX;
+        $str .= sprintf '<button class="w3-border w3-round w3-button w3-green w3-hover-green w3-margin-left" style="width: 110px" onclick="tech_submitTechStatus(this, %d, %d, %d, %d, 3);">Pass</button>', $teamIDX, $itemIDX, $headingIDX, $classIDX;
+    } else {
+        $str .= sprintf '<button class="w3-border w3-round w3-button w3-orange w3-hover-red"  style="width: 110px" onclick="tech_submitTechStatus(this, %d, %d, %d, %d, 0);">Reset</button>', $teamIDX, $itemIDX, $headingIDX, $classIDX;
+        if ($inStatus == 2) {
+            $str .= sprintf '<button class="w3-border w3-round w3-button w3-green w3-hover-green w3-margin-left" style="width: 110px" onclick="tech_submitTechStatus(this, %d, %d, %d, %d, 3);">Pass</button>', $teamIDX, $itemIDX, $headingIDX, $classIDX;
+        }
+    }
+    $str .= '</div>';
+    $str .= '</li>';
+    return ($str);
+    }
 sub t_itemRow (){
     my ($sectionIDX, $itemIDX, $secNumber, $txRequirement, $txSection, $reg, $adv, $mic, $pts) = @_;
     my %APPLICABLE = (1=>'Yes', 0=>'---');
@@ -509,16 +723,16 @@ sub t_itemRow (){
     $str .= sprintf '<td class="w3-right-align">%s</td>', $APPLICABLE{$reg};
     $str .= sprintf '<td class="w3-right-align">%s</td>', $APPLICABLE{$adv};
     $str .= sprintf '<td class="w3-right-align">%s</td>', $APPLICABLE{$mic};
-    $str .= sprintf '<td class="w3-right-align" >%2.2f</td>', $pts;
+    $str .= sprintf '<td class="w3-right-align pointsFor_%d" >%2.2f</td>', $sectionIDX, $pts;
     $str .= sprintf '<td class="w3-right-align">';
     $str .= sprintf '<i class="fa fa-pencil  w3-button w3-hover-green w3-round" aria-hidden="true" onclick="tech_editItem(this, %d, %d, %d);"></i>', $itemIDX, $secNumber, $sectionIDX;
-    $str .= sprintf '<i class="fa fa-trash-o w3-button w3-hover-red w3-round" aria-hidden="true" onclick="tech_deleteItem(this, %d);"></i>', $itemIDX;
+    $str .= sprintf '<i class="fa fa-trash-o w3-button w3-hover-red w3-round" aria-hidden="true" onclick="tech_deleteItem(this, %d, %d);"></i>', $itemIDX, $sectionIDX;
     $str .= '</td>';
     $str .= '</tr>';
     return ($str);
     }
 sub t_section (){
-    my ($sectionIDX, $sec, $title, $secClass) = @_;
+    my ($sectionIDX, $sec, $title, $secClass, $boCheck, $sectionType) = @_;
     my $Tech = new SAE::TECH();
     my %ITEMS = %{$Tech->_getTechSectionCheckItems($sectionIDX)};
     my $str;
@@ -547,8 +761,20 @@ sub t_section (){
         $str .= &t_itemRow($sectionIDX,$itemIDX, $ITEMS{$itemIDX}{IN_SECTION},$ITEMS{$itemIDX}{TX_REQUIREMENT},$ITEMS{$itemIDX}{TX_SECTION}, $ITEMS{$itemIDX}{BO_REGULAR}, $ITEMS{$itemIDX}{BO_ADVANCE}, $ITEMS{$itemIDX}{BO_MICRO}, $ITEMS{$itemIDX}{IN_POINTS} );
     }
     $str .= '</table>';
-    $str .= '<div class="w3-container w3-border-top w3-padding w3-grey">';
-    $str .= sprintf '<button class="w3-button w3-border w3-round w3-hover-green w3-card w3-light-grey" onclick="tech_addCheckItem(this, %d, %d)">Add Check Item</button>', $sectionIDX, $sec;
+    $str .= '<div class="w3-display-container w3-border-top w3-padding w3-grey" style="height: 60px">';
+    $str .= sprintf '<button class="w3-button w3-border w3-round w3-hover-green w3-card w3-light-grey w3-left" onclick="tech_addCheckItem(this, %d, %d)">Add Check Item</button>', $sectionIDX, $sec;
+    $str .= '<div class="w3-display-bottomright w3-text-white w3-xlarge w3-margin-bottom w3-margin-right sectionPoints_'.$sectionIDX.'">0 Points</div>';
+    $str .= '<div class="w3-display-bottommiddle w3-text-white w3-xlarge w3-margin-bottom">';
+    # $str .= '<input type="checkbox" class="w3-check" onc><label class="w3-margin-left">Required Inspection</label>';
+    if ($sectionType==1){
+        if ($boCheck == 1) {
+            $str .= sprintf '<input type="checkbox" class="w3-check" checked data-table="TB_TECH_REQ_SECTION" data-field="BO_CHECK" data-primekey="PK_TECH_REQ_SECTION_IDX" data-key="%d" onchange="tech_updateCheckItem(this);"><label class="w3-margin-left">Required Inspection</label>', $sectionIDX;
+            } else {
+
+            $str .= sprintf '<input type="checkbox" class="w3-check" data-table="TB_TECH_REQ_SECTION" data-field="BO_CHECK" data-primekey="PK_TECH_REQ_SECTION_IDX" data-key="%d" onchange="tech_updateCheckItem(this);"><label class="w3-margin-left">Required Inspection</label>', $sectionIDX;
+            }
+        }
+    $str .= '</div>';
     $str .= '</div>';
 
     $str .= '</div>';

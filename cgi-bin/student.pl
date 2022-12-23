@@ -124,7 +124,7 @@ sub student_openRequirementsChecks (){
     my %BGCOLOR     = (''=>'w3-light-grey', 0=>'w3-light-grey', 1=>'w3-light-grey', 2=>'w3-red', 3=>'w3-blue');
     my $str;
     $str .= '<div class="w3-container" style="overflow-y: auto;">';
-    $str .= '<h3 class="w3-container w3-border w3-round w3-border-red w3-pale-yellow w3-padding">By confirming these safety items, you certify that you\'ve review and met all required Safety & Airworthiness</h3>';
+    $str .= '<h3 class="w3-container w3-border w3-round w3-border-red w3-pale-yellow w3-padding">By confirming these requirements items, you certify that you\'ve met all requirements in accordance with the rules</h3>';
     $str .= '<ul class="w3-ul">';
     foreach $headingIDX (sort {$HEAD{$a}{IN_SECTION} <=> $HEAD{$b}{IN_SECTION}} keys %HEAD) {
         $str .= '<div class="w3-container w3-light-grey w3-card w3-margin-bottom">';

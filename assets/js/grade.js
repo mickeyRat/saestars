@@ -2,6 +2,321 @@ var d=document;
 var now = new Date();
 var time = now.getTime();
 
+
+
+// ============= 2023 ========================
+
+function grade_deleteTemplate(o, tempIDX) {
+    var jsYes = confirm("Click [OK] toconfirm the action to delete this template from your library.");
+    if (!jsYes){return}
+    var ajxData         = {}; 
+    ajxData.do          = 'grade_deleteTemplate';
+    ajxData.act         = 'print';
+    ajxData.tempIDX     = tempIDX;
+    console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            $('#template_'+tempIDX).remove();
+            console.log(str);
+        }
+    });
+    }
+function grade_loadInstructions(argument) {
+    var ajxData         = {}; 
+    ajxData.do          = 'grade_loadInstructions';
+    ajxData.act         = 'print';
+    ajxData.txFirstName = $.cookie('TX_FIRST_NAME');;
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            $('#AssessmentHelper').html(str);
+        }
+    });
+    
+    // body...
+}
+function grade_loadTemplate (o, tempIDX) {
+    $('#subsectionComment').val($(o).data('value'));
+    $(o).close('sae-top2');
+}
+function grade_previewTemplate (o, tempIDX) {
+    $('#templatePreview').html($(o).data('value'));
+}
+function grade_openTemplateList (o, userIDX) {
+    var ajxData         = {}; 
+    ajxData.do          = 'grade_openTemplateList';
+    ajxData.act         = 'print';
+    ajxData.userIDX     = userIDX;
+    $.modal2("Load from Template", "80%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $('#modal2_content').html(str);
+        }
+    });
+}
+function grade_saveTemplate (o) {
+    var userIDX         = $.cookie('PK_USER_IDX');
+    var comments        = $('#templateComment').val();
+    var txTitle         = $('#templateTitle').val();
+    if (txTitle == '') {alert("Missing Template Title"); return}
+    var data            = {};
+    var ajxData         = {}; 
+    data.CL_COMMENT     = comments;
+    data.TX_TITLE       = txTitle;
+    data.FK_USER_IDX    = userIDX;
+    ajxData.do          = 'grade_saveTemplate';
+    ajxData.act         = 'print';
+    ajxData['jsonData'] = JSON.stringify(data);
+    console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            $(o).close('sae-top2');
+            // setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
+        }
+    });
+    }
+function grade_openTemplate (o) {
+    var comments        = $('#subsectionComment').val();
+    var data            = {};
+    var ajxData         = {}; 
+    var userIDX         = $.cookie('PK_USER_IDX');
+    data.CL_COMMENT     = comments;
+    ajxData.do          = 'grade_openTemplate';
+    ajxData.act         = 'print';
+    ajxData['jsonData'] = JSON.stringify(data);
+    $.modal2("Save Commetns to Template", "50%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $('#modal2_content').html(str);
+        }
+    });
+    }
+function grade_updateComments (o, commentIDX) {
+    var comments = $('#subsectionComment_update').val();
+    var data    = {};
+    var ajxData = {};              
+    data.CL_COMMENT              = comments;
+    ajxData.do                   = 'grade_updateComments';
+    ajxData.act                  = 'print';
+    ajxData.commentIDX           = commentIDX;
+    ajxData.userIDX              = $.cookie('PK_USER_IDX');
+    ajxData['jsonData'] = JSON.stringify(data);
+    // return;
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            $('#Comment_'+commentIDX).replaceWith(str);
+            $(o).close('sae-top2');
+            // setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
+        }
+    });
+ }
+function grade_editComment (commentIDX) {
+    $.modal2("Edit feedback & comments", "50%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: {'do':'grade_editComment','act':'print','commentIDX':commentIDX},
+        success: function(str){
+            // console.log(str);
+            $('#modal2_content').html(str);
+        }
+    });
+    }
+function grade_deleteComment (commentIDX) {
+    // body...
+    var jsYes = confirm("Are you sure?");
+    if (!jsYes){return}
+    $('#savedMessage').show();
+    var ajxData = {};
+    ajxData['do'] = 'grade_deleteComment';
+    ajxData['act'] = 'print';
+    ajxData.commentIDX = commentIDX;
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            $('#Comment_'+commentIDX).remove();
+            // console.log(str);
+            // $('#COMMENT_CONTAINER').prepend(str);
+            setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 1000);
+        }
+    });
+    }
+function grade_postComments (o, cardIDX, teamIDX, subIDX) {
+    $('#savedMessage').show();
+    var data    = {};
+    var ajxData = {};
+    var userIDX = $.cookie('PK_USER_IDX');
+    var comments = $('#subsectionComment').val();
+    data.CL_COMMENT              = comments;
+    ajxData.do                   = 'grade_postComments';
+    ajxData.act                  = 'print';
+    data.FK_CARD_IDX             = cardIDX;
+    data.FK_SUBSECTION_IDX       = subIDX;
+    data.FK_TEAM_IDX             = teamIDX;
+    data.FK_USER_IDX             = userIDX;
+    ajxData['jsonData'] = JSON.stringify(data);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            $('#subsectionComment').val('');
+            $('#COMMENT_CONTAINER').prepend(str);
+            setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
+        }
+    });
+    }
+function grade_setAssessmentStatus (o, cardIDX, inStatus, classIDX, inCardType) {
+    $('#savedMessage').show();
+    var ajxData = {};
+    // var data    = {};
+    ajxData.do                   = 'grade_setAssessmentStatus';
+    ajxData.act                  = 'print';
+    ajxData.FK_CARD_IDX          = cardIDX;
+    ajxData.IN_STATUS            = inStatus;
+    ajxData.FK_CLASS_IDX         = classIDX;
+    ajxData.FK_CARDTYPE_IDX      = inCardType;
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
+            $(o).close();
+            $('#CARD_'+cardIDX).replaceWith(str);
+        }
+    });
+    }
+function selectAllCheckBox (o, className, cardIDX) {
+    $('#savedMessage').show();
+    var value = 0;
+    if ($(o).is(':checked')){value = 100}
+    $('.'+className).each(function(){
+        $(this).prop('checked', o.checked);
+        var subIDX = $(this).data('value');
+        grade_updateFieldValue (cardIDX, subIDX, value);
+    });
+setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
+}
+function grade_updateFieldValue(cardIDX, subIDX, inValue) {
+    var ajxData = {};
+    ajxData.do                   = 'grade_updateField';
+    ajxData.act                  = 'print';
+    ajxData.FK_CARD_IDX          = cardIDX;
+    ajxData.FK_SUBSECTION_IDX    = subIDX;
+    ajxData.IN_VALUE             = inValue;
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            
+        }
+    });
+}
+function grade_updateCheckField(o, cardIDX, subIDX) {
+    $('#savedMessage').show();
+    var value = 0;
+    if ($(o).is(':checked')){value = 100}
+    grade_updateFieldValue (cardIDX, subIDX, value);
+    setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
+    }
+function grade_updateField(o, cardIDX, subIDX) {
+    $('#savedMessage').show();
+    var value = $(o).val();
+    grade_updateFieldValue (cardIDX, subIDX, value);
+    setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
+    }
+function grade_moveToNextField (e, o) {
+
+    var fieldValue = $(o).val();
+    if (isNaN(fieldValue)){
+        // console.log("the number enter is invalid")
+        $(o).val(0);
+        return
+    }
+    if (fieldValue < 0){
+        $(o).val(0);
+        return
+    }
+    if (fieldValue > 100){
+        $(o).val(100);
+        return
+    }
+    // console.log(isNaN(fieldValue));
+    // console.log('Value = ' + fieldValue);
+    // console.log(e.keyCode);
+    var next = $(o).prop('tabindex')+1;
+    var prev = $(o).prop('tabindex')-1;
+    if (e.keyCode==40){
+        // $(o).val(fieldValue);
+        $('[tabindex='+next+']').focus();
+    }
+    if (e.keyCode==38){
+
+        $('[tabindex='+prev+']').focus();
+    }
+    }
+function grade_openHelp (o, subIDX, inSection, cardIDX, teamIDX) {
+    var inValue = $(o).val();
+    var userIDX = $.cookie('PK_USER_IDX');
+    $('.rowTitle').removeClass('w3-yellow').addClass('w3-white');
+    $('#AssessmentHelper').html(loading);
+    $(o).closest('tr').removeClass('w3-white').addClass('w3-yellow');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: {'do':'grade_openHelp','act':'print','subIDX':subIDX,'inSection':inSection,'cardIDX':cardIDX,'teamIDX':teamIDX,'userIDX':userIDX,'inValue':inValue},
+        success: function(str){
+            $('#AssessmentHelper').html(str);
+        }
+    });
+    
+}
+function grade_openAssessment (o, cardIDX, inNumber, txSchool, classIDX, teamIDX, inCardType) {
+    // body...
+    // console.log(cardIDX);
+    var eventIDX = $.cookie('LOCATION');
+    var userIDX = $.cookie('PK_USER_IDX');
+    var txFirstName = $.cookie('TX_FIRST_NAME');
+    console.log(txFirstName );
+    $.modal('<b>Team #:' + pad(inNumber,3) + '</b> - '+txSchool, '97%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: {'do':'grade_openAssessment','act':'print','eventIDX':eventIDX,'txFirstName':txFirstName,'cardIDX':cardIDX,'userIDX':userIDX,'classIDX':classIDX,'teamIDX':teamIDX,'inCardType':inCardType},
+        success: function(str){
+            $('#modal_content').html(str);
+        }
+    });
+
+}
+
+
+
+// ============= 2023 ========================
+
 function sae_uploadDesignExcelScoresheet(o, eventIDX){
     $('#uploadedDisplay').html(loading); 
     var userIDX = $('#JUDGE_IDX :selected').val();

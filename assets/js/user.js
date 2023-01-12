@@ -2,6 +2,167 @@
     var sid = $.cookie('SID');
     var loading = '<div class="w3-padding" style="margin: auto;"><img src="../../images/loader.gif"> Loading...</div>';
 
+
+// ===============2023 ==========================================
+function user_downloadEmailList(o) {
+    var ajxData = {};
+    ajxData.do                   = 'user_downloadEmailList';
+    ajxData.act                  = 'print';
+    ajxData.FK_EVENT_IDX         = $.cookie('LOCATION');;
+    // console.log(ajxData);
+    $.ajax({
+        type: 'GET',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            console.log(str);
+            console.log("Done");
+        }
+    });
+    }
+function user_removeJudgeFromEventList (o, userIDX) {
+    var jsYes = confirm("Click OK to confirm the removal of this Judge from the event.");
+    if (!jsYes){return}
+    var ajxData = {};
+    ajxData.do                   = 'user_removeJudgeFromEventList';
+    ajxData.act                  = 'print';
+    ajxData.FK_EVENT_IDX         = $.cookie('LOCATION');;
+    ajxData.FK_USER_IDX          = userIDX;
+
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            $('#userBarPreference_'+userIDX).removeClass('w3-white').addClass('w3-pale-red');
+            $('#userBarPreference_'+userIDX).fadeOut(500);
+        }
+    });
+}
+function user_closeAddJudgeModal (o, eventIDX) {
+    $('#mainPageContent').html(loading);
+    $(o).close();
+    openManageJudges();
+    // $('#EVENT_LIST_'+eventIDX).html(str);
+}
+function user_selectClassesPreference(o, classIDX, userIDX) {
+    if (classIDX==0){
+        user_updateClassPreference(o,1);
+        user_updateClassPreference(o,2);
+        user_updateClassPreference(o,3);
+        $('.judgesPreference_'+userIDX).prop('checked', o.checked);
+        $('.judgesBarPreference_'+userIDX).prop('checked', o.checked);
+
+    } else {
+        var count = $('input.judgesPreference_'+userIDX+':checked').length;
+        if (count==3){ 
+            $('#judge_'+userIDX+'_selectAll').prop('checked', true);
+        } else { 
+            $('#judge_'+userIDX+'_selectAll').prop('checked', false);
+        }
+        // console.log(count);
+        user_updateClassPreference(o, classIDX);
+        var barCount      = $('input.preferenceCount_'+userIDX+':checked').length;
+        var barClassCount = $('input.judgesBarPreference_'+userIDX+':checked').length;
+        if (barCount==0){
+            $('#userBarPreference_'+userIDX).removeClass('w3-white').addClass('w3-pale-red');
+            $('#userBarPreference_'+userIDX).fadeOut(500);
+        }
+        if (barClassCount>0 && barClassCount<3){
+            $('#user_'+userIDX+'_selectAll').prop('checked', false);
+        } else if (barClassCount==3) {
+            $('#user_'+userIDX+'_selectAll').prop('checked', true);
+        }
+        // console.log('bar count = ' + barCount);
+    }
+    var barCount = $('input.preferenceCount_'+userIDX+':checked').length;
+    if (barCount==0){
+        $('#userBarPreference_'+userIDX).removeClass('w3-white').addClass('w3-pale-red');
+        $('#userBarPreference_'+userIDX).fadeOut(500);
+    }
+}
+function user_updateClassPreference (o, classIDX) {
+    var inStatus = 0;
+    if($(o).is(':checked')){inStatus=1}
+    var ajxData = {};
+    ajxData.do                   = 'user_addJudgeToList';
+    ajxData.act                  = 'print';
+    ajxData.FK_EVENT_IDX         = $.cookie('LOCATION');;
+    ajxData.FK_CLASS_IDX         = classIDX;
+    ajxData.FK_USER_IDX          = $(o).val();
+    ajxData.inStatus             = inStatus;
+
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+        }
+    });
+}
+function user_openJudgeCopyList (o, viewEventIDX) {
+    var eventIDX = $.cookie('LOCATION');
+    var ajxData         = {}; 
+    ajxData.do          = 'user_openJudgeCopyList';
+    ajxData.act         = 'print';
+    ajxData.eventIDX    = eventIDX;
+    $.modal("Create list by Copying", "50%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+        }
+    });
+}
+function user_openJudgeList (o, viewEventIDX) {
+    var eventIDX = $.cookie('LOCATION');
+    var ajxData         = {}; 
+    ajxData.do          = 'user_openJudgeList';
+    ajxData.act         = 'print';
+    ajxData.eventIDX    = eventIDX;
+    $.modal("Create Just List for Event", "75%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+        }
+    });
+}
+function user_copyJudgesList (o) {
+    var FromEventIDX = $('input[name=eventList]:checked').val();
+    var eventIDX = $.cookie('LOCATION');
+    var ajxData          = {}; 
+    ajxData.do           = 'user_copyJudgesList';
+    ajxData.act          = 'print';
+    ajxData.FromEventIDX = FromEventIDX;
+    ajxData.eventIDX     = eventIDX;
+    // $.modal("Create Just List for Event", "50%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $('#mainPageContent').html(loading);
+            openManageJudges();
+            $(o).close();
+            // $('#modal_content').html(str);
+        }
+    });
+    // _copyJudgesList
+}
+
+
+
+// ===============2023 ==========================================
+
 function sae_updateChanges(o, userIDX){
     $('#savedMessage').fadeIn(250);
     // ('w3-hide');

@@ -176,7 +176,7 @@ sub grade_setAssessmentStatus (){
        $Paper->_setAssessmentStatus($cardIDX, $inStatus);
     my %DETAILS = %{$Paper->_getCardAndTreamDetails($cardIDX )};
     my $inScore = $Paper->_calculateDesignScore($inCardType, $classIDX, $cardIDX);
-    my $str = &t_teamAssessmentBar($cardIDX, $DETAILS{IN_NUMBER}, $DETAILS{TX_SCHOOL}, $classIDX, $DETAILS{FK_TEAM_IDX}, $inStatus, $inScore, $DETAILS{FK_CARDTYPE_IDX});
+    my $str = &t_teamAssessmentBar($cardIDX, $DETAILS{IN_NUMBER}, $DETAILS{TX_SCHOOL}, $classIDX, $DETAILS{FK_TEAM_IDX}, $inStatus, $inScore, $DETAILS{FK_CARDTYPE_IDX}, $DETAILS{FK_USER_IDX});
 
     return ($str);
     }
@@ -237,6 +237,7 @@ sub grade_openAssessment(){
     my $cardIDX    = $q->param('cardIDX');
     my $teamIDX    = $q->param('teamIDX');
     my $inCardType = $q->param('inCardType');
+    my $adminUserIDX = $q->param('adminUserIDX');
     my $txFirstName  = $q->param('txFirstName');
     # my $inCardType = 1;
     # my %DATA = %{decode_json($q->param('jsonData'))};
@@ -248,17 +249,23 @@ sub grade_openAssessment(){
     my %SCORES     = %{$Paper->_getCardScores($cardIDX)};
     my %REPORT     = %{$Ref->_getTeamDocuments($eventIDX)};
     my $str = '<div class="w3-container w3-grey" style="text-align: right; padding: 10px; ">';
+    my $disabled = '';
+    # my $classDisabled = '';
+    # if ($adminUserIDX != $userIDX){$disabled = 'disabled'; $classDisabled = 'w3-disabled'}
     $str .= '<button class="w3-button w3-border w3-round w3-light-grey" onclick="grade_loadInstructions(this);">Instructions</button>';
     $str .= '<a class="w3-button w3-border w3-round w3-text-black  w3-light-grey w3-margin-left" href="read.html?fileID='.$REPORT{$teamIDX}{$DOC{$inCardType}}{TX_KEYS}.'&location='.$eventIDX.'" target="report" onclick="window.open(\'read.html?fileIDdoc='.$REPORT{$teamIDX}{$DOC{$inCardType}}{TX_KEYS}.'&location='.$eve.'\',\'report\',\'width=1000,height=600\')">Download</a>';
-    $str .= sprintf '<button class="w3-button w3-border w3-round w3-card-4 w3-yellow w3-margin-left" onclick="grade_setAssessmentStatus(this, %d, %d, %d, %d);">Exit & Save as Draft</button>', $cardIDX , 1, $classIDX, $inCardType ;
-    $str .= sprintf '<button class="w3-button w3-border w3-round w3-card-4 w3-blue w3-margin-left" onclick="grade_setAssessmentStatus(this, %d, %d, %d, %d);">Save as Final</button>', $cardIDX , 2, $classIDX, $inCardType ; #2= Status of the assessment.  2=Complete; 1=Draft; 0=Not Started
+    if ($adminUserIDX == $userIDX){
+        $str .= sprintf '<button class="w3-button w3-border w3-round w3-card-4 w3-yellow w3-margin-left" onclick="grade_setAssessmentStatus(this, %d, %d, %d, %d);">Exit & Save as Draft</button>', $cardIDX , 1, $classIDX, $inCardType ;
+        $str .= sprintf '<button class="w3-button w3-border w3-round w3-card-4 w3-blue w3-margin-left" onclick="grade_setAssessmentStatus(this, %d, %d, %d, %d);">Save as Final</button>', $cardIDX , 2, $classIDX, $inCardType ; #2= Status of the assessment.  2=Complete; 1=Draft; 0=Not Started
+    }
     $str .= '</div>';
     $str .= '<div class="w3-container w3-row" style="padding: 0px; ">';
     my $instruction = &t_scoringGuide($txFirstName);
     $str .= '<div class="w3-third w3-container w3-light-grey w3-border w3-card-2" style="padding: 0px;">';
     $str .= '<table class="w3-table w3-white w3-card-4">';
     $str .= '<tr>';
-    $str .= sprintf '<th></th>';
+    $str .= sprintf '<th>&nbsp;</th>';
+    # $str .= sprintf '<th>'.$adminUserIDX.' - '.$userIDX.'</th>';
     $str .= '<th style="width: 100px; text-align: center;">Score<br>(0-100%)</th>';
     $str .= '</tr>';
     my $color = 'w3-white';
@@ -351,13 +358,13 @@ sub t_commentBlocks (){
     return ($str);
     }
 sub t_teamAssessmentBar(){
-    my ($cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inStatus, $inScore, $inCardType)= @_;
+    my ($cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inStatus, $inScore, $inCardType, $userIDX)= @_;
     my %BTN_STATUS = (0=>'Start', 1=>'Continue', 2=>'Completed');
     my %BTN_COLOR  = (0=>'w3-white', 1=>'w3-yellow', 2=>'w3-blue');
     my %MAXSCORE = (1=>35, 2=>5, 3=>5, 4=>5);
     my $str;
     $str .= '<li ID="CARD_'.$cardIDX.'" class="w3-bar w3-border w3-white w3-round-large w3-card-2 w3-hover-pale-yellow" style="margin-bottom: 3px;">';
-    $str .= '<div class="w3-container w3-padding-small">';
+    $str .= '<div class="w3-container w3-padding-small">'.$userIDX;
     $str .= '<table class="r" style="width: 100%; padding: 0px;">';
     $str .= '<tr>';
     $str .= sprintf '<td class="w3-large"  style="text-align: left;"><b>%03d</b> - %s</td>', $inNumber , $txSchool;
@@ -367,7 +374,7 @@ sub t_teamAssessmentBar(){
             $str .= sprintf '<td style="width: 15%; text-align: right;">0/%2.1f (0.0%)</td>', $MAXSCORE{$inCardType};
         }
     $str .= sprintf '<td style="width: 125px;  text-align: right;">';
-    $str .= sprintf '<button class="w3-button %s w3-border w3-card w3-round w3-hover-green" onclick="grade_openAssessment(this, %d, %d, \'%s\', %d, %d, %d)">%s</button>', $BTN_COLOR{$inStatus}, $cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $BTN_STATUS{$inStatus};
+    $str .= sprintf '<button class="w3-button %s w3-border w3-card w3-round w3-hover-green" onclick="grade_openAssessment(this, %d, %d, \'%s\', %d, %d, %d, %d);">%s</button>', $BTN_COLOR{$inStatus}, $cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $BTN_STATUS{$inStatus};
     $str .= '</td>';
     $str .= '</tr>';
     $str .= '</table>';
@@ -375,6 +382,37 @@ sub t_teamAssessmentBar(){
     $str .= '</div>';
 
     $str .= '</li>';
+    return ($str);
+    }
+sub ManageReportAssessments(){
+    print $q->header();
+    my $Paper = new SAE::REPORTS();
+    # my $Ref = new SAE::REFERENCE();
+    my $userIDX = $q->param('userIDX');  
+    my $inType = $q->param('inType');  
+    my $eventIDX = $q->param('location'); 
+    my %CARDS    = %{$Paper->_getAssignedPapers($eventIDX, $userIDX, $inType)}; 
+    my %TITLE    = (1=>'Design Report', 2=>'Technical Data Sheet', 3=>'Drawing', 4=>'Requirement');
+    my $str;
+    $str .= '<br><div class="w3-container w3-margin-top">';  
+    $str .= sprintf '<h2>%s: <i>Assessments</i></h2>', $TITLE{$inType};
+    if ($inType == 1) {
+        $str .= '<h3><button class="w3-button w3-border w3-round w3-green w3-hover-light-green w3-small" onclick="sae_openImportDesignScores();">Upload Excel</button></h3>';
+    }
+    $str .= '<div class="w3-container w3-row-padding">';
+        $str .= '<ul class="w3-ul">'.$userIDX;
+        foreach $cardIDX (sort {$CARDS{$a}{IN_NUMBER} <=> $CARDS{$b}{IN_NUMBER}} keys %CARDS) {
+            my $inNumber   = $CARDS{$cardIDX}{IN_NUMBER};
+            my $txSchool   = $CARDS{$cardIDX}{TX_SCHOOL};
+            my $classIDX   = $CARDS{$cardIDX}{FK_CLASS_IDX};
+            my $teamIDX    = $CARDS{$cardIDX}{PK_TEAM_IDX};
+            my $inStatus   = $CARDS{$cardIDX}{IN_STATUS};
+            my $inCardType = $CARDS{$cardIDX}{FK_CARDTYPE_IDX};
+            my $inScore    = $Paper->_calculateDesignScore($inCardType, $classIDX, $cardIDX);
+            $str .= &t_teamAssessmentBar($cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inStatus, $inScore, $inCardType, $userIDX);
+        }
+        $str .= '</ul>';
+    $str .= '</div>';
     return ($str);
     }
 # =========================================================================
@@ -698,96 +736,3 @@ sub sae_openImportDesignScores(){
     $str .= '</form>';
     return ($str);
     }
-sub ManageReportAssessments(){
-    print $q->header();
-    my $Paper = new SAE::REPORTS();
-    # my $Ref = new SAE::REFERENCE();
-    my $userIDX = $q->param('userIDX');  
-    my $inType = $q->param('inType');  
-    my $eventIDX = $q->param('location'); 
-    my %CARDS    = %{$Paper->_getAssignedPapers($eventIDX, $userIDX, $inType)}; 
-    my %TITLE    = (1=>'Design Report', 2=>'Technical Data Sheet', 3=>'Drawing', 4=>'Requirement');
-    # %TODO = %{$Paper->_getJudgesToDos($userIDX, $inType, $location)};
-    # %CLASS = %{$Ref->_getClassList()};
-    # %CARDTYPE = %{$Ref->_getCardTypeList()};
-    # %PAPER = %{$Ref->_getTeamDocuments($location)};
-    # %DOC = (1=>1, 2=>2, 3=>3, 4=>1);
-    # %STATUS = (0=>"To Do", 1=>"Draft", 2=>"Done");
-    # %W3CLASS = (0=>"w3-white", 1=>"w3-yellow", 2=>"w3-blue");
-    my $str;
-    $str .= '<br><div class="w3-container w3-margin-top">';  
-    # $str .= scalar(keys %TODO)."<br>";
-    $str .= sprintf '<h2>%s: <i>Assessments</i></h2>', $TITLE{$inType};
-    if ($inType == 1) {
-        $str .= '<h3><button class="w3-button w3-border w3-round w3-green w3-hover-light-green w3-small" onclick="sae_openImportDesignScores();">Upload Excel</button></h3>';
-    }
-    $str .= '<div class="w3-container w3-row-padding">';
-        $str .= '<ul class="w3-ul">';
-        foreach $cardIDX (sort {$CARDS{$a}{IN_NUMBER} <=> $CARDS{$b}{IN_NUMBER}} keys %CARDS) {
-            my $inNumber   = $CARDS{$cardIDX}{IN_NUMBER};
-            my $txSchool   = $CARDS{$cardIDX}{TX_SCHOOL};
-            my $classIDX   = $CARDS{$cardIDX}{FK_CLASS_IDX};
-            my $teamIDX    = $CARDS{$cardIDX}{PK_TEAM_IDX};
-            my $inStatus   = $CARDS{$cardIDX}{IN_STATUS};
-            my $inCardType = $CARDS{$cardIDX}{FK_CARDTYPE_IDX};
-            my $inScore    = $Paper->_calculateDesignScore($inCardType, $classIDX, $cardIDX);
-            $str .= &t_teamAssessmentBar($cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inStatus, $inScore, $inCardType);
-        }
-        $str .= '</ul>';
-    $str .= '</div>';
-
-# ==========OLD============
-    # foreach $classIDX (sort keys %TODO){
-    #     $str .= '<h4>'.$CLASS{$classIDX}{TX_CLASS}.' Class</h4>';
-    #     $str .= '<table class="w3-table-all">';
-    #     $str .= '<thead>';
-    #     $str .= '<tr class="w3-blue-grey w3-hide-small">';
-    #     $str .= '<th style="width: 5%;">#</th>';
-    #     $str .= '<th>School</th>';
-    #     $str .= '<th style="width: 15%;">Document</th>';
-    #     $str .= '<th style="width: 15%;">Score</th>';
-    #     $str .= '<th style="width: 10%;" >Status</th>'; 
-    #     $str .= '</tr>';
-    #     $str .= '</thead>';
-    #     $str .= '<tbody>';
-    #     foreach $cardIDX (sort {$TODO{$classIDX}{$a}{IN_NUMBER} <=> $TODO{$classIDX}{$b}{IN_NUMBER}} keys %{$TODO{$classIDX}}){
-    #         my $teamIDX = $TODO{$classIDX}{$cardIDX}{PK_TEAM_IDX};
-    #         my $score = $Ref->_calculatePaperScores($teamIDX,$cardIDX,$inType);
-    #         $inNumber = substr("000".$TODO{$classIDX}{$cardIDX}{IN_NUMBER},-3,3);
-    #         $str .= '<tr class="w3-small  w3-hide-small" >';
-    #         $str .= '<td class="w3-small" >'.$inNumber.'</td>';
-    #         $str .= '<td class="w3-small" ><a class="w3-link w3-text-blue-grey" href="javascript:void('.$cardIDX.');" onclick="openAssessment('.$cardIDX.',\''.$inNumber.'\','.$classIDX.','.$teamIDX .','.$inType.', 1);">'.$TODO{$classIDX}{$cardIDX}{TX_SCHOOL}.'</a></td>';
-    #         $str .= '<td class="w3-small" nowrap >';
-    #         if ($PAPER{$teamIDX}{$DOC{$inType}}{TX_KEYS}){
-    #             # $str .= '<a href="view.php?doc='.$PAPER{$teamIDX}{$DOC{$inType}}{TX_KEYS}.'" target="_blank">'.$PAPER{$teamIDX}{$DOC{$inType}}{TX_PAPER}.'</a>';
-    #             $str .= '<a href="read.html?fileID='.$PAPER{$teamIDX}{$DOC{$inType}}{TX_KEYS}.'" target="_blank">'.$PAPER{$teamIDX}{$DOC{$inType}}{TX_PAPER}.'</a>';
-    #         } else {
-    #             $str .= '<span class="w3-small w3-text-blue-grey">not available</span>';
-    #         }
-    #         $str .= '</td>';
-    #         $str .= sprintf '<td class="teamPaperScores_'.$teamIDX.' w3-small w3-right" nowrap ID="teamPaperScores_'.$teamIDX.'">%2.4f / %2.1f</td>', $score, $CARDTYPE{$inType}{IN_POINTS};
-    #         $link = '<a class="w3-link w3-text-black" href="javascript:void('.$cardIDX.');" onclick="openAssessment('.$cardIDX.',\''.$inNumber.'\','.$classIDX.','.$teamIDX .','.$inType.',1);">'.$STATUS{$TODO{$classIDX}{$cardIDX}{IN_STATUS}}.'</a>';
-    #         $str .= '<td ID="TD_ASSESSMENT_'.$cardIDX.'" nowrap class="'.$W3CLASS{$TODO{$classIDX}{$cardIDX}{IN_STATUS}}.'" style="text-align: right;">'.$link.'</td>';
-    #         $str .= '</tr>';
-    #         $str .= '<tr class="w3-hide-medium w3-hide-large ">';
-    #         $str .= '<td class="'.$W3CLASS{$TODO{$classIDX}{$cardIDX}{IN_STATUS}}.' w3-card-2 ">';
-    #         $str .= sprintf '<b>School:</b> <span class="w3-text-black">%s - %s</span><br>', $inNumber, $TODO{$classIDX}{$cardIDX}{TX_SCHOOL};
-    #         $str .= '<b>Document:</b> <span class="w3-text-black">';
-    #         if ($PAPER{$teamIDX}{$DOC{$inType}}{TX_KEYS}){
-    #             $str .= '<a href="read.html?fileID='.$PAPER{$teamIDX}{$DOC{$inType}}{TX_KEYS}.'" target="_blank">'.$PAPER{$teamIDX}{$DOC{$inType}}{TX_PAPER}.'</a>';
-    #             # $str .= '<a href="view.php?doc='.$PAPER{$teamIDX}{$DOC{$inType}}{TX_KEYS}.'" target="_blank">'.$PAPER{$teamIDX}{$DOC{$inType}}{TX_PAPER}.'</a>';
-    #         } else {
-    #             $str .= 'not available';
-    #         }
-    #         $str .= '</span><br>';
-    #         $str .= sprintf '<b>Score:</b> <span class="teamPaperScores_'.$teamIDX.' w3-text-black ">%2.4f / %2.1f</span><br>', $score, $CARDTYPE{$inType}{IN_POINTS};
-    #         $str .= '<b>Status:</b> <span class="teamPaperScores_'.$teamIDX.' w3-text-black ">'.$link.'</span><br>';
-    #         $str .= '</td>';
-    #         $str .= '</tr>';
-    #     }
-    #     $str .= '</tbody>'; 
-    #     $str .= '</table>';
-    # }
-    # $str .= '</div>';
-    return ($str);
-}

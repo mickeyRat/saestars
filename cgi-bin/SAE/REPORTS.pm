@@ -54,7 +54,7 @@ sub _getAverage(){
     } else {
         return (sum(@_)/@_);
     }
-}
+    }
 sub _getMyTemplates (){
     my ($self, $userIDX) = @_;
     my $SQL = "SELECT * FROM TB_TEMPLATE WHERE FK_USER_IDX=?";

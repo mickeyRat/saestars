@@ -218,8 +218,9 @@ function openManagePapers(){
     var location = $.cookie('LOCATION');
     $.ajax({
         type: 'POST',
-        url: '../cgi-bin/main2.pl',
-        data: {'do':'openManagePapers','act':'print','location':location},
+        url: '../cgi-bin/paper.pl',
+        // url: '../cgi-bin/main2.pl',
+        data: {'do':'paper_openManagePapers','act':'print','location':location},
         success: function(str){
             $('#mainPageContent').html(str);
         }
@@ -273,7 +274,7 @@ function openManageJudges(){
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/user.pl',
-        data: {'do':'openManageJudges','act':'print', 'location': location },
+        data: {'do':'openManageJudges','act':'print', 'location': location,'eventIDX':location },
         success: function(str){
             // console.log(str);
             // alert(str);

@@ -28,6 +28,86 @@ sub new{
 	bless($self, $className);
 	return $self;
 }
+
+# 2023================================================================================
+sub _getClassPreference (){
+    my ($self, $userIDX, $eventIDX) = @_;
+    my $SQL = "SELECT * FROM TB_PREF WHERE (FK_USER_IDX=? AND FK_EVENT_IDX=?)";
+    my $select = $dbi->prepare( $SQL );
+       $select->execute($userIDX, $eventIDX);
+    my %HASH = %{$select->fetchall_hashref('FK_CLASS_IDX')};
+    return (\%HASH);
+    }
+sub _setUpdateJudgesList (){
+    my ($self, $eventIDX, $userIDX, $classIDX, $inStatus) = @_;
+    my $str;
+    # print "$eventIDX, $userIDX, $classIDX";
+    my $SQL = "SELECT * FROM TB_PREF WHERE (FK_EVENT_IDX=? AND FK_USER_IDX=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $eventIDX, $userIDX, $classIDX );
+    my $rows = $select->rows;
+    if ($inStatus==0){
+            $SQL = "DELETE FROM TB_PREF WHERE (FK_EVENT_IDX=? AND FK_USER_IDX=? AND FK_CLASS_IDX=?)";
+            my $delete = $dbi->prepare($SQL);
+               $delete->execute( $eventIDX, $userIDX, $classIDX );
+        } else {
+            if ($rows == 0){
+                $SQL = "INSERT INTO TB_PREF (FK_EVENT_IDX, FK_USER_IDX, FK_CLASS_IDX) VALUES (?, ?, ?)";
+                my $insert = $dbi->prepare($SQL);
+                   $insert->execute($eventIDX, $userIDX, $classIDX);
+            }
+        }
+    return ();
+    }
+sub _getEventJudge (){
+    my ($self, $eventIDX) = @_;
+    my $SQL = "SELECT * FROM TB_PREF WHERE FK_EVENT_IDX=?";
+    my $select = $dbi->prepare( $SQL );
+       $select->execute($eventIDX);
+    my %HASH = %{$select->fetchall_hashref(['FK_USER_IDX','FK_CLASS_IDX'])};
+    return (\%HASH);
+    }
+sub _getEventJudges (){
+    my ($self, $eventIDX) = @_;
+    my $SQL = "SELECT USER.* FROM TB_PREF AS PREF JOIN TB_USER AS USER ON PREF.FK_USER_IDX=USER.PK_USER_IDX WHERE PREF.FK_EVENT_IDX=?";
+    my $select = $dbi->prepare( $SQL );
+       $select->execute($eventIDX);
+    my %HASH = %{$select->fetchall_hashref('PK_USER_IDX')};
+    return (\%HASH);
+    }
+sub _getAllEvents (){
+    my ($self) = @_;
+    my $SQL = "SELECT * FROM TB_EVENT";
+    my $select = $dbi->prepare( $SQL );
+       $select->execute();
+    my %HASH = %{$select->fetchall_hashref('PK_EVENT_IDX')};
+    return (\%HASH);
+    }
+sub _copyJudgesList (){
+    my ($self, $FromEventIDX, $eventIDX) = @_;
+    my $SQL_INSERT = "INSERT INTO TB_PREF (FK_USER_IDX, FK_EVENT_IDX, FK_CLASS_IDX) VALUES (?, ?, ?)";
+    my $insert     = $dbi->prepare( $SQL_INSERT );
+    my $SQL        = "SELECT FK_USER_IDX, FK_CLASS_IDX FROM TB_PREF WHERE FK_EVENT_IDX=?";
+    my $select     = $dbi->prepare( $SQL );
+       $select->execute($FromEventIDX);
+    while (my ($userIDX, $classIDX) = $select->fetchrow_array()) {
+        # print "$userIDX, $classIDX\n";
+        if ($classIDX==0){
+                $insert->execute($userIDX, $eventIDX, 1);
+                $insert->execute($userIDX, $eventIDX, 2);
+                $insert->execute($userIDX, $eventIDX, 3);
+            } else {
+                $insert->execute($userIDX, $eventIDX, $classIDX);
+            }
+    }
+    # print ("$FromEventIDX, $eventIDX");
+    return ();
+    }
+
+# 2023================================================================================
+
+
+
 sub _register(){ 
     # developed in 2022 to take advantage of JSON data structure 
     my ($self, $jsonData) = @_;

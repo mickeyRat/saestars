@@ -20,6 +20,14 @@ sub new{
     }
 
 # -------------- 2023 --------------
+sub _getCertificationStatus (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT * FROM TB_TECH_STUDENT WHERE FK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $teamIDX );
+    my %HASH = %{$select->fetchall_hashref('FK_TECH_REQ_IDX')};
+    return (\%HASH);
+    }
 sub _getTechSafetyCheckStatus(){
     my ($self, $teamIDX, $inSafetyStatus, $classIDX) = @_;
     my $txSafety = 'Safety Check<br>Not Started';

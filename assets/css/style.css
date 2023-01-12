@@ -528,6 +528,85 @@ footer h2 i{
 }
 
 
+.tag-name{
+    border: 2px solid #ccc;
+    padding: 3px;
+    border-radius: 7px;
+    background-color: #ffffff;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.tag-name .tag{
+    display: flex;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    margin: 5px;
+    align-items: center;
+    border-radius: 4px;
+    background: #f2f2f2;
+}
+
+.tag-name .w3-dropdown-hover{
+/*    display: flex;*/
+    padding: 5px 10px;
+    border: 0
+    margin: 5px;
+/*    margin-top: 15px;*/
+    align-items: top;
+    border-radius: 7px;
+/*    background: #f2f2f2;*/
+}
+.tag i{
+    font-size: 16px;
+    margin-left: 5px;
+}
+
+.tag-name input{
+    flex: 1;
+    font-size: 16px;
+    padding: 5px;
+    outline: none;
+    border: 0;
+    min-width: 76px;
+}
+.tag-name select{
+    flex: 1;
+    font-size: 16px;
+    padding: 5px;
+    outline: none;
+    border: 0;
+    min-width: 76px;
+}
+
+.tag-name .divInput{
+    flex: 1;
+    font-size: 16px;
+    padding: 5px;
+    outline: none;
+    border: 0;
+    align-items: center;
+    min-width: 76px;
+}
+.tag-name_log{
+    border: 2px solid #ccc;
+    padding: 3px;
+    border-radius: 7px;
+    background-color: #ffffff;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.tag-name_log .tag_log{
+    display: flex;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    margin: 5px;
+    align-items: center;
+    border-radius: 4px;
+    background: #f2f2f2;
+}
+
 
 
 

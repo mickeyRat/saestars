@@ -10,7 +10,8 @@ use URI::Escape;
 use Cwd 'abs_path';
 use JSON;
 use Text::CSV;
-
+use HTTP::Headers;
+use HTTP::Message;
 
 #---- SAE MODULES -------
 use SAE::SDB;
@@ -25,6 +26,8 @@ use SAE::WEATHER;
 use SAE::CARD;
 use SAE::USER;
 use SAE::TEAM;
+use SAE::JSONDB;
+
 
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
@@ -41,6 +44,149 @@ if ($act eq "print"){
     &{$do= $q->param("do")};
 }
 exit;
+# ================== 2023 =========================================
+sub user_removeJudgeFromEventList (){
+    my $eventIDX= $q->param('FK_EVENT_IDX');
+    my $userIDX= $q->param('FK_USER_IDX');
+    print $q->header();
+    my $JsonDB = new SAE::JSONDB();
+    my $str = $JsonDB->_delete('TB_PREF', qq(FK_USER_IDX=$userIDX AND FK_EVENT_IDX=$eventIDX));
+    my $str;
+
+    return ($str);
+    }
+sub user_addJudgeToList (){
+    print $q->header();
+    my $eventIDX  = $q->param('FK_EVENT_IDX');
+    my $userIDX   = $q->param('FK_USER_IDX');
+    my $classIDX  = $q->param('FK_CLASS_IDX');
+    my $inStatus  = $q->param('inStatus');
+    my $User      = new SAE::USER();
+    my $newIDX = $User->_setUpdateJudgesList( $eventIDX, $userIDX, $classIDX, $inStatus);
+
+    my $str;
+    return ($newIDX);
+    }
+sub user_openJudgeList (){
+    my $eventIDX= $q->param('eventIDX');
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my $User = new SAE::USER();
+    my %JUDGES = %{$User ->_getJudges()};
+    my %EJ = %{$User->_getEventJudge($eventIDX)};
+    print $q->header();
+    my $str;
+    $str .= '<div class="w3-container w3-border w3-round w3-light-grey" style="height: 600px; overflow-y: auto;">';
+    foreach $userIDX (sort {lc($JUDGES{$a}{TX_LAST_NAME}) cmp lc($JUDGES{$b}{TX_LAST_NAME})} keys %JUDGES) {
+        $str .= '<ul class="w3-ul">';
+        $str .= '<li class="w3-bar w3-white w3-round " style="padding: 1px 10px;">';
+        my $allChecked = '';
+        my $regChecked = '';
+        my $advChecked = '';
+        my $micChecked = '';
+        if (scalar(keys %{$EJ{$userIDX}})>=3){$allChecked  = 'checked'}
+        if (exists $EJ{$userIDX}{1}){$regChecked  = 'checked'}
+        if (exists $EJ{$userIDX}{2}){$advChecked  = 'checked'}
+        if (exists $EJ{$userIDX}{3}){$micChecked  = 'checked'}
+
+        $str .= '<div class="w3-container" style="padding: 0px;">';
+        $str .= '<table class="w3-table-all" style="100%;">';
+        $str .= '<tr class="w3-hover-pale-yellow">';
+        $str .= sprintf '<td><i class="fa fa-user w3-margin-right" aria-hidden="true"></i>%s, %s <span class="w3-small w3-text-blue">( <i>%s</i> )</span><td>', $JUDGES{$userIDX}{TX_LAST_NAME}, $JUDGES{$userIDX}{TX_FIRST_NAME}, $JUDGES{$userIDX}{TX_EMAIL};
+        $str .= sprintf '<td style="width: 15%;"><input ID="judge_'.$userIDX.'_selectAll" type="checkbox" class="w3-check" '.$allChecked.' value="'.$userIDX.'" onclick="user_selectClassesPreference(this, 0 ,'.$userIDX.');"><label class="w3-margin-left">All</label></td>';
+        $str .= '<td style="width: 15%;"><input ID="'.$userIDX.'_1" type="checkbox" class="w3-check judgesPreference_'.$userIDX.'" '.$regChecked.' value="'.$userIDX.'" onclick="user_selectClassesPreference(this, 1 ,'.$userIDX.');"><label class="w3-margin-left">Regular</label></td>';
+        $str .= '<td style="width: 15%;"><input ID="'.$userIDX.'_2" type="checkbox" class="w3-check judgesPreference_'.$userIDX.'" '.$advChecked.' value="'.$userIDX.'" onclick="user_selectClassesPreference(this, 2 ,'.$userIDX.');"><label class="w3-margin-left">Advanced</label></td>';
+        $str .= '<td style="width: 15%;"><input ID="'.$userIDX.'_3" type="checkbox" class="w3-check judgesPreference_'.$userIDX.'" '.$micChecked.' value="'.$userIDX.'" onclick="user_selectClassesPreference(this, 3 ,'.$userIDX.');"><label class="w3-margin-left">Micro</label></td>';
+        $str .= '</tr>';
+        $str .= '</table>';
+        # $str .= sprintf '<input ID="JUDGE_'.$userIDX.'" value="%d" type="checkbox" class="w3-check" '.$checked.' onchange="user_addJudgeToList(this);"><label for="JUDGE_'.$userIDX.'" class="w3-margin-left">%s, %s (%s)</label><br>',$userIDX, $JUDGES{$userIDX}{TX_LAST_NAME}, $JUDGES{$userIDX}{TX_FIRST_NAME},$JUDGES{$userIDX}{TX_EMAIL};
+        $str .= '</div>';
+        $str .= '</li>';
+        $str .= '</ul>';
+    }
+    $str .= '</div>';
+    $str .= '<div class="w3-panel w3-padding w3-center">';
+    # $str .= '<button class="w3-border w3-round w3-button w3-margin-top">Copy</button>';
+    $str .= '<button class="w3-border w3-round w3-button w3-margin-top w3-green"  style="width: 120px;" onclick="user_closeAddJudgeModal(this);">Close</button>';
+    $str .= '</div>';
+    return ($str);
+    }
+sub user_openJudgeCopyList  (){
+    my $eventIDX = $q->param('eventIDX');
+    my $User         = new SAE::USER();
+    # my $Ref          = new SAE::REFERENCE();
+    my %EVENTS       = %{$User->_getAllEvents()};
+    print $q->header();
+    my $str;
+    $str .= '<div class="w3-container w3-border w3-round" style="height: 600px; overflow-y: auto;">';
+    $str .= '<ul class="w3-ul w3-border w3-round">';
+    foreach $evtIDX (sort {$b <=> $a} keys %EVENTS) {
+        if ($evtIDX == $eventIDX){next}
+        $str .= '<li class="w3-bar w3-white w3-round w3-hover-pale-yellow" style="padding: 1px 10px;">';
+        $str .= '<div class="w3-bar-item">';
+        $str .= sprintf '<input ID="EVENT_'.$evtIDX.'" value="%d" type="radio" name="eventList" class="w3-check" onchange=""><label for="EVENT_'.$evtIDX.'" class="w3-margin-left">Create a New list from: <b>%s</b></label><br>',$evtIDX, $EVENTS{$evtIDX}{TX_EVENT_NAME};
+        $str .= '</div>';
+        $str .= '</li>';
+        $str .= '</label>';
+    }
+    $str .= '</ul>';
+    $str .= '</div>';
+    $str .= '<div class="w3-panel w3-padding w3-center">';
+    $str .= '<button class="w3-border w3-round w3-button w3-margin-top w3-hover-blue" onclick="user_copyJudgesList(this);">Copy</button>';
+    $str .= '<button class="w3-border w3-round w3-button w3-margin-top w3-margin-left" onclick="user_closeAddJudgeModal(this)">Cancel</button>';
+    $str .= '</div>';
+    return($str);
+    }
+sub user_copyJudgesList (){
+    my $eventIDX     = $q->param('eventIDX');
+    my $FromEventIDX = $q->param('FromEventIDX');
+    print $q->header();
+    my $User         = new SAE::USER();
+    my $str = $User->_copyJudgesList($FromEventIDX, $eventIDX);
+    return ($str);
+    }
+sub t_JudgeBar (){
+    my ($userIDX, $txLastName, $txFirstName, $txEmail, $classCount, $hash) = @_;
+    my %CLASS_PREF = %{$hash};
+    my %CLASS = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
+    my $str;
+    $str = '<li ID="userBarPreference_'.$userIDX.'" class="w3-bar w3-border w3-white w3-round" style="margin-top: 7px;">';
+    $str .= '<div class="w3-display-container">';
+    # $str .= '<span onclick="" class="w3-display-right w3-button w3-round w3-large w3-right w3-margin-top">&times;</span>';
+    $str .= sprintf '<i class="fa fa-times fa-2x w3-display-right w3-button w3-round w3-large w3-right w3-margin-top w3-hover-red" aria-hidden="true" onclick="user_removeJudgeFromEventList(this, %d);"></i>', $userIDX;
+    $str .= sprintf '<div class="w3-quarter">';
+    $str .= '<img src="../assets/img/person.jpeg" class="w3-bar-item w3-circle" style="width:80px">';
+    $str .= sprintf '<b>%s, %s</b><br><span class="w3-text-blue w3-small">%s</span>', $txLastName, $txFirstName, $txEmail;
+    $str .= '</div>';
+    $str .= '<div class="w3-threequarter">';
+    $str .= '<b>Preferences:</b> ';
+    my $allChecked = '';
+    if ($classCount>=3){$allChecked  = 'checked'}
+    $str .= sprintf '<span class="w3-margin-left"><input ID="user_'.$userIDX.'_selectAll" type="checkbox" '.$allChecked.' value="'.$userIDX.'" class="w3-check" onchange="user_selectClassesPreference(this, 0, '.$userIDX.');">';
+    $str .= sprintf '<label class="" > All</label></span> ';
+    foreach $classIDX (sort {$a <=> $b} keys %CLASS) {
+        my $checked = '';
+        if (exists $CLASS_PREF{$classIDX}){$checked = 'checked'}
+        # my $prefIDX = $CLASS_PREF{$classIDX}{PK_PREF_IDX}; 
+        $str .= sprintf '<span class="w3-margin-left"><input type="checkbox" '.$checked.' value="'.$userIDX.'" class="w3-check judgesBarPreference_'.$userIDX.' preferenceCount_'.$userIDX.'" onchange="user_selectClassesPreference(this, '.$classIDX.' ,'.$userIDX.');"><label class="" > %s</label></span> ', $CLASS{$classIDX};
+    }
+    my $tdsCheck  = '';
+    my $drawCheck = '';
+    my $reqCheck  = '';
+    if (exists $CLASS_PREF{20}){$tdsCheck = 'checked'}
+    if (exists $CLASS_PREF{30}){$drawCheck = 'checked'}
+    if (exists $CLASS_PREF{40}){$reqCheck = 'checked'}
+    $str .= sprintf '<span class="w3-margin-left"><input type="checkbox" '.$tdsCheck.' value="'.$userIDX.'" class="w3-check preferenceCount_'.$userIDX.'" onchange="user_selectClassesPreference(this, 20, '.$userIDX.');">';
+    $str .= sprintf '<label class="" > TDS</label></span> ';
+    $str .= sprintf '<span class="w3-margin-left"><input type="checkbox" '.$drawCheck.' value="'.$userIDX.'" class="w3-check preferenceCount_'.$userIDX.'" onchange="user_selectClassesPreference(this, 30, '.$userIDX.');">';
+    $str .= sprintf '<label class="" > Drawing</label></span> ';
+    $str .= sprintf '<span class="w3-margin-left"><input type="checkbox" '.$reqCheck.' value="'.$userIDX.'" class="w3-check preferenceCount_'.$userIDX.'" onchange="user_selectClassesPreference(this, 40, '.$userIDX.');">';
+    $str .= sprintf '<label class="" > Requirements</label></span> ';
+    $str .= '<br><i class="w3-small w3-text-grey">Note: If no class selected, user will be removed from the event list.</i>';
+    $str .= '</div>';
+    $str .= '</div>';
+    $str .= '</li>';
+    return ($str);
+    }
 # ***********************************************************************************************************************************
 #  BATCH PASSWORD CHANGE
 # ***********************************************************************************************************************************
@@ -73,7 +219,7 @@ sub sae_loadListOfJudges(){
     $str .= '</table>';
     
     return ($str);
-}
+    }
 sub sae_resetPasswordBatch(){
     print $q->header();
     my %USERS = %{decode_json($q->param('jsonData'))};
@@ -88,7 +234,7 @@ sub sae_resetPasswordBatch(){
         # $str .= "$userIDX = $saltedPassword\n";
     }
     return ($str);
-}
+    }
 # ***********************************************************************************************************************************
 #  MANAGE USERS
 # ***********************************************************************************************************************************
@@ -101,7 +247,7 @@ sub sae_updateUserAttributes(){
     $Ref->_updateUserAttribute($userIDX, $field, $val); 
     return
     
-}
+    }
 sub sae_addClassPreference(){
       print $q->header();
     my $userIDX = $q->param('userIDX');
@@ -109,7 +255,7 @@ sub sae_addClassPreference(){
     my $Ref = new SAE::REFERENCE();
     $Ref->_addClassPreference($userIDX, $classIDX); 
     return
-}
+    }
 sub sae_removeClassPreference(){
       print $q->header();
     my $userIDX = $q->param('userIDX');
@@ -117,7 +263,7 @@ sub sae_removeClassPreference(){
     my $Ref = new SAE::REFERENCE();
     $Ref->_removeClassPreference($userIDX, $classIDX); 
     return
-}
+    }
 sub sae_addEventPreference(){
     print $q->header();
     my $userIDX = $q->param('userIDX');
@@ -125,7 +271,7 @@ sub sae_addEventPreference(){
     my $Ref = new SAE::REFERENCE();
     $Ref->_addEventPreference($userIDX, $eventIDX);
     return
-}
+    }
 sub sae_removeEventPreference(){
     print $q->header();
     my $userIDX = $q->param('userIDX');
@@ -133,97 +279,146 @@ sub sae_removeEventPreference(){
     my $Ref = new SAE::REFERENCE();
     $Ref->_removeEventPreference($userIDX, $eventIDX);
     return
-}
+    }
 sub openManageJudges(){
     print $q->header(); 
-    my $Ref = new SAE::REFERENCE();
-    %USERS = %{$Ref->_getListofJudges()};
-    %EVENTS = %{$Ref->_getEventList()};
-    %EVPREF = %{$Ref->_getEventPreference()};
-    %CLPREF = %{$Ref->_getClassPreference()};
-    %CLASS = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
+    my $User     = new SAE::USER();
+    my $eventIDX = $q->param('eventIDX');
+
+    
+    my $Ref      = new SAE::REFERENCE();
+    %USERS       = %{$Ref->_getListofJudges()};
+    %EVENTS      = %{$Ref->_getEventList()};
+    %EVPREF      = %{$Ref->_getEventPreference()};
+    %CLPREF      = %{$Ref->_getClassPreference()};
+    %CLASS       = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
     my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
     $year += 1900;
     my $str;
-    $str = '<br>';
-    $str .= '<div class="w3-container w3-margin w3-display-container w3-margin-top">';
-    $str .= '<h3><i class="fa fa-gavel fa-fw"></i> Judge Preferences</h3>';
+
+    $str .= '<div class="w3-container w3-margin-top" >';
+    $str .= '<h2 class="w3-margin-top">Judges</h2>';
+
+    $str .= '<div class="w3-container w3-blue-grey">';
+    $str .= sprintf '<h3>%s</h3>',$EVENTS{$eventIDX}{TX_EVENT_NAME};
     $str .= '</div>';
-    $str .= '<table class="w3-table-all w3-small w3-hoverable w3-border w3-card-2">';
-    $str .= '<tr class="w3-hide-small">';
-    $str .= '<th style="width: 200px;">Judges</th>';
-    $str .= '<th>e-Mail</th>';
-    foreach $eventIDX (sort keys %EVENTS) {
-        $str .= sprintf '<th style="width: 80px;">%s<br>%s<br><input  ID="forSelectAll" type="checkbox" onclick="sae_selectCurrentEvent(this,'.$eventIDX.');"></th>', $EVENTS{$eventIDX}{IN_YEAR}, $EVENTS{$eventIDX}{TX_EVENT};
-    }
-    # $str .= '<input  ID="forSelectAll" type="checkbox" class="w3-check" onclick="toggleSelection(\'inputBinary\', this);">&nbsp; <label for="forSelectAll" class="w3-small">Select All</label>';
-    $str .= '<th>Since</th>';
-    $str .= '<th>Years of<br>Service</th>';
-    $str .= '<th>Willing to <br>Assess Extra</th>';
-    for ($i=1; $i<=3; $i++){
-        $str .= sprintf '<th style="width: 80px;">%s<br>Class<br><input  ID="forSelectAll" type="checkbox" onclick="sae_selectCurrentClass(this,'.$i.');"></th>', $CLASS{$i};
-    }
-    $str .= '<th>Volunteer<br>Alumni</th>';
-    $str .= '<th>Student<br>Alumni</th>';
-    $str .= '</tr>';
-    foreach $userIDX (sort {lc($USERS{$a}{TX_LAST_NAME}) cmp lc($USERS{$b}{TX_LAST_NAME})}keys %USERS) {
-        my $userName = $USERS{$userIDX}{TX_LAST_NAME}.', '.$USERS{$userIDX}{TX_FIRST_NAME};
-        $str .= '<tr class="w3-hide-small">';
-        $str .= sprintf '<td class="w3-medium">%s</td>', $userName;
-        $str .= sprintf '<td>%s</td>', $USERS{$userIDX}{TX_EMAIL};
-        foreach $eventIDX (sort keys %EVENTS) {
-            my $checked = '';
-            if (exists $EVPREF{$userIDX}{$eventIDX}){$checked = 'checked'}
-            $str .= sprintf '<td><input class="event_'.$eventIDX.' w3-check" type="checkbox" data-access="'.$checked.'" value="'.$userIDX.'" onclick="sae_updateEventPreference(this, %1d, %1d);" %s></td>', $userIDX, $eventIDX, $checked;
+    my $display = '';
+    my %CLASS = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
+    # foreach $eventIDX (sort {$b <=> $a} keys %EVENTS) {
+        my %JUDGES     = %{$User->_getEventJudges($eventIDX)};
+        $str .= sprintf '<div ID="EVENT_'.$eventIDX.'" class="w3-container w3-white w3-border-0 w3-border-left w3-border-right w3-border-bottom event w3-padding-bottom" style="display: %s">', $display;
+        $str .= '<button class="w3-border w3-round w3-button w3-margin-top w3-hover-green" onclick="user_openJudgeList(this, '.$eventIDX.');">Add Judge To Event</button>';
+        $str .= '<button class="w3-border w3-round w3-button w3-margin-top w3-margin-left w3-hover-green" onclick="user_openJudgeCopyList(this, '.$eventIDX.');">Copy From Previous Event</button>';
+        # $str .= '<button class="w3-border w3-round w3-button w3-margin-top w3-margin-left w3-hover-green" onclick="user_downloadEmailList(this);">Export List (*.csv)</button>';
+        $str .= '<a class="w3-border w3-text-black w3-round w3-button w3-margin-top w3-margin-left w3-hover-green" href="cgi-bin/export.pl?do=export_volunteerEmailFormat&act=print&eventIDX='.$eventIDX.'" target="_blank">Export E-mail Format (*.txt)</a>';
+        $str .= '<a class="w3-border w3-text-black w3-round w3-button w3-margin-top w3-margin-left w3-hover-green" href="cgi-bin/export.pl?do=export_emailExcel&act=print&eventIDX='.$eventIDX.'" target="_blank">Export Email (*.csv)</a>';
+        $str .= '<div class="w3-container w3-border w3-round w3-margin-top w3-margin-bottom w3-light-grey">';
+        $str .= '<ul UD="EVENT_LIST_'.$eventIDX.'" class="w3-ul">';
+        foreach $userIDX (sort {lc($JUDGES{$a}{TX_LAST_NAME}) cmp lc ($JUDGES{$b}{TX_LAST_NAME})} keys %JUDGES) {
+            my %CLASS_PREF = %{$User->_getClassPreference($userIDX, $eventIDX)};
+            my $classCount = scalar(keys %CLASS_PREF);
+            $str .= &t_JudgeBar($userIDX, $JUDGES{$userIDX}{TX_LAST_NAME}, $JUDGES{$userIDX}{TX_FIRST_NAME}, $JUDGES{$userIDX}{TX_EMAIL}, $classCount, \%CLASS_PREF);
         }
-        $str .= sprintf '<td><a href="javascript:void(0);" onclick="sae_askYearStarted(this, %1d, \'%s\', \'%s\');">%s</a></td>', $userIDX, $USERS{$userIDX}{TX_YEAR}, 'TX_YEAR', $USERS{$userIDX}{TX_YEAR};
-        $str .= sprintf '<td class="TD_USER_'.$userIDX.'" ID="TD_USER_'.$userIDX.'">%s</td>',  $year - $USERS{$userIDX}{TX_YEAR};
-        my $eChecked = '';
-        if ($USERS{$userIDX}{BO_EXTRA} == 1) {$eChecked = 'checked'}  
-        $str .= sprintf '<td class="w3-border"><input class="w3-check" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');" %s> <span>Extra</span></td>', $userIDX, 'BO_EXTRA', $eChecked;
-        for ($i=1; $i<=3; $i++){
-            my $checked = '';
-            if (exists $CLPREF{$userIDX}{$i}){$checked = 'checked'}
-            $str .= sprintf '<td style="text-align: cetner;"><input class="pref_class_'.$i.' w3-check" data-access="'.$checked.'" type="checkbox" value="'.$userIDX.'" onclick="sae_updateClassPreference(this, %1d, %1d);" %s> %s</td>', $userIDX, $i, $checked, substr($CLASS{$i},0,1);
-        }
-        my $vChecked = '';
-        my $sChecked = '';
-        if ($USERS{$userIDX}{BO_VOL_ALUM} == 1) {$vChecked = 'checked'}    
-        if ($USERS{$userIDX}{BO_STU_ALUM} == 1) {$sChecked = 'checked'}    
-        $str .= sprintf '<td class="w3-border"><input class="w3-check" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');" %s> <span>V-Alum</span></td>', $userIDX, 'BO_VOL_ALUM', $vChecked;
-        $str .= sprintf '<td class="w3-border"><input class="w3-check" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');" %s> <span>S-Alum</span></td>', $userIDX, 'BO_STU_ALUM', $sChecked;
-        $str .= '</tr>';
-        $str .= '<tr></tr>';
-        $str .= '<tr class="w3-hide-medium w3-hide-large">';
-        $str .= '<td class="w3-container">';
-        $str .= sprintf '<header class="w3-large w3-blue-grey w3-padding"><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><span>%s</span></header><br>', $userName;
-        $str .= sprintf '<b>Email: </b><span>%s</span><br>', $USERS{$userIDX}{TX_EMAIL};
-        $str .= sprintf '<b>Years Started: </b><span>%s</span><br>', $USERS{$userIDX}{TX_YEAR};
-        $str .= sprintf '<b>Years of Service: </b><span class="TD_USER_'.$userIDX.'">%s</span><br>',  $year - $USERS{$userIDX}{TX_YEAR};
-        $str .= sprintf '<br><b>Event Preference: </b><br>';
+        $str .= '</ul>';
+
+        $str .= '</div>';
         
-        foreach $eventIDX (sort keys %EVENTS) {
-            my $checked = '';
-            if (exists $EVPREF{$userIDX}{$eventIDX}){$checked = 'checked'}
-            $str .= sprintf '<input class="eventSmall_'.$eventIDX.' w3-check w3-margin-left" type="checkbox" onclick="sae_updateEventPreference(this, %1d, %1d);" %s> &nbsp;%s %s',  $userIDX, $eventIDX, $checked,  $EVENTS{$eventIDX}{IN_YEAR}, $EVENTS{$eventIDX}{TX_EVENT};
-        }
-        $str .= sprintf '<br><br><b>Extra Preference: </b><br>';
-        $str .= sprintf '<input class="w3-check w3-margin-left" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');"> <span>Yes, willing to take on Extra Assessments</span><br>', $userIDX, 'BO_EXTRA';
-        $str .= sprintf '<br><b>Class Preference: </b><br>';
-        for ($i=1; $i<=3; $i++){
-            my $checked = '';
-            if (exists $CLPREF{$userIDX}{$i}){$checked = 'checked'}
-            $str .= sprintf '<input class="classSmall_'.$i.' w3-check w3-margin-left" type="checkbox" onclick="sae_updateClassPreference(this, %1d, %1d);" %s> %s', $userIDX, $i, $checked, $CLASS{$i};
-        }
-        $str .= sprintf '<br><br><b>Alumni Status: </b><br>';
-        $str .= sprintf '<input class="w3-check w3-margin-left" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');" %s> <span>Volunteer</span>', $userIDX, 'BO_VOL_ALUM', $vChecked;
-        $str .= sprintf '<input class="w3-check w3-margin-left" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');" %s> <span>Student</span>', $userIDX, 'BO_STU_ALUM', $sChecked;
-        $str .= '</td>';
-        $str .= '</tr>';    
+        $str .= '</div>';
+        $display = 'none;';
+    # }
+    $str .= '</div>';
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # $str .= '<br>';
+    # $str .= '<div class="w3-container w3-margin w3-display-container w3-margin-top">';
+    # $str .= '<h3><i class="fa fa-gavel fa-fw"></i> Judge Preferences</h3>';
+    # $str .= '</div>';
+    # $str .= '<table class="w3-table-all w3-small w3-hoverable w3-border w3-card-2">';
+    # $str .= '<tr class="w3-hide-small">';
+    # $str .= '<th style="width: 200px;">Judges</th>';
+    # $str .= '<th>e-Mail</th>';
+    # foreach $eventIDX (sort keys %EVENTS) {
+    #     $str .= sprintf '<th style="width: 80px;">%s<br>%s<br><input  ID="forSelectAll" type="checkbox" onclick="sae_selectCurrentEvent(this,'.$eventIDX.');"></th>', $EVENTS{$eventIDX}{IN_YEAR}, $EVENTS{$eventIDX}{TX_EVENT};
+    # }
+    # # $str .= '<input  ID="forSelectAll" type="checkbox" class="w3-check" onclick="toggleSelection(\'inputBinary\', this);">&nbsp; <label for="forSelectAll" class="w3-small">Select All</label>';
+    # $str .= '<th>Since</th>';
+    # $str .= '<th>Years of<br>Service</th>';
+    # $str .= '<th>Willing to <br>Assess Extra</th>';
+    # for ($i=1; $i<=3; $i++){
+    #     $str .= sprintf '<th style="width: 80px;">%s<br>Class<br><input  ID="forSelectAll" type="checkbox" onclick="sae_selectCurrentClass(this,'.$i.');"></th>', $CLASS{$i};
+    # }
+    # $str .= '<th>Volunteer<br>Alumni</th>';
+    # $str .= '<th>Student<br>Alumni</th>';
+    # $str .= '</tr>';
+    # foreach $userIDX (sort {lc($USERS{$a}{TX_LAST_NAME}) cmp lc($USERS{$b}{TX_LAST_NAME})}keys %USERS) {
+    #     my $userName = $USERS{$userIDX}{TX_LAST_NAME}.', '.$USERS{$userIDX}{TX_FIRST_NAME};
+    #     $str .= '<tr class="w3-hide-small">';
+    #     $str .= sprintf '<td class="w3-medium">%s</td>', $userName;
+    #     $str .= sprintf '<td>%s</td>', $USERS{$userIDX}{TX_EMAIL};
+    #     foreach $eventIDX (sort keys %EVENTS) {
+    #         my $checked = '';
+    #         if (exists $EVPREF{$userIDX}{$eventIDX}){$checked = 'checked'}
+    #         $str .= sprintf '<td><input class="event_'.$eventIDX.' w3-check" type="checkbox" data-access="'.$checked.'" value="'.$userIDX.'" onclick="sae_updateEventPreference(this, %1d, %1d);" %s></td>', $userIDX, $eventIDX, $checked;
+    #     }
+    #     $str .= sprintf '<td><a href="javascript:void(0);" onclick="sae_askYearStarted(this, %1d, \'%s\', \'%s\');">%s</a></td>', $userIDX, $USERS{$userIDX}{TX_YEAR}, 'TX_YEAR', $USERS{$userIDX}{TX_YEAR};
+    #     $str .= sprintf '<td class="TD_USER_'.$userIDX.'" ID="TD_USER_'.$userIDX.'">%s</td>',  $year - $USERS{$userIDX}{TX_YEAR};
+    #     my $eChecked = '';
+    #     if ($USERS{$userIDX}{BO_EXTRA} == 1) {$eChecked = 'checked'}  
+    #     $str .= sprintf '<td class="w3-border"><input class="w3-check" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');" %s> <span>Extra</span></td>', $userIDX, 'BO_EXTRA', $eChecked;
+    #     for ($i=1; $i<=3; $i++){
+    #         my $checked = '';
+    #         if (exists $CLPREF{$userIDX}{$i}){$checked = 'checked'}
+    #         $str .= sprintf '<td style="text-align: cetner;"><input class="pref_class_'.$i.' w3-check" data-access="'.$checked.'" type="checkbox" value="'.$userIDX.'" onclick="sae_updateClassPreference(this, %1d, %1d);" %s> %s</td>', $userIDX, $i, $checked, substr($CLASS{$i},0,1);
+    #     }
+    #     my $vChecked = '';
+    #     my $sChecked = '';
+    #     if ($USERS{$userIDX}{BO_VOL_ALUM} == 1) {$vChecked = 'checked'}    
+    #     if ($USERS{$userIDX}{BO_STU_ALUM} == 1) {$sChecked = 'checked'}    
+    #     $str .= sprintf '<td class="w3-border"><input class="w3-check" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');" %s> <span>V-Alum</span></td>', $userIDX, 'BO_VOL_ALUM', $vChecked;
+    #     $str .= sprintf '<td class="w3-border"><input class="w3-check" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');" %s> <span>S-Alum</span></td>', $userIDX, 'BO_STU_ALUM', $sChecked;
+    #     $str .= '</tr>';
+    #     $str .= '<tr></tr>';
+    #     $str .= '<tr class="w3-hide-medium w3-hide-large">';
+    #     $str .= '<td class="w3-container">';
+    #     $str .= sprintf '<header class="w3-large w3-blue-grey w3-padding"><meta http-equiv="Content-Type" content="text/html; charset=utf-8"><span>%s</span></header><br>', $userName;
+    #     $str .= sprintf '<b>Email: </b><span>%s</span><br>', $USERS{$userIDX}{TX_EMAIL};
+    #     $str .= sprintf '<b>Years Started: </b><span>%s</span><br>', $USERS{$userIDX}{TX_YEAR};
+    #     $str .= sprintf '<b>Years of Service: </b><span class="TD_USER_'.$userIDX.'">%s</span><br>',  $year - $USERS{$userIDX}{TX_YEAR};
+    #     $str .= sprintf '<br><b>Event Preference: </b><br>';
+        
+    #     foreach $eventIDX (sort keys %EVENTS) {
+    #         my $checked = '';
+    #         if (exists $EVPREF{$userIDX}{$eventIDX}){$checked = 'checked'}
+    #         $str .= sprintf '<input class="eventSmall_'.$eventIDX.' w3-check w3-margin-left" type="checkbox" onclick="sae_updateEventPreference(this, %1d, %1d);" %s> &nbsp;%s %s',  $userIDX, $eventIDX, $checked,  $EVENTS{$eventIDX}{IN_YEAR}, $EVENTS{$eventIDX}{TX_EVENT};
+    #     }
+    #     $str .= sprintf '<br><br><b>Extra Preference: </b><br>';
+    #     $str .= sprintf '<input class="w3-check w3-margin-left" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');"> <span>Yes, willing to take on Extra Assessments</span><br>', $userIDX, 'BO_EXTRA';
+    #     $str .= sprintf '<br><b>Class Preference: </b><br>';
+    #     for ($i=1; $i<=3; $i++){
+    #         my $checked = '';
+    #         if (exists $CLPREF{$userIDX}{$i}){$checked = 'checked'}
+    #         $str .= sprintf '<input class="classSmall_'.$i.' w3-check w3-margin-left" type="checkbox" onclick="sae_updateClassPreference(this, %1d, %1d);" %s> %s', $userIDX, $i, $checked, $CLASS{$i};
+    #     }
+    #     $str .= sprintf '<br><br><b>Alumni Status: </b><br>';
+    #     $str .= sprintf '<input class="w3-check w3-margin-left" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');" %s> <span>Volunteer</span>', $userIDX, 'BO_VOL_ALUM', $vChecked;
+    #     $str .= sprintf '<input class="w3-check w3-margin-left" type="checkbox" value="1" onclick="sae_updateUserAttributes(this, %1d, \'%s\');" %s> <span>Student</span>', $userIDX, 'BO_STU_ALUM', $sChecked;
+    #     $str .= '</td>';
+    #     $str .= '</tr>';    
         
     
-    }
-    $str .= '</table>';
+    # }
+    # $str .= '</table>';
     
     return ($str);
 }
@@ -239,7 +434,7 @@ sub sae_addTeamToUser(){
     my $location = $q->param('location');
     my $userTeamIDX = $Auth->_addTeamToUser($userIDX, $teamIDX);
     my $str = &_tempListOfUserTeams($teamName, $userTeamIDX);
-}
+    }
 sub _tempListOfUserTeams(){
     my $str;
     my $name = shift;
@@ -250,7 +445,7 @@ sub _tempListOfUserTeams(){
     $str .= '<span style="margin-left: 10px">'.$name.'</span>';
     $str .= '</li>';
     return ($str);
-}
+    }
 sub sae_getListOfTeams(){
     print $q->header();
     my $Ref = new SAE::REFERENCE();
@@ -271,7 +466,7 @@ sub sae_getListOfTeams(){
     $str .= '</div>';
 
     return($str);
-}
+    }
 sub _tempListOfTeams(){
     my $str;
     my $name = shift;
@@ -282,7 +477,7 @@ sub _tempListOfTeams(){
     $str .= '<span style="margin-left: 10px">'.$name.'</span>';
     $str .= '</li>';
     return ($str);
-}
+    }   
 sub sae_resetPasswordSubmit(){
     print $q->header();
     my $userIDX = $q->param('userIDX');
@@ -292,7 +487,7 @@ sub sae_resetPasswordSubmit(){
     my $saltedPassword = $salt.crypt($password,$salt);
     $Auth->_updatePassword($saltedPassword, 1, $userIDX);
     return ($saltedPassword);
-}
+    }    
 sub sae_resetPassword(){ #Resetting password from the Admin Screen
     print $q->header();
     my $Ref = new SAE::REFERENCE();
@@ -307,8 +502,7 @@ sub sae_resetPassword(){ #Resetting password from the Admin Screen
     $str .= '</form>';
     $str .= '</div>';
     return ($str);
-}
-
+    }
 sub sae_updateUserLevel(){
     print $q->header();
     my $Ref = new SAE::REFERENCE();
@@ -316,21 +510,21 @@ sub sae_updateUserLevel(){
     my $inLevel = $q->param('inLevel');
     my $str = $Ref->_updateUserLevelById($userIDX, $inLevel);
     return ($str);
-}
+    }
 sub sae_removeUserAccess(){
     print $q->header();
     my $tilesIDX = $q->param('tilesIDX');
     my $userIDX = $q->param('userIDX');
     my $Auth = new SAE::Auth();
     $Auth->_deleteUserAccess($tilesIDX, $userIDX);
-}
+    }
 sub sae_grantUserAccess(){
     print $q->header();
     my $tilesIDX = $q->param('tilesIDX');
     my $userIDX = $q->param('userIDX');
     my $Auth = new SAE::Auth();
     $Auth->_addUserAccess($tilesIDX, $userIDX);
-}
+    }
 sub _templateUserCard(){
     my $str;
     my $userIDX = shift;
@@ -356,7 +550,7 @@ sub _templateUserCard(){
     $str .= '</div>';
     
     return ($str);
-}
+    }
 sub sae_editUserInfo(){
     print $q->header();
     my $str;
@@ -379,8 +573,7 @@ sub sae_editUserInfo(){
     $str .= '</center>';
     $str .= '</div>';
     return ($str);
-}
-
+    }
 sub sae_saveUserInfo(){
     print $q->header();
     my $str;
@@ -392,7 +585,7 @@ sub sae_saveUserInfo(){
     $Ref->_updateUserInfo($txFistName, $txLastName, $txEmail, $userIDX);
     $str = &_templateUserCard($userIDX, $txFistName, $txLastName, $txEmail, $txEmail);
     return ($str);
-}
+    }
 sub sae_updateChanges(){
     print $q->header(); 
     my $userIDX = $q->param('userIDX');
@@ -407,7 +600,7 @@ sub sae_updateChanges(){
     }
     $User->_saveField($txField, $inValue, $userIDX);
     return;
-}
+    }
 sub sae_addUserAccess(){
     print $q->header(); 
     my $userIDX = $q->param('userIDX');
@@ -415,7 +608,7 @@ sub sae_addUserAccess(){
     my $User = new SAE::USER();
     $User->_addUserAccess($tileIDX, $userIDX);
     return;
-}
+    }
 sub sae_removeUserAccess(){
     print $q->header(); 
     my $userIDX = $q->param('userIDX');
@@ -423,7 +616,7 @@ sub sae_removeUserAccess(){
     my $User = new SAE::USER();
     $User->_removeUserAccess($tileIDX, $userIDX);
     return;
-}
+    }
 sub sae_addUserTeam(){
     print $q->header(); 
     my $userIDX = $q->param('userIDX');
@@ -431,7 +624,7 @@ sub sae_addUserTeam(){
     my $User = new SAE::USER();
     $User->_addUserTeam($teamIDX, $userIDX);
     return;
-}
+    }
 sub sae_removeUserTeam(){
     print $q->header(); 
     my $userIDX = $q->param('userIDX');
@@ -439,7 +632,7 @@ sub sae_removeUserTeam(){
     my $User = new SAE::USER();
     $User->_removeUserTeam($teamIDX, $userIDX);
     return;
-}
+    }
 sub sae_userSelected(){
     print $q->header();
     my $userIDX = $q->param('userIDX');
@@ -534,56 +727,8 @@ sub sae_userSelected(){
     $str .= '</div>';
     
     
-    
-    # my $str;
-    # $str = &_templateUserCard($userIDX, $USER{TX_FIRST_NAME}, $USER{TX_LAST_NAME}, $USER{TX_LOGIN}, $USER{TX_EMAIL});
-
-    # $str .= '<fieldset class="sae_userloaded w3-contianer w3-margin  w3-white w3-round">';
-    # $str .= '<legend>User Level</legend>';
-    # my $accessLevel = $REF{$USER{IN_USER_TYPE}};
-    
-    # foreach $level (sort {$a<=>$b} @TYPES){
-    #     my $checked = '';
-    #     if ($accessLevel == $level){$checked = 'checked'}
-    #     $str .= sprintf '<input class="w3-radio w3-margin-left" type="radio" name="IN_USER_TYPE" %s onclick="sae_updateUserLevel('.$userIDX.','.$level.')"> %s<br>', $checked, $TITLES{$level};
-    # }
-    # $str .= '</fieldset>';
-    
-    # $str .= '<fieldset class="sae_userloaded w3-contianer w3-margin w3-white w3-round">';
-    # $str .= '<legend>Advanced Access level</legend>';
-    # foreach $number (sort {$a<=>$b} @TYPES){
-    #     $str .= '<h4 class="sae_userloaded w3-margin-left w3-large w3-padding-small">'.$TITLES{$number}.' Menu Access ( <a class="w3-small " href="javascript:void(0);" onclick="sae_selectAllLevelAccess('.$number.', 1, '.$userIDX.');">Select All</a> | <a class="w3-small " href="javascript:void(0);" onclick="sae_selectAllLevelAccess('.$number.', 0,'.$userIDX.');">Unselect All</a>)</h4>';
-    #     $str .= '<ul class="w3-ul sae_userloaded w3-margin-left w3-small">';
-    #     foreach $pkTilesIdx (sort {$TILES{$number}{$a}{IN_ORDER} <=> $TILES{$number}{$b}{IN_ORDER}} keys %{$TILES{$number}}){
-    #         if ($pkTilesIdx == 14 || $pkTilesIdx == 15  || $pkTilesIdx == 16  || $pkTilesIdx == 17){next}
-    #         my $checked = '';
-    #         if (exists $ACCESS{$pkTilesIdx}){$checked = 'checked'}
-    #         $str .= '<li style="padding: 1px;">';
-    #         $str .= '<input ID="'.$TITLES_ID{$number}.''.$pkTilesIdx.'" data-key="'.$pkTilesIdx.'" data-access="'.$checked.'" class="w3-check '.$TITLES_CLASS{$number}.' saeAccess saeAccessLevel_'.$number.'" ';
-    #         $str .= 'type="checkbox" value="'.$pkTilesIdx.'" ';
-    #         $str .= 'onchange="sae_processUserAccess(this, '.$userIDX.', '.$pkTilesIdx.');" '.$checked.'>';
-    #         $str .= '&nbsp;&nbsp;<label for="'.$TITLES_ID{$number}.''.$pkTilesIdx.'">'.$TILES{$number}{$pkTilesIdx}{TX_TITLE}.'</label>';
-    #         $str .= '</li>';
-    #     }
-    #     $str .= '</ul>';
-    # }
-    
-    # $str .= '</fieldset>';
-    # $str .= '<fieldset class="sae_userloaded w3-contianer w3-margin w3-white w3-round">';
-    # $str .= '<legend>Team Subscription</legend>';
-    # $str .= '<button class="w3-button w3-round-large w3-border w3-margin-bottom w3-margin-left"  style="width: 175px;" onclick="sae_getListOfTeams('.$userIDX.');">Add Team(s)</button>';
-    # $str .= '<div ID="userListOfTeam_Content" class="w3-container">';
-    # $str .= '<ul class="w3-ul w3-card-2" ID="userListOfTeam_Content_UL">';
-    # foreach $utIDX (sort {$SUB{$a}{IN_NUMBER} <=> $SUB{$b}{IN_NUMBER}} keys %SUB){
-    #     my $name = sprintf "%03d - %s", $SUB{$utIDX}{IN_NUMBER}, $SUB{$utIDX}{TX_SCHOOL};
-    #     $str .= &_tempListOfUserTeams($name, $utIDX);
-    # }
-    # $str .= '</ul>';
-    # $str .= '</div>';
-    # $str .= '</fieldset>';
-    
     return ($str);
-}
+    }
 sub sae_openManageUsers(){
     print $q->header(); 
     my $User = new SAE::USER();
@@ -622,10 +767,10 @@ sub sae_openManageUsers(){
 
     $str .= '</div>';    
     return ($str);
-}
+    }
 sub sae_deleteUser(){
     print $q->header();
     my $userIDX = $q->param('userIDX');
     my $User = new SAE::USER();
     $User->_deleteUser($userIDX);
-}
+    }

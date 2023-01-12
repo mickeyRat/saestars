@@ -294,18 +294,19 @@ function grade_openHelp (o, subIDX, inSection, cardIDX, teamIDX) {
     });
     
 }
-function grade_openAssessment (o, cardIDX, inNumber, txSchool, classIDX, teamIDX, inCardType) {
+function grade_openAssessment (o, cardIDX, inNumber, txSchool, classIDX, teamIDX, inCardType, adminUserIDX) {
     // body...
-    // console.log(cardIDX);
+    console.log('adminUserIDX      = ' + adminUserIDX);
+    console.log('logged In userIDX = ' + $.cookie('PK_USER_IDX'));
     var eventIDX = $.cookie('LOCATION');
     var userIDX = $.cookie('PK_USER_IDX');
     var txFirstName = $.cookie('TX_FIRST_NAME');
-    console.log(txFirstName );
+    // console.log(txFirstName );
     $.modal('<b>Team #:' + pad(inNumber,3) + '</b> - '+txSchool, '97%');
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/grade.pl',
-        data: {'do':'grade_openAssessment','act':'print','eventIDX':eventIDX,'txFirstName':txFirstName,'cardIDX':cardIDX,'userIDX':userIDX,'classIDX':classIDX,'teamIDX':teamIDX,'inCardType':inCardType},
+        data: {'do':'grade_openAssessment','act':'print','eventIDX':eventIDX,'txFirstName':txFirstName,'cardIDX':cardIDX,'userIDX':userIDX,'classIDX':classIDX,'teamIDX':teamIDX,'inCardType':inCardType,'adminUserIDX':adminUserIDX},
         success: function(str){
             $('#modal_content').html(str);
         }

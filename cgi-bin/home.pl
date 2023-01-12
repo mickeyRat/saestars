@@ -64,7 +64,7 @@ sub sae_loadHomePage(){
     my $Tech   = new SAE::TECH();
     my $str = '<div class="w3-container w3-white w3-margin-top">';
     $str .= '<header class="w3-container" style="padding-top:22px">';
-    $str .= '<h5><b><i class="fa fa-dashboard"></i> My Dashboard</b></h5>';
+    $str .= '<h5><b><i class="fa fa-dashboard"></i> My ccc Dashboard</b></h5>';
     $str .= '</header>';
 
     foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS ) {
@@ -199,9 +199,3 @@ sub sae_loadHomePage(){
     return ($str);
 }
 
-sub __template(){
-    print $q->header();
-    my $str;
-
-    return ($str);
-}

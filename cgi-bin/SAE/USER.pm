@@ -4,6 +4,7 @@ use DBI;
 use SAE::SDB;
 use SAE::JSONDB;
 use SAE::SECURE;
+use SAE::PROFILE;
 use CGI::Session;
 use CGI::Cookie;
 # use URI::Escape;
@@ -103,9 +104,23 @@ sub _copyJudgesList (){
     # print ("$FromEventIDX, $eventIDX");
     return ();
     }
-
+sub _getUser (){
+    my ($self, $userIDX) = @_;
+    my $SQL = "SELECT * FROM TB_USER WHERE PK_USER_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($userIDX);
+    my %HASH = %{$select->fetchrow_hashref()};
+    return (\%HASH);
+    }
 # 2023================================================================================
-
+sub _getUserDetails (){
+    my ($self, $userIDX) = @_;
+    my $SQL = "SELECT * FROM TB_USER WHERE PK_USER_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($userIDX);
+    my %HASH = %{$select->fetchrow_hashref()};
+    return (\%HASH);
+    }
 
 
 sub _register(){ 
@@ -172,6 +187,9 @@ sub getLoginData (){
     if ($rows == 0) {
         return ;
     } else {
+        my $Profile = new SAE::PROFILE();
+        # my $row = $Profile->_checkForCurrentProfile($USERDATA{PK_USER_IDX});
+        $USERDATA{IN_PROFILE} = $Profile->_checkForCurrentProfile($USERDATA{PK_USER_IDX});
         return (\%USERDATA);
     }
 }

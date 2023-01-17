@@ -584,9 +584,9 @@ exit;
         my $checkedForScore = '';
         my $checkedNotForScore = '';
         my $checkedOutDisabled = '';
-        if ($ticketStatus == 0){$checkedOut = 'checked'}
-        if ($ticketStatus == 1){$checkedForScore = 'checked'}
-        if ($ticketStatus == 2){$checkedNotForScore = 'checked'}
+        if ($ticketStatus == 1){$checkedOut = 'checked'}
+        if ($ticketStatus == 0){$checkedForScore = 'checked'}
+        # if ($ticketStatus == 2){$checkedNotForScore = 'checked'}
         if ($reinspect == 1){$checkedOutDisabled = 'disabled'}
         my $str;
         $str = '<div class="w3-container w3-quarter w3-light-grey w3-border w3-card-4 w3-padding-small" style="min-height: 638px;">';
@@ -603,34 +603,34 @@ exit;
             $str .= sprintf '<button class="w3-button w3-round w3-border w3-red w3-margin-top" onclick="confirmFlightTicket(this, %d, %d, %d, %d);">Confirm Delete</button>', $flightIDX, $teamIDX, $inNumber, $classIDX;
             $str .= '</div>';
             $str .= '<div class="w3-container">';
-            $str .= sprintf '<input id="checkedOut_%d" '.$checkedOut.' '.$checkedOutDisabled.' class="w3-check" data-field="IN_STATUS" data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" type="radio" value="0" name="TicketStatus" onclick="updateAttemptStatus(event, this, %d);">', $flightIDX, $flightIDX, $flightIDX;
+            $str .= sprintf '<input id="checkedOut_%d" '.$checkedOut.' '.$checkedOutDisabled.' class="w3-check" data-field="BO_OUT" data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" type="radio" value="1" name="TicketStatus" onclick="updateAttemptStatus(event, this, %d);">', $flightIDX, $flightIDX, $flightIDX;
             $str .= '<label for="checkedOut_'.$flightIDX.'"  '.$checkedOutDisabled.' class="w3-margin-left w3-large">Checked-Out</label>';
             $str .= '</div>';
             $str .= '<div class="w3-container">';
-            $str .= sprintf '<input id="ForScore_%d" '.$checkedForScore.' class="w3-check" data-field="IN_STATUS" data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" type="radio" value="1" name="TicketStatus" onclick="updateAttemptStatus(event, this, %d);">', $flightIDX, $flightIDX, $flightIDX;
-            $str .= '<label for="ForScore_'.$flightIDX.'" class="w3-margin-left w3-large"><i>Checked-In: </i>For Score</label>';
+            $str .= sprintf '<input id="ForScore_%d" '.$checkedForScore.' class="w3-check" data-field="BO_OUT" data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" type="radio" value="0" name="TicketStatus" onclick="updateAttemptStatus(event, this, %d);">', $flightIDX, $flightIDX, $flightIDX;
+            $str .= '<label for="ForScore_'.$flightIDX.'" class="w3-margin-left w3-large">Check-In</label>';
             $str .= '</div>';
-            $str .= '<div class="w3-container">';
-            $str .= sprintf '<input id="NotForScore_%d" '.$checkedNotForScore.' class="w3-check" data-field="IN_STATUS" data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" type="radio" value="2" name="TicketStatus" onclick="updateAttemptStatus(event, this, %d);">', $flightIDX, $flightIDX, $flightIDX;
-            $str .= '<label for="NotForScore_'.$flightIDX.'" class="w3-margin-left w3-large"><i>Checked-In: </i>Not For Score</label>';
-            $str .= '</div>';
-            my $display = 'display: none;';
-            if ($ticketStatus == 2) {$display = ''}
-            $str .= '<div ID="cor_2" class="w3-panel w3-pale-yellow ticket_corridian w3-padding" style="'.$display.' border-style: inset; margin-top: 4px;">';
-            $str .= '<span><i>Internal Use only: Reasons for not scoring</i></span>';
-            $str .= '<div class="item-container">';
-                $str .= '<div class="w3-dropdown-hover" style="align-items: center; flex: 2; background: #FFFFFF;  width: 100%;">';
-                $str .= sprintf '<input type="text" ID="DNFItemInput"  autocomplete="off" class="w3-input" data-key="%d" onKeyUp="createItemTag(event, this);" style="flex: 1; font-size: 16px; padding: 5px; border:1; outline: none;">', $flightIDX;
-                $str .= '<div id="reasonDiv" class="divInput w3-dropdown-content w3-bar-block w3-card-2 w3-white" style="max-height: 600px;  overflow-y: scroll">';
-                $str .= '<ul ID="reasonDiv_List" class="w3-ul">';
-                    foreach $txReason (@REASONS) {
-                        $str .= &t_reasonListItem($flightIDX, $txReason);
-                        }
-                    $str .= '</ul>';
-                $str .= '</div>';
-                $str .= '</div>';
-            $str .= '</div>';
-            $str .= '</div>';
+            # $str .= '<div class="w3-container">';
+            # $str .= sprintf '<input id="NotForScore_%d" '.$checkedNotForScore.' class="w3-check" data-field="IN_STATUS" data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" type="radio" value="2" name="TicketStatus" onclick="updateAttemptStatus(event, this, %d);">', $flightIDX, $flightIDX, $flightIDX;
+            # $str .= '<label for="NotForScore_'.$flightIDX.'" class="w3-margin-left w3-large"><i>Checked-In: </i>Not For Score</label>';
+            # $str .= '</div>';
+            # my $display = 'display: none;';
+            # if ($ticketStatus == 2) {$display = ''}
+            # $str .= '<div ID="cor_2" class="w3-panel w3-pale-yellow ticket_corridian w3-padding" style="'.$display.' border-style: inset; margin-top: 4px;">';
+            # $str .= '<span><i>Internal Use only: Reasons for not scoring</i></span>';
+            # $str .= '<div class="item-container">';
+            #     $str .= '<div class="w3-dropdown-hover" style="align-items: center; flex: 2; background: #FFFFFF;  width: 100%;">';
+            #     $str .= sprintf '<input type="text" ID="DNFItemInput"  autocomplete="off" class="w3-input" data-key="%d" onKeyUp="createItemTag(event, this);" style="flex: 1; font-size: 16px; padding: 5px; border:1; outline: none;">', $flightIDX;
+            #     $str .= '<div id="reasonDiv" class="divInput w3-dropdown-content w3-bar-block w3-card-2 w3-white" style="max-height: 600px;  overflow-y: scroll">';
+            #     $str .= '<ul ID="reasonDiv_List" class="w3-ul">';
+            #         foreach $txReason (@REASONS) {
+            #             $str .= &t_reasonListItem($flightIDX, $txReason);
+            #             }
+            #         $str .= '</ul>';
+            #     $str .= '</div>';
+            #     $str .= '</div>';
+            # $str .= '</div>';
+            # $str .= '</div>';
 
             $str .= '<div class="w3-container w3-center w3-padding">';
                         $str .= '<button class="w3-button w3-card w3-border w3-round w3-card-2 w3-hover-grey w3-margin" style="width: 100px;" onclick="$(this).close();">Exit</button>';
@@ -867,7 +867,7 @@ exit;
             $str .= '</div>';
         $str .= '<div class="w3-container w3-border w3-card-4" style="height: 800px; overflow-y: scroll; padding: 0px" >';
         $str .= '<div class="w3-row" style="padding: 0px;">';
-            $str .= &t_ticketStatus($flightIDX, $inNumber, $teamIDX, $classIDX, $inRound, $TIX{IN_STATUS}, $TIX{BO_REINSPECT});
+            $str .= &t_ticketStatus($flightIDX, $inNumber, $teamIDX, $classIDX, $inRound, $TIX{BO_OUT}, $TIX{BO_REINSPECT});
             $str .= '<div class="w3-white w3-container w3-threequarter"  style="padding: 0px;">';
                 $str .= '<div class="w3-bar w3-black">';
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink w3-border-left w3-white" onclick="openTab(this,\'ticketLog\', %d, %d)">Ticket Logs</button>', $teamIDX, $classIDX ;

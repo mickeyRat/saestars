@@ -75,11 +75,12 @@ sub tech_submitTechStatus (){
     if (exists $CERT{$itemIDX }) {$certStatus = "Complete"}
     print $q->header();
     my $str;
+    my $inPoints   = $TECH{IN_POINTS};
     if ($inStatus>0) {
-        $str = &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $TECH{TX_REQUIREMENT},$TECH{IN_HEAD},$TECH{IN_SECTION},$TECH{TX_SECTION},$TECH{IN_STATUS}, $certStatus);
+        $str = &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $TECH{TX_REQUIREMENT},$TECH{IN_HEAD},$TECH{IN_SECTION},$TECH{TX_SECTION},$TECH{IN_STATUS}, $certStatus, $inPoints);
     } else {
         my %REQ = %{$Tech->_getReqList()};
-        $str = &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $REQ{$headingIDX}{$itemIDX}{TX_REQUIREMENT},$REQ{$headingIDX}{$itemIDX}{IN_HEAD},$REQ{$headingIDX}{$itemIDX}{IN_SECTION},$REQ{$headingIDX}{$itemIDX}{TX_SECTION},0, $certStatus);
+        $str = &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $REQ{$headingIDX}{$itemIDX}{TX_REQUIREMENT},$REQ{$headingIDX}{$itemIDX}{IN_HEAD},$REQ{$headingIDX}{$itemIDX}{IN_SECTION},$REQ{$headingIDX}{$itemIDX}{TX_SECTION},0, $certStatus, $inPoints);
     }
     my %DATA;
         $DATA{ITEM}              = $str;
@@ -122,12 +123,14 @@ sub tech_openSafetyCheck  (){
                 my $certStatus = "No";
                 if (exists $CERT{$itemIDX }) {$certStatus = "Complete"}
                 my $inStatus = $TECH{$itemIDX}{IN_STATUS};
+                my $inPoints = $REQ{$headingIDX}{$itemIDX}{IN_POINTS};
                 $str .= &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $REQ{$headingIDX}{$itemIDX}{TX_REQUIREMENT}, $inHeading, $REQ{$headingIDX}{$itemIDX}{IN_SECTION}, $REQ{$headingIDX}{$itemIDX}{TX_SECTION}, $inStatus, $certStatus);
             }
             $str .= '</ul>';
         }
     }
     $str .= '</div>';
+
     return ($str);
     }
 sub tech_openRequirementsCheck  (){
@@ -150,9 +153,9 @@ sub tech_openRequirementsCheck  (){
             $str .= sprintf '<h4 class="w3-strong">';
             if ($HEAD{$headingIDX}{BO_CHECK} == 1) {
                 # $str .= '<i class="fa fa-heart w3-text-red w3-margin-right" aria-hidden="true"></i>';
-                $str .= sprintf '<b class="w3-text-red">%d - %s</b>', $HEAD{$headingIDX}{IN_SECTION}, $HEAD{$headingIDX}{TX_SECTION};
+                $str .= sprintf '<b class="w3-text-red">%d - (Required) %s</b>', $HEAD{$headingIDX}{IN_SECTION}, $HEAD{$headingIDX}{TX_SECTION};
             } else {
-                $str .= sprintf '<b>%d - %s</b>', $HEAD{$headingIDX}{IN_SECTION}, $HEAD{$headingIDX}{TX_SECTION};
+                $str .= sprintf '<b>%d - (<i>Optional</i>) %s</b>', $HEAD{$headingIDX}{IN_SECTION}, $HEAD{$headingIDX}{TX_SECTION};
             }
             
             $str .= '</h4>';
@@ -161,11 +164,15 @@ sub tech_openRequirementsCheck  (){
                 my $certStatus = "No";
                 if (exists $CERT{$itemIDX }) {$certStatus = "Complete"}
                 my $inStatus = $TECH{$itemIDX}{IN_STATUS};
-                $str .= &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $REQ{$headingIDX}{$itemIDX}{TX_REQUIREMENT}, $inHeading, $REQ{$headingIDX}{$itemIDX}{IN_SECTION}, $REQ{$headingIDX}{$itemIDX}{TX_SECTION}, $inStatus, $certStatus);
+                my $inPoints = $REQ{$headingIDX}{$itemIDX}{IN_POINTS};
+                $str .= &t_inspectionItem($classIDX, $teamIDX, $itemIDX, $headingIDX, $REQ{$headingIDX}{$itemIDX}{TX_REQUIREMENT}, $inHeading, $REQ{$headingIDX}{$itemIDX}{IN_SECTION}, $REQ{$headingIDX}{$itemIDX}{TX_SECTION}, $inStatus, $certStatus, $inPoints);
             }
             $str .= '</ul>';
         }
     }
+    $str .= '<div class="w3-container w3-padding w3-margin w3-center">';
+    $str .= '<button class="w3-button w3-border w3-card">Complete Inspection</button>';
+    $str .= '</div>';
     $str .= '</div>';
     return ($str);
     }
@@ -698,7 +705,7 @@ sub t_teamInspectionBar(){
     return($str);
     }
 sub t_inspectionItem (){
-    my ($classIDX, $teamIDX, $itemIDX, $headingIDX, $txRequirement, $inHeading, $inSection, $txSection, $inStatus, $certStatus) = @_;
+    my ($classIDX, $teamIDX, $itemIDX, $headingIDX, $txRequirement, $inHeading, $inSection, $txSection, $inStatus, $certStatus, $inPoints) = @_;
     my $str;
     my %COLOR = (0=>'w3-light-grey', 1=>'w3-pale-green',2=>'w3-pale-red',3=>'w3-blue',);
     $str = sprintf '<li ID="TECH_ITEM_%d_%d" class="w3-bar %s w3-border w3-round w3-padding-small w3-card-2 w3-margin-bottom" >', $teamIDX, $itemIDX, $COLOR{$inStatus};
@@ -710,6 +717,12 @@ sub t_inspectionItem (){
             $str .= sprintf '<span>Rule Reference: <b>%s</b></span><span class="w3-margin-left"> - Team Certification: <b class="w3-green w3-round w3-border" style="padding: 1px 10px;">%s</b></span>', $txRequirement,$certStatus;
         }
     $str .= sprintf '<br><span>%d.%d - %s</span>', $inHeading, $inSection, $txSection;
+    # $str .= '<br><span class="w3-container w3-border w3-light-grey w3-round w3-padding">';
+    # $str .= '<div class="w3-container">';
+    $str .= '<span class="w3-container">';
+    $str .= sprintf '<input ID="ITEM_'.$itemIDX.'" type="checkbox" class="w3-check"> <label for="ITEM_'.$itemIDX.'">Add ( %2.2f pts) to Penalty Cart</label>', $inPoints;
+    $str .= '</span>';
+    # $str .= '</div>';
     $str .= '</div>';
     $str .= '<div class="w3-bar-item w3-right">';
     if ($inStatus <1){
@@ -744,7 +757,7 @@ sub t_itemRow (){
     $str .= '</td>';
     $str .= '</tr>';
     return ($str);
-    }
+    }   
 sub t_section (){
     my ($sectionIDX, $sec, $title, $secClass, $boCheck, $sectionType) = @_;
     my $Tech = new SAE::TECH();

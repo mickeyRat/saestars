@@ -21,7 +21,7 @@ use SAE::RUBRIC;
 use SAE::GRADE;
 use SAE::USER;
 use SAE::JSONDB;
-# use SAE::TEAM;
+use SAE::PAPER;
 my $Util = new SAE::Common();
 
 $q = new CGI;
@@ -40,6 +40,15 @@ if ($act eq "print"){
 }
 exit;
 # ===============2023 =====================================================
+sub grade_teamAttributes (){
+    print $q->header();
+    my $teamIDX    = $q->param('teamIDX');
+    my $table    = $q->param('table');
+    my %DATA       = %{decode_json($q->param('jsonData'))};
+    my $JsonDB     = new SAE::JSONDB();
+        $JsonDB->_update($table, \%DATA, qq(PK_TEAM_IDX=$teamIDX));
+    return ($str);
+    }
 sub grade_loadInstructions (){
     my $txFirstName     = $q->param('txFirstName');
     print $q->header();
@@ -244,10 +253,12 @@ sub grade_openAssessment(){
     print $q->header();
     my $Paper      = new SAE::REPORTS();
     my $Ref        = new SAE::REFERENCE();
+    my $Team       = new SAE::PAPER();
     my %SECTION    = %{$Paper->_getPaperSection($inCardType, $classIDX)};
     my %SUBSECTION = %{$Paper->_getPaperSubSection()};
     my %SCORES     = %{$Paper->_getCardScores($cardIDX)};
     my %REPORT     = %{$Ref->_getTeamDocuments($eventIDX)};
+    my %TEAM       = %{$Team->_getTeamDetails($teamIDX)};
     my $str = '<div class="w3-container w3-grey" style="text-align: right; padding: 10px; ">';
     my $disabled = '';
     # my $classDisabled = '';
@@ -308,6 +319,54 @@ sub grade_openAssessment(){
         }
     }
     $str .= '</table>';
+    if ($inCardType==2 & $classIDX==1) {
+    $str .= '<div class="w3-container w3-margin-top" style="padding: 10px 0px;">';
+    $str .= '<h3 class="w3-margin-left">Payload Prediction Data</h3>';
+    $str .= '<table class="w3-table-all">'; 
+        $str .= '<tr class="w3-blue-grey">';
+        $str .= '<td style="text-align: right;" class="w3-padding"><b>Slope</b>:</td>';
+        $str .= sprintf '<td style="padding: 0; width: 100px;" ><input type="number" class="w3-input w3-border" data-field="IN_SLOPE" data-table="TB_TEAM" max="0" step=".0001" onchange="grade_teamAttributes(this, %d);" value="%2.5f"></td>', $teamIDX, $TEAM{IN_SLOPE};
+        $str .= '</tr>';
+        $str .= '<tr class="w3-blue-grey">';
+        $str .= '<td style="text-align: right;" class="w3-padding"><b>y-intercept</b>:</td>';
+        $str .= sprintf '<td style="padding: 0; width: 100px;" ><input type="number" class="w3-input w3-border" data-field="IN_YINT" data-table="TB_TEAM" min="0" step="0.05" onchange="grade_teamAttributes(this, %d);" value="%2.2f"></td>', $teamIDX, $TEAM{IN_YINT};
+        $str .= '</tr>';
+    $str .= '</table>';
+    $str .= '</div>';
+    }
+
+    if ($inCardType==2 & $classIDX==2) {
+    $str .= '<div class="w3-container w3-margin-top" style="padding: 10px 0px;">';
+    $str .= '<h3 class="w3-margin-left">Advanced Class Standard Deviation Data</h3>';
+    $str .= '<table class="w3-table-all">'; 
+        $str .= '<tr class="w3-blue-grey">';
+        $str .= '<td style="text-align: right;" class="w3-padding"><b>Standard Deviation (ft)</b>:</td>';
+        $str .= sprintf '<td style="padding: 0; width: 100px;" ><input type="number" class="w3-input w3-border" data-field="IN_STD" data-table="TB_TEAM" min="0" step="1" onchange="grade_teamAttributes(this, %d);" value="%2.1f"></td>', $teamIDX, $TEAM{IN_STD};
+        $str .= '</tr>';
+    $str .= '</table>';
+    $str .= '</div>';
+    }
+    # $str .= '<ul class="w3-ul">';
+    # $str .= '<li class="w3-bar w3-border w3-white w3-round">';
+    # $str .= '<div class="w3-bar-item">';
+    # $str .= '<label>Slope</label><input type="text" class="w3-margin-left w3-input w3-border w3-card-4 w3-round" style="width: 100px; display: inline-block"><br>';
+    # $str .= '<label>y-Intercept</label><input type="text" class="w3-margin-left w3-input w3-border w3-card-4 w3-round" style="width: 100px; display: inline-block">';
+    # $str .= '</div>';
+    # $str .= '</li>';
+    # $str .= '</ul>';
+    
+    # $str .= '<table class="w3-table-all">'; 
+    # if ($inCardType==2 & $classIDX==1) {
+    #     $str .= '<tr>';
+    #     $str .= '<td>Slope</td>';
+    #     $str .= '<td></td>';
+    #     $str .= '</tr>';
+    #     $str .= '<tr>';
+    #     $str .= '<td>y-intercept</td>';
+    #     $str .= '<td></td>';
+    #     $str .= '</tr>';
+    # }
+    # $str .= '<table>';
     $str .= '</div>';
     $str .= '<div ID="AssessmentHelper" class="w3-twothird w3-container w3-white">';
     $str .= &t_scoringGuide($txFirstName);
@@ -364,7 +423,7 @@ sub t_teamAssessmentBar(){
     my %MAXSCORE = (1=>35, 2=>5, 3=>5, 4=>5);
     my $str;
     $str .= '<li ID="CARD_'.$cardIDX.'" class="w3-bar w3-border w3-white w3-round-large w3-card-2 w3-hover-pale-yellow" style="margin-bottom: 3px;">';
-    $str .= '<div class="w3-container w3-padding-small">'.$userIDX;
+    $str .= '<div class="w3-container w3-padding-small">';
     $str .= '<table class="r" style="width: 100%; padding: 0px;">';
     $str .= '<tr>';
     $str .= sprintf '<td class="w3-large"  style="text-align: left;"><b>%03d</b> - %s</td>', $inNumber , $txSchool;
@@ -400,7 +459,7 @@ sub ManageReportAssessments(){
         $str .= '<h3><button class="w3-button w3-border w3-round w3-green w3-hover-light-green w3-small" onclick="sae_openImportDesignScores();">Upload Excel</button></h3>';
     }
     $str .= '<div class="w3-container w3-row-padding">';
-        $str .= '<ul class="w3-ul">'.$userIDX;
+        $str .= '<ul class="w3-ul">' ;
         foreach $cardIDX (sort {$CARDS{$a}{IN_NUMBER} <=> $CARDS{$b}{IN_NUMBER}} keys %CARDS) {
             my $inNumber   = $CARDS{$cardIDX}{IN_NUMBER};
             my $txSchool   = $CARDS{$cardIDX}{TX_SCHOOL};

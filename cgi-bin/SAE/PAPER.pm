@@ -4,6 +4,8 @@ use DBI;
 use SAE::SDB;
 use List::Util qw( sum min max reduce );
 
+use SAE::PROFILE;
+
 my $dbi = new SAE::Db();
 
 sub new{
@@ -13,7 +15,37 @@ sub new{
 	return $self;
 }
 # ==== 2023 ===============================================
-
+sub _getEmailList (){
+    my ($self, $eventIDX, $inCardType) = @_;
+    my $SQL = "SELECT DISTINCT U.TX_EMAIL FROM TB_CARD AS C 
+		JOIN TB_USER AS U ON C.FK_USER_IDX=U.PK_USER_IDX
+		WHERE (C.FK_EVENT_IDX=? AND C.FK_CARDTYPE_IDX=? AND C.IN_STATUS<?)";
+	my $select = $dbi->prepare($SQL);
+	   $select->execute( $eventIDX, $inCardType, 2 );
+	my %HASH = %{$select->fetchall_hashref('TX_EMAIL')};
+    return (\%HASH);
+    }
+sub _getOutstandingPaperStatistics (){
+    my ($self, $eventIDX, $inCardType) = @_;
+    my $SQL = "SELECT PK_CARD_IDX FROM TB_CARD AS C WHERE (C.FK_EVENT_IDX=? AND C.FK_CARDTYPE_IDX=? AND IN_STATUS=?)";
+	my $select = $dbi->prepare($SQL);
+	   $select->execute( $eventIDX, $inCardType, 2 );
+	my $complete = $select->rows();
+	   $SQL = "SELECT PK_CARD_IDX FROM TB_CARD AS C WHERE (C.FK_EVENT_IDX=? AND C.FK_CARDTYPE_IDX=? AND IN_STATUS<?)";
+	   $select = $dbi->prepare($SQL);
+	   $select->execute( $eventIDX, $inCardType, 2 );
+	my $pending = $select->rows();  
+	my $percent = ($complete/($complete + $pending));
+    return ($percent);
+    }
+sub _getUserAssignedPapers (){
+    my ($self, $eventIDX, $userIDX, $inCardType) = @_;
+    my $SQL = "SELECT C.*, T.IN_NUMBER, T.TX_SCHOOL FROM TB_CARD AS C JOIN TB_TEAM AS T ON C.FK_TEAM_IDX=T.PK_TEAM_IDX WHERE (C.FK_EVENT_IDX=? AND C.FK_USER_IDX=? AND FK_CARDTYPE_IDX=?)";
+	my $select = $dbi->prepare($SQL);
+	   $select->execute( $eventIDX, $userIDX, $inCardType );
+	my %HASH = %{$select->fetchall_hashref('PK_CARD_IDX')};
+    return (\%HASH);
+    }
 sub _getUserDetails (){
     my ($self, $inCardType, $eventIDX, $userIDX) = @_;
     my $SQL = "SELECT * FROM TB_USER WHERE PK_USER_IDX=?";
@@ -67,14 +99,38 @@ sub _getJudgeAssignment (){
     my %HASH = %{$select->fetchall_hashref(['FK_CARDTYPE_IDX','FK_TEAM_IDX','FK_USER_IDX'])}; 
     return (\%HASH);
     }
-sub _getListOfJudges (){
-    my ($self, $eventIDX, $classIDX) = @_;
-    my $SQL = "SELECT USER.* FROM TB_PREF AS JUDGE JOIN TB_USER AS USER ON JUDGE.FK_USER_IDX=USER.PK_USER_IDX WHERE (JUDGE.FK_EVENT_IDX=? AND JUDGE.FK_CLASS_IDX =?)";
-	my $select = $dbi->prepare($SQL);
-	   $select->execute($eventIDX, $classIDX);
-    my %HASH = %{$select->fetchall_hashref('PK_USER_IDX')}; 
-    return (\%HASH);
-    }
+# sub _getListOfJudges (){
+#     my ($self, $eventIDX, $classIDX) = @_;
+#     my $SQL = "SELECT USER.* FROM TB_PREF AS JUDGE JOIN TB_USER AS USER ON JUDGE.FK_USER_IDX=USER.PK_USER_IDX WHERE (JUDGE.FK_EVENT_IDX=? AND JUDGE.FK_CLASS_IDX =?)";
+# 	my $select = $dbi->prepare($SQL);
+# 	   $select->execute($eventIDX, $classIDX);
+#     my %HASH = %{$select->fetchall_hashref('PK_USER_IDX')}; 
+#     return (\%HASH);
+#     }
+# sub _getEventYear (){
+#     my ($self, $eventIDX) = @_;
+#     my $SQL = "SELECT IN_YEAR FROM TB_EVENT WHERE PK_EVENT_IDX=?";
+#     my $select = $dbi->prepare($SQL);
+#        $select->execute($eventIDX);
+#     my ($siteYear) = $select->fetchrow_array();
+#     return ($siteYear);
+#     }
+# sub _getListOfJudges (){
+#     my ($self, $txYear, $eventIDX) = @_;
+#     my $SQL = "SELECT IN_YEAR FROM TB_EVENT WHERE PK_EVENT_IDX=?";
+#     my $select = $dbi->prepare($SQL);
+#        $select->execute($eventIDX);
+#     my ($siteYear) = $select->fetchrow_array();
+#     if (lc($siteYear) eq 'east'){
+#     		my $SQL = "SELECT P.*, U.* FROM TB_PROFILE AS P JOIN TB_USER AS U ON P.FK_USER_IDX=U.PK_USER_IDX WHERE (P.TX_YEAR=? AND P.BO_EAST=?)";
+#     	} else {
+#     		my $SQL = "SELECT P.*, U.* FROM TB_PROFILE AS P JOIN TB_USER AS U ON P.FK_USER_IDX=U.PK_USER_IDX WHERE (P.TX_YEAR=? AND P.BO_WEST=?)";
+#     	}
+# 	my $select = $dbi->prepare($SQL);
+# 	   $select->execute($txYear, 1);
+#     my %HASH = %{$select->fetchall_hashref('PK_USER_IDX')}; 
+#     return (\%HASH);
+#     }
 sub _getTeamDetails (){
     my ($self, $teamIDX) = @_;
     my $SQL = "SELECT * FROM TB_TEAM WHERE PK_TEAM_IDX=?";
@@ -105,14 +161,6 @@ sub getTeamByClass(){
     return (\%HASH);
 }
 
-sub getListOfJudges(){
-	my ($eventIDX, $classIDX) = @_;
-	my $SQL = "SELECT USER.* FROM TB_PREF AS JUDGE JOIN TB_USER AS USER ON JUDGE.FK_USER_IDX=USER.PK_USER_IDX WHERE (JUDGE.FK_EVENT_IDX=? AND JUDGE.FK_CLASS_IDX IN (?, ?))";
-	my $select = $dbi->prepare($SQL);
-	   $select->execute($eventIDX, 0, $classIDX);
-    my %HASH = %{$select->fetchall_hashref('PK_USER_IDX')}; 
-    return (\%HASH);
-}
 sub _batchRemoval (){
     my ($self, $eventIDX, $classIDX, $inCardType) = @_;
     my %TEAMS = %{&getTeamByClass($eventIDX, $classIDX)};
@@ -128,7 +176,7 @@ sub _batchAssign (){
     my ($self, $eventIDX, $classIDX, $userIDX, $inCardType) = @_;
     my $SQL = "SELECT * FROM TB_CARD WHERE (FK_EVENT_IDX=? AND FK_CARDTYPE_IDX=?)";
     my $select = $dbi->prepare($SQL);
-	   $select->execute($eventIDX, ($inCardType/10));
+	   $select->execute($eventIDX, $inCardType);
 	my %ASSIGN = %{$select->fetchall_hashref('FK_TEAM_IDX')};
     my $str;
     my %TEAMS = %{&getTeamByClass( $eventIDX, $classIDX )};
@@ -136,20 +184,26 @@ sub _batchAssign (){
     my $insert = $dbi->prepare($SQL);
 	foreach $teamIDX (sort keys %TEAMS){
 		if (exists $ASSIGN{$teamIDX}){next}
-		$insert->execute($userIDX, $teamIDX, $eventIDX, ($inCardType/10));
+		$insert->execute($userIDX, $teamIDX, $eventIDX, $inCardType);
 	}
     return ();
     }
 sub _autoAssign (){
     my ($self, $eventIDX, $classIDX, $inLimit, $inCardType) = @_;
-    my %TEAMS = %{&getTeamByClass($eventIDX, $classIDX)};
-    my %JUDGES = %{&getListOfJudges($eventIDX, $classIDX)};
-    my %ASSIGN = ();
-    my @LIST = ();
-    my $SQL = "SELECT FK_TEAM_IDX, COUNT(FK_TEAM_IDX) AS IN_COUNT FROM TB_CARD WHERE (FK_EVENT_IDX=? AND FK_CARDTYPE_IDX=?) GROUP BY FK_TEAM_IDX";
-    my $select = $dbi->prepare($SQL);
+    my %TEAMS      = %{&getTeamByClass($eventIDX, $classIDX)};
+    # my %JUDGES = %{&getListOfJudges($eventIDX, $classIDX)};
+    my $Profile    = new SAE::PROFILE();
+    my @tm         = localtime();
+    my $txYear     = ($tm[5] + 1900);
+    my %EVENT      = %{$Profile->_getEventDetails( $eventIDX )};
+    my $site       = $EVENT{TX_EVENT}; 
+    my %JUDGES     = %{$Profile->_getAvailableJudges($inCardType, $txYear, $site, $classIDX)};
+    my %ASSIGN     = ();
+    my @LIST       = ();
+    my $SQL        = "SELECT FK_TEAM_IDX, COUNT(FK_TEAM_IDX) AS IN_COUNT FROM TB_CARD WHERE (FK_EVENT_IDX=? AND FK_CARDTYPE_IDX=?) GROUP BY FK_TEAM_IDX";
+    my $select     = $dbi->prepare($SQL);
 	   $select->execute($eventIDX, $inCardType);
-    my %COUNT = %{$select->fetchall_hashref('FK_TEAM_IDX')}; 
+    my %COUNT      = %{$select->fetchall_hashref('FK_TEAM_IDX')}; 
     for (my $x=0; $x<$inLimit; $x++){
     	foreach $userIDX (sort keys %JUDGES) {
     		push (@LIST, $userIDX);

@@ -299,30 +299,9 @@ sub registerNewUser(){
     my $from = 'aerogeek@saestars.com';
     my $subject = 'SAE-STARS: Welcome';
     my $message = $Mail->_getWelcomeEmailText($DATA{TX_FIRST_NAME}, $to, $DATA{TX_PASSWORD});
-       $Mail->_sendMail($to, $from, $subject, $message);
+       $Mail->_sendMail_HTML($to, $from, $subject, $message);
+       # $Mail->_sendMail($to, $from, $subject, $message);
     return ($message);
-
-    # my $txFirstName = $q->param('TxFirstName');
-    # my $txLastName = $q->param('TxLastName');
-    # my $txEmail = $q->param('TxEmail');
-    # my $txPassword = $q->param('TxPassword');
-    # my $User = new SAE::USER();
-    # # my $User = new SAE::TB_USER();
-    # my $Auth = new SAE::Auth();
-    # my $salt = $Auth->getTemporaryPassword(2);
-    # my $userPassword = $salt.crypt($txPassword, $salt);
-    # my $newIDX = $User->_registerNewUser($txFirstName, $txLastName, $txEmail, $userPassword);
-    # $Auth->_createNewStudentAccess( $newIDX );
-    # my $body = &getWelcomeText($txFirstName, $txEmail, $txPassword);
-    # $str .= '<h2>Welcome</h2>';
-    # my %mail = (   To      => $txEmail,
-    #                 From    => 'donotreply@saestars.com',
-    #                 'Content-Type' => 'text/html; charset=UTF-8',
-    #                 Subject => 'New User ['.$txFirstName.' '.$txLastName.'] ('.$newIDX .') Registration',
-    #                 Message => $body
-    #             );
-    # sendmail(%mail) or die $Mail::Sendmail::error;
-    # return ($str.$body);
 }
 sub checkEmailAddress(){
     print $q->header();
@@ -388,7 +367,8 @@ sub resetPassword(){
         my $from = 'aerogeek@saestars.com';
         my $subject = 'SAE-STARS: Password Reset';
         my $message = $Mail->_getPasswordResetText($to, $tp);
-        $Mail->_sendMail($to, $from, $subject, $message);
+        $Mail->_sendMail_HTML($to, $from, $subject, $message);
+        # $Mail->_sendMail($to, $from, $subject, $message);
 
         $str .= '<p>';
         $str .= 'A new temporary password will be sent to the email address provided ['.$txEmail.']';

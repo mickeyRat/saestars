@@ -10,9 +10,11 @@ use URI::Escape;
 use Cwd 'abs_path';
 use JSON;
 use Text::CSV;
+use Mail::Sendmail;
 
 
 #---- SAE MODULES -------
+use SAE::MAIL;
 use SAE::SDB;
 use SAE::Auth;
 use SAE::AUTO;
@@ -26,15 +28,19 @@ use SAE::TEAM;
 use SAE::USER;
 use SAE::PAPER;
 use SAE::JSONDB;
+use SAE::PROFILE;
 
 my %CLASS      = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
-
+my %COLOR      = (0=>'', 1=>'w3-yellow', 2=>'w3-blue');
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
 
 my $path = abs_path($0);
 $path =~ s/\\[^\\]+$//;
 $path =~ s/\/[^\/]+$//;
+my @tm         = localtime();
+my $txYear     = ($tm[5] + 1900);
+
 
 my $act = $q->param("act");
 
@@ -45,20 +51,163 @@ if ($act eq "print"){
 }
 exit;
 #==============================================================================
+sub paper_sendMail (){
+    print $q->header();
+    my $to      = $q->param('to');
+    my $from    = $q->param('from');
+    my $subject = $q->param('subject');
+    my $message = $q->param('message');
+    my $Mail = new SAE::MAIL();
+    $str = $Mail->_sendMail_TEXT($to, $from, $subject, $message);
+    return($str);
+    }
+sub properCase(){
+    my $txt  = shift;
+    my $case = sprintf '%s%s', uc(substr($txt,0,1)), lc(substr($txt,1));
+    return($case);
+}
+sub paper_openSendReminderToAll (){
+    my $eventIDX     = $q->param('eventIDX');
+    my $userIDX      = $q->param('userIDX');
+    my $loginUserIDX = $q->param('loginUserIDX');
+    my $inCardType   = $q->param('inCardType');
+    my $User         = new SAE::USER();
+    my $Paper        = new SAE::PAPER();
+    my %EMAIL        = %{$Paper->_getEmailList($eventIDX, $inCardType)};
+    my %ADMIN        = %{$User->_getUserDetails($loginUserIDX)};
+    my $percent      = $Paper->_getOutstandingPaperStatistics($eventIDX, $inCardType);
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my %STATUS       = (0=>'Not Started', 1=>'Draft', 2=>'Completed');
+    my %TYPE         = (1=>'Design reports', 2=>'TDS reports', 3=>'Drawings', 4=>'Design requirements');
+    print $q->header();
+
+    my $txt = sprintf "Hi Folks,\n\n";
+    # $txt .=  "$eventIDX, $userIDX  \n";
+    # $txt .= join("; ", keys %PAPER)."\n\n";
+    $txt .= "Thank you all again for volunteering your time to grade this year's SAE Aero-Design Student Design Report for the upcoming competition.  ";
+    $txt .= "This is just a friendly reminder that the due date to have all the assessments completed is quickly approaching and ";
+    $txt .= sprintf "there are still several outstanding %s to complete.\n", $TYPE{$inCardType};
+    
+    $txt .= sprintf "\n  Current Complete Status = %2.2f%\n", $percent;
+    $txt .= "\nWhen complete, make sure to click on [ Save as Final ] to complete and finalize your assessment for each design report.  ";
+    $txt .= "Once all your allocated design reports have completed, you will drop off my weekly/daily reminder emails.";
+    $txt .= "\n\nThank you again for volunteering to support this event.\n\n";
+    $txt .= sprintf "Sincerely,\n\nDesign Report Coordinator\n%s", &properCase($ADMIN{TX_FIRST_NAME});
+
+    my $str;
+    $str = '<div class="w3-container">';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa fa-envelope-o"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<input ID="EMAIL_TO" class="w3-input w3-border" name="first" type="text" placeholder="Email" value="%s">', join(", ", keys %EMAIL);
+    $str .= '</div>';
+    $str .= '</div>';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa fa-pencil" aria-hidden="true"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<input ID="EMAIL_SUBJECT" class="w3-input w3-border" name="first" type="text" placeholder="Email" value="ACTION REQUIRED: SAE %s Assessments are Due Soon">', $TYPE{$inCardType};
+    $str .= '</div>';
+    $str .= '</div>';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa fa-info-circle"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<textarea ID="EMAIL_MESSAGE" class="w3-padding" style="max-width: 100%; min-width: 100%; min-height: 360px;">%s</textarea>', $txt;
+    $str .= '</div>';
+    $str .= '</div>';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa " aria-hidden="true"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<button class="w3-button w3-blue w3-border w3-card w3-round w3-padding w3-margin-right" style="width: 150px;" onclick="paper_sendMail(this, \'%s\');"><i class="w3-xlarge fa fa-paper-plane-o w3-margin-right" aria-hidden="true"> </i>Send</button>', $ADMIN{TX_EMAIL};
+    $str .= '<button class="w3-button         w3-border w3-card w3-round w3-padding w3-margin-left" onclick="$(this).close();">Cancel</button>';
+    $str .= '</div><br><br>';
+    $str .= '</div>';
+
+    $str .= '</div>';
+    return ($str);
+    }
+
+sub paper_openSendReminder (){
+    my $eventIDX     = $q->param('eventIDX');
+    my $userIDX      = $q->param('userIDX');
+    my $loginUserIDX = $q->param('loginUserIDX');
+    my $inCardType   = $q->param('inCardType');
+    my $User         = new SAE::USER();
+    my $Paper        = new SAE::PAPER();
+    my %USER         = %{$User->_getUserDetails($userIDX)};
+    my %ADMIN        = %{$User->_getUserDetails($loginUserIDX)};
+    my %PAPER        = %{$Paper->_getUserAssignedPapers($eventIDX, $userIDX, $inCardType)};
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my %STATUS       = (0=>'Not Started', 1=>'Draft', 2=>'Completed');
+    my %TYPE         = (1=>'Design report', 2=>'TDS report', 3=>'Drawing', 4=>'Design Requirement');
+    print $q->header();
+
+    my $txt = sprintf "Hi %s,\n\n", &properCase($USER{TX_FIRST_NAME});
+    # $txt .=  "$eventIDX, $userIDX  \n";
+    # $txt .= join("; ", keys %PAPER)."\n\n";
+    $txt .= "Thank you again for volunteering your time to grade this year's SAE Aero-Design Student Design Report for the upcoming competition.  ";
+    $txt .= "This is just a friendly reminder that the due date to have all the assessments completed is quickly approaching and ";
+    $txt .= sprintf "you still have several outstanding %s assessments to complete.\n\n", $TYPE{$inCardType};
+    foreach $cardIDX (sort {$PAPER{$a}{IN_NUMBER} <=> $PAPER{$b}{IN_NUMBER}} keys %PAPER) {
+        $txt .= sprintf "  - ( %s ) %03d: %s \n", $STATUS{$PAPER{$cardIDX}{IN_STATUS}}, $PAPER{$cardIDX}{IN_NUMBER}, $PAPER{$cardIDX}{TX_SCHOOL};
+    }
+    $txt .= "\nWhen complete, make sure to click on [ Save as Final ] to complete and finalize your assessment for each design report.  ";
+    $txt .= "Once all your allocated design reports have completed, you will drop off my weekly/daily reminder emails.";
+    $txt .= "\n\nThank you again for volunteering to support this event.\n\n";
+    $txt .= sprintf "Sincerely,\n\nDesign Report Coordinator\n%s", &properCase($ADMIN{TX_FIRST_NAME});
+
+    my $str;
+    $str = '<div class="w3-container">';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa fa-envelope-o"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<input ID="EMAIL_TO" class="w3-input w3-border" name="first" type="text" placeholder="Email" value="%s">', $USER{TX_EMAIL};
+    $str .= '</div>';
+    $str .= '</div>';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa fa-pencil" aria-hidden="true"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<input ID="EMAIL_SUBJECT" class="w3-input w3-border" name="first" type="text" placeholder="Email" value="ACTION REQUIRED: SAE %s Assessments are Due Soon">', $TYPE{$inCardType};
+    $str .= '</div>';
+    $str .= '</div>';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa fa-info-circle"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<textarea ID="EMAIL_MESSAGE" class="w3-padding" style="max-width: 100%; min-width: 100%; min-height: 360px;">%s</textarea>', $txt;
+    $str .= '</div>';
+    $str .= '</div>';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa " aria-hidden="true"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<button class="w3-button w3-blue w3-border w3-card w3-round w3-padding w3-margin-right" style="width: 150px;" onclick="paper_sendMail(this, \'%s\');"><i class="w3-xlarge fa fa-paper-plane-o w3-margin-right" aria-hidden="true"> </i>Send</button>', $ADMIN{TX_EMAIL};
+    $str .= '<button class="w3-button         w3-border w3-card w3-round w3-padding w3-margin-left" onclick="$(this).close();">Cancel</button>';
+    $str .= '</div><br><br>';
+    $str .= '</div>';
+
+    $str .= '</div>';
+    return ($str);
+    }
 sub paper_openJudgeView(){
     print $q->header();
     my $eventIDX   = $q->param('location');
     my $str;
-    $str = &view_teamView($eventIDX);
+    $str = &view_judgeView($eventIDX);
     return ($str);
-}
+    }
 sub paper_openTeamView(){
     print $q->header();
     my $eventIDX   = $q->param('location');
     my $str;
     $str = &view_teamView($eventIDX);
     return ($str);
-}
+    }
 sub paper_batchRemoval (){
     my $eventIDX  = $q->param('eventIDX');
     my $classIDX  = $q->param('classIDX');
@@ -96,14 +245,19 @@ sub paper_autoAssign (){
 sub paper_openAutoAssign (){
     my $eventIDX   = $q->param('eventIDX');
     my $inCardType = $q->param('inCardType');
+    my @tm         = localtime();
+    my $txYear     = ($tm[5] + 1900);
     # my %DATA = %{decode_json($q->param('jsonData'))};
     my %CLASS      = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
     my %TYPE       = (1=>'Design Report', 2=>'TDS', 3=>'3d Drawing', 4=>'Requirements');
     print $q->header();
-    my $Paper      = new SAE::PAPER();
-    my %USERS      = %{$Paper->_getListOfJudges($eventIDX, $inCardType)};
+    # my $Paper      = new SAE::PAPER();
+    my $Profile      = new SAE::PROFILE();
+    my %EVENT      = %{$Profile->_getEventDetails( $eventIDX )};
+    my $site       = lc($EVENT{TX_EVENT});
     my $str;
     $str .= '<div class="w3-container">';
+    # my %USERS      = %{$Paper->_getListOfJudges($eventIDX, $inCardType)};
     # $str .= scalar (keys );
     $str .= '<ul class="w3-ul">';
     if ($inCardType == 1) {
@@ -123,6 +277,8 @@ sub paper_openAutoAssign (){
         }
     } else {
         foreach $classIDX (sort keys %CLASS) {
+            my %USERS = %{$Profile->_getAvailableJudges($inCardType, $txYear, $site, $classIDX)};
+            # $str .= "$inCardType, $txYear, $site, $classIDX<br>";
             $str .= '<li class="w3-bar w3-border w3-white w3-round">';
             $str .= '<div class="w3-bar-item w3-right">';
             $str .= sprintf '<button class="w3-border w3-round w3-button w3-pale-red w3-hover-red w3-margin-top" onclick="paper_batchRemoval(this, %d, %d);">Bacth Removal</button>', $classIDX, $inCardType;
@@ -141,6 +297,16 @@ sub paper_openAutoAssign (){
     }
     $str .= '</ul>';
     $str .= '</div>';
+
+    return ($str);
+    }
+sub paper_removeCardFromJudge (){
+    my $cardIDX= $q->param('cardIDX');
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    print $q->header();
+    my $JsonDB = new SAE::JSONDB();
+    my $newIDX = $JsonDB->_delete('TB_CARD', qq(PK_CARD_IDX=$cardIDX));
+    my $str;
 
     return ($str);
     }
@@ -183,22 +349,20 @@ sub paper_openAvailableJudges (){
     my %TYPE       = (1=>'Design Report', 2=>'TDS', 3=>'3d Drawing', 4=>'Requirements');
     my %TARGET     = (1=>'designReport_'.$teamIDX, 2=>'tds_'.$teamIDX, 3=>'3dDrawing_'.$teamIDX, 4=>'Requirements_'.$teamIDX);
     print $q->header();
+    my @tm         = localtime();
+    my $txYear     = ($tm[5] + 1900);
     # my %DATA = %{decode_json($q->param('jsonData'))};
     my $Paper      = new SAE::PAPER();
-    # my $Paper = New SAE::PAPER();
-    my %TEAM  = %{$Paper->_getTeamDetails($teamIDX)};
-    my $inNumber = $TEAM{IN_NUMBER};
-    my $txSchool = $TEAM{TX_SCHOOL};
-    my $classIDX = $TEAM{FK_CLASS_IDX};
-    my %USERS      = ();
-    if ($inCardType == 1) {
-        %USERS      = %{$Paper->_getListOfJudges($eventIDX, $classIDX)};
-    } else {
-        %USERS      = %{$Paper->_getListOfJudges($eventIDX, ($inCardType*10))};
-    }
+    my $Profile    = new SAE::PROFILE();
+    # my $eventYear  = $Paper->_getEventYear( $eventIDX );
+    # my %TEAM       = %{$Profile->_getTeamDetails($teamIDX)};
+    my %EVENT      = %{$Profile->_getEventDetails( $eventIDX )};
+    my $inNumber   = $TEAM{IN_NUMBER};
+    my $txSchool   = $TEAM{TX_SCHOOL};
+    my $classIDX   = $TEAM{FK_CLASS_IDX};
+    my %USERS      = %{$Profile->_getAvailableJudges($inCardType, $txYear, $EVENT{TX_EVENT}, $classIDX)};
     my %JUDGE      = %{$Paper->_getJudgeAssignmentByTeam($inCardType, $teamIDX)};
     my %COUNT      = %{$Paper->_getAssignmentCount($inCardType, $eventIDX)};
-
     my $str;
     $str .= '<div class="w3-container w3-light-grey">';
     $str .= sprintf '<h3>%s Judges</h3>', $TYPE{$inCardType};
@@ -218,33 +382,23 @@ sub paper_openAvailableJudges (){
         my $assignmentCount = $COUNT{$userIDX}{IN_TOTAL};
         $str .= &t_nameTagAvailable($inCardType, $eventIDX, $userIDX, $teamIDX,);
     }
-    # $str .= '';
     $str .= '</div>';
-
-    $str .= '</div>';
-
     return ($str);
     }
 sub paper_openManagePapers(){
     print $q->header();
 	my $eventIDX   = $q->param('location');
-
- # ============ OLD =============
-    $str .= '<div class="w3-container w3-margin-top w3-padding" >';
-    $str .= '<h2>Manage Papers</h2>';
-    $str .= '<div class="w3-row" style="width: 100%" >';
-    $str .= '<a href="javascript:void(0);" onclick="paper_openTeamView(this);"><div class="w3-col tablink w3-bottombar w3-hover-light-grey w3-padding w3-border-red" style="width: 20%;">Team View</div></a>';
-    $str .= '<a href="javascript:void(0);" onclick="paper_openJudgeView(this);"><div class="w3-col tablink w3-bottombar w3-hover-light-grey w3-padding" style="width: 20%;">Judge View</div></a>';
-    $str .= '<a href="javascript:void(0);" onclick="sae_openStatView(this, 1);"><div class="w3-col tablink w3-bottombar w3-hover-light-grey w3-padding" style="width: 20%;">Judge Statistics</div></a>';
-    $str .= '<a href="javascript:void(0);" onclick="sae_openStatTeamView(this, 1);"><div class="w3-col tablink w3-bottombar w3-hover-light-grey w3-padding" style="width: 20%;">Team Statistics</div></a>';
-    $str .= '<a href="javascript:void(0);" onclick="sae_openStatBreakdown(this);"><div class="w3-col tablink w3-bottombar w3-hover-light-grey w3-padding" style="width: 20%;">Stats Breakdown</div></a>';
-    # $str .= '<a href="javascript:void(0);" onclick="alert(\'Under Construction\')"><div class="w3-col tablink w3-bottombar w3-hover-light-grey w3-padding" style="width: 20%;">Class Statistics</div></a>';
-    # $str .= '<button class="w3-bar-item w3-button sae-tabs w3-light-blue" onclick="sae_openTeamView(this);">Team View</button>';
-    # $str .= '<button class="w3-bar-item w3-button sae-tabs " onclick="sae_openJudgeView(this);">Judges View</button>';
+    $str .= '<div class="w3-container w3-margin-top">';
+    $str .= '<br><h2>Manage Papers</h2>';
+    $str .= '<div class="w3-bar w3-black w3-margin-top" style="w3-margin-top: 25px;">';
+    $str .= '<button class="w3-bar-item w3-button paperTab w3-red" data-key="TeamView"    onclick="paperOpenTab(this);">Teams</button>';
+    $str .= '<button class="w3-bar-item w3-button paperTab"        data-key="JudgeView"   onclick="paperOpenTab(this);">Judges</button>';
+    $str .= '<button class="w3-bar-item w3-button paperTab"        data-key="JudgeStats"  onclick="sae_openStatView(this,1);">Judge\'s Statistics View</button>';
+    $str .= '<button class="w3-bar-item w3-button paperTab"        data-key="TestStats"   onclick="sae_openStatTeamView(this, 1);">Team\'s Statistics</button>';
+    $str .= '<button class="w3-bar-item w3-button paperTab"        data-key="RubricStats" onclick="sae_openStatBreakdown(this, 1);">Rubric Statistics</button>';
     $str .= '</div>';
-    $str .= '<div ID="paperContentContainer" class="w3-margin-top" style="height: auto; overflow: auto;">';
+    $str .= '<div id="tabContent"    class="w3-container w3-white" style="padding: 0px;">';
     $str .= &view_teamView($eventIDX);
-    # $str .= &_templateTeamView();
     $str .= '</div>';
     $str .= '</div>';
     return ($str);
@@ -277,7 +431,7 @@ sub t_nameTagAvailable (){
     }
 sub t_nameTag (){
     my ($cardIDX, $label, $inStatus, $userIDX, $teamIDX, $inCardType, $inNumber, $txSchool, $classIDX) = @_;
-    my %COLOR = (0=>'', 1=>'w3-yellow', 2=>'w3-blue');
+    
     my $str;
     $str = sprintf '<span class="tag %s w3-hover-pale-yellow span_assigned_%d" ><u style="cursor: pointer;" onclick="grade_openAssessment(this, %d, %d, \'%s\', %d, %d, %d, %d);">%s</u>',$COLOR{$inStatus}, $cardIDX, $cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $label;
     if ($inStatus<2){
@@ -286,8 +440,79 @@ sub t_nameTag (){
     $str .= '</span>';
     return ($str);
     }
+sub t_JudgeView (){
+    my ($title, $btn, $inCardType, $adminUserIDX, $hash1, $hash2) = @_;
+    my %TYPE  = (1=>'Design Report', 2=>'TDS Report', 3=>'Drawing', 4=>'Design Requirement');
+    my %USERS = %$hash1;
+    my %CARDS = %$hash2;
+    my $str;
+    $str .= '<h3 class="w3-margin-left w3-border w3-blue-grey w3-round w3-margin-top w3-padding">'.$title;
+    $str .= sprintf '<button class="w3-margin-left w3-large w3-button w3-round w3-border w3-light-grey w3-hover-yellow" onclick="paper_openSendReminderToAll(this, '.$inCardType.')">Send Reminder Email to %s Judges</button></h3>', $TYPE{$inCardType};
+    $str .= '<div class="w3-container" style="padding: 0px;">';
+    $str .= '<table class="w3-table w3-bordered" style="width: 100%;">';
+    $str .= '<tr>';
+    $str .= '<th style="width: 15%">Judge\'s Name</th>';
+    $str .= '<th style="width: 85%">Assigned Teams</th>';
+    $str .= '</tr>';
+    $str .= '<tbody>';
+    foreach $userIDX (sort {lc($USERS{$a}{TX_LAST_NAME}) cmp lc($USERS{$b}{TX_LAST_NAME})} keys %USERS) {
+        $str .= '<tr>';
+        $str .= sprintf '<td class="w3-large">%s, %s<br>', $USERS{$userIDX}{TX_LAST_NAME}, $USERS{$userIDX}{TX_FIRST_NAME};
+        $str .= sprintf '<a style="text-decoration: none;" href="javascript:void(0);" onclick="paper_openSendReminder(this, %d, %d);">Send Reminder</a>', $userIDX, $inCardType;
+        $str .= '</td>';
+        $str .= '<td style="vertical-align: top; display: flex; flex-wrap: wrap;">';
+        foreach $cardIDX (sort {$CARDS{$userIDX}{$a}{IN_NUMBER} <=> $CARDS{$userIDX}{$b}{IN_NUMBER}} keys %{$CARDS{$userIDX}}) {
+            my $inNumber  = $CARDS{$userIDX}{$cardIDX}{IN_NUMBER};
+            my $txSchool  = $CARDS{$userIDX}{$cardIDX}{TX_SCHOOL};
+            my $inStatus  = $CARDS{$userIDX}{$cardIDX}{IN_STATUS};
+            my $classIDX  = $CARDS{$userIDX}{$cardIDX}{FK_CLASS_IDX};
+            my $teamIDX  = $CARDS{$userIDX}{$cardIDX}{FK_TEAM_IDX};
+            my $inCardType  = $CARDS{$userIDX}{$cardIDX}{FK_CARDTYPE_IDX};
+            $str .= '<div ID="CARD_'.$cardIDX.'" class="w3-card-4 w3-margin-left w3-margin-bottom w3-white w3-display-container" style="width: 225px;">';
+            if ($inStatus <2){
+                $str .= '<i class="fa fa-times w3-display-topright w3-transparent w3-button w3-hover-red w3-round" aria-hidden="true" style="margin-top: 5px; margin-right: 5px;" onclick="paper_removeCardFromJudge(this, '.$cardIDX.')"></i>';
+            }
+            $str .= sprintf '<header class="w3-container %s">', $COLOR{$inStatus};
+            $str .= sprintf '<h4>#: %03d</h4>', $inNumber;
+            $str .= sprintf '</header>', $inNumber;
+            $str .= '<div class="w3-container w3-white" style="height: 43px; overflow-y: hidden">';
+            my $cutOff = 35;
+            $str .= sprintf '%s', substr($txSchool,0,$cutOff);
+            if (length($txSchool)>$cutOff){
+                $str .= '...';
+            }
+            $str .= '</div>';
+            $str .= sprintf '<button class="w3-button w3-block w3-dark-grey" style="position: relative; bottom: 0px;" onclick="grade_openAssessment(this, %d, %d, \'%s\', %d, %d, %d, %d);">%s</button>', $cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $btn;
+            $str .= '</div>';
+        }
+    }
+    $str .= '</tbody>';
+    $str .= '</table>';
+    return ($str);
+    }
+sub view_judgeView (){
+    my $eventIDX   = $q->param('eventIDX');
+    my $adminUserIDX   = $q->param('adminUserIDX');
+    my $Profile    = new SAE::PROFILE();
+    my %USERS      = %{$Profile->_getDesignJudges($txYear)}; 
+    my %DESIGN     = %{$Profile->_getAssignment($eventIDX, 1)};
+    my %TDS_USER   = %{$Profile->_getTdsJudges($txYear)}; 
+    my %TDS        = %{$Profile->_getAssignment($eventIDX, 2)};
+    my %DRW_USER   = %{$Profile->_getDrwJudges($txYear)}; 
+    my %DRW        = %{$Profile->_getAssignment($eventIDX, 3)};
+    my %REQ_USER   = %{$Profile->_getReqJudges($txYear)}; 
+    my %REQ        = %{$Profile->_getAssignment($eventIDX, 4)};
+    my $str;
+    $str .= &t_JudgeView('Design Report Assignments', 'Goto Design Report', 1, $adminUserIDX, \%USERS, \%DESIGN);
+    $str .= &t_JudgeView('TDS Report Assignments', 'Goto TDS',  2, $adminUserIDX, \%TDS_USER , \%TDS);
+    $str .= &t_JudgeView('Drawing Report Assignments', 'Goto Drawings',  3, $adminUserIDX, \%DRW_USER , \%DRW);
+    $str .= &t_JudgeView('Requirement Report Assignments', 'Goto Req\'ts',  4, $adminUserIDX, \%REQ_USER , \%REQ);
+
+    return ($str);
+    }
 sub view_teamView (){
     my ($eventIDX) = @_; #= $q->param('eventIDX');
+
     # my %DATA = %{decode_json($q->param('jsonData'))};
     # print $q->header();
     my $str;
@@ -298,22 +523,22 @@ sub view_teamView (){
     my %ASSIGNMENT = %{$Paper->_getJudgeAssignment($eventIDX)};
     my $str;
     
-    $str .= '<div class="w3-container w3-margin-top w3-padding">';
+    # $str .= '<div class="w3-container w3-margin-top w3-padding">';
     # $str .= '<h2 class="w3-margin-top">Manage Paper</h2>';
-    $str .= '<table class="w3-table-all w3-bordered w3-white" style="width: 100%">';
+    $str .= '<table class="w3-table-all w3-bordered w3-white" style="width: 100%; margin: 0px;">';
     $str .= '<tr>';
     $str .= '<th style="vertical-align: middle"># - School</th>';
     $str .= '<th style="width: 400px;">';
     $str .= '<button class="w3-button w3-border w3-round w3-card w3-hover-green" onclick="paper_openAutoAssign(this, 1);">Design: Auto Assignment</button>';
     $str .= '</th>';
     $str .= '<th style="width: 170px;">';
-    $str .= '<button class="w3-button w3-border w3-round w3-card w3-hover-green" onclick="paper_openAutoAssign(this, 20);">TDS: Batch</button>';
+    $str .= '<button class="w3-button w3-border w3-round w3-card w3-hover-green" onclick="paper_openAutoAssign(this, 2);">TDS: Batch</button>';
     $str .= '</th>';    
     $str .= '<th style="width: 170px;">';
-    $str .= '<button class="w3-button w3-border w3-round w3-card w3-hover-green" onclick="paper_openAutoAssign(this, 30);">Drawing: Batch</button>';
+    $str .= '<button class="w3-button w3-border w3-round w3-card w3-hover-green" onclick="paper_openAutoAssign(this, 3);">Drawing: Batch</button>';
     $str .= '</th>';    
     $str .= '<th style="width: 170px;">';
-    $str .= '<button class="w3-button w3-border w3-round w3-card w3-hover-green" onclick="paper_openAutoAssign(this, 40);">Req.: Batch</button>';
+    $str .= '<button class="w3-button w3-border w3-round w3-card w3-hover-green" onclick="paper_openAutoAssign(this, 4);">Req.: Batch</button>';
     $str .= '</th>';
 
     $str .= '</tr>';
@@ -380,7 +605,7 @@ sub view_teamView (){
         $str .= '</tr>';
     }
     $str .= '</table>';
-    $str .= '</div>';
+    # $str .= '</div>';
     return ($str);
     }
 sub _templateTeamView(){

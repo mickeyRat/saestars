@@ -24,6 +24,7 @@ use SAE::WEATHER;
 use SAE::CARD;
 use SAE::TEAM;
 use SAE::USER;
+use SAE::PROFILE;
 
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
@@ -204,10 +205,11 @@ sub sae_showUserProfile(){
     # my $userName = $q->param('userName');
     my $User = new SAE::USER($userIDX);
     my $Team = new SAE::TEAM();
+    my $Profile = new SAE::PROFILE();
     my %USER = %{$User->_getUserData()};
     my %TEAMS    = %{$Team->_getTeamList($eventIDX)};
     my %USERTEAM = %{$Team->_getUserTeam($userIDX, $eventIDX)};
-    
+    my %PROFILE = %{$Profile->_getUserPreferenceHistory($userIDX)};
     
     my $Ref = new SAE::REFERENCE();
     # my $location = $q->param('location');  
@@ -222,6 +224,9 @@ sub sae_showUserProfile(){
     $str .= sprintf '<button class="w3-bar-item w3-button tablink %s " onclick="sae_openUserTab(this, \'%s\');">Profile</button>', $activeTab,'userProfile';
     # $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="sae_openUserTab(this, \'%s\');">Access</button>', 'userAccess';
     $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="sae_openUserTab(this, \'%s\');">Team</button>', 'userTeam';
+    if ($USER{IN_USER_TYPE}>=1){
+        $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="sae_openUserTab(this, \'%s\');">Event Preferences</button>', 'Preference';
+    }
     $str .= '</div>';
     $str .= '<div id="userProfile" class="w3-container w3-border-left w3-border-right w3-border-bottom userTabs  w3-white w3-round">';
     $str .= sprintf '<h3>User ID: %d</h3>', $userIDX;
@@ -250,55 +255,25 @@ sub sae_showUserProfile(){
     $str .= '<label class="w3-small w3-text-grey">Team Code:<br><input type="number" id="sae_teamCodeEntry" class="w3-input w3-border w3-lightblue w3-round" style="width: 200px; display: inline;">&nbsp;';
     $str .= '</label>';
     $str .= sprintf '<button class="w3-button w3-border w3-green w3-round w3-margin-left " onclick="sae_subscribeToTeam(%d, 1);";>Add Team</button>', $userIDX;
-    
     $str .= '</div>';
-    $str .= '</div>';
-    
+    $str .= '</div>';    
 
-    
-    $str .= '</div>';
-    
-    
-    
-    
-    
-    # $str .= '<div class="w3-margin-top w3-padding w3-container w3-margin-top">';
-    # $str .= '<h2>User Profile</h2>';
-    
-    # $str .= '<div class="w3-container w3-padding">';
-    # $str .= '<p>User Information</p>';
-    # $str .= '<div class="w3-display-container w3-card-2 w3-round-large w3-padding w3-border w3-white">';
-    # $str .= '<label class="w3-small">First Name</label>';
-    # $str .= '<input ID="profile_txFirst" type="text" class="w3-input" value="'.$USER{$userIDX}{TX_FIRST_NAME}.'">';
-    # $str .= '<label class="w3-small">Last Name</label>';
-    # $str .= '<input ID="profile_txLast" type="text" class="w3-input" value="'.$USER{$userIDX}{TX_LAST_NAME}.'">';
-    # $str .= '<label class="w3-small">Email</label>';
-    # $str .= '<input ID="profile_txEmail" type="text" class="w3-input" value="'.$USER{$userIDX}{TX_EMAIL}.'">';
-    # $str .= '<label class="w3-small">Password</label><br>';
-    # $str .= '<span>****************************************<span><br>';
-    # $str .= '<a class="w3-small" href="javascript:void(0);" onclick="sae_changeMyPassword('.$userIDX.');">Change Password</a><br>';
-    # $str .= '<br><br>';
-    # $str .= '<button class="w3-display-bottomright w3-margin w3-button w3-border w3-card-2" onclick="sae_saveProfile('.$userIDX.');">Save</button>';
-    # $str .= '</div>';
+    $str .= '<div id="Preference" class="w3-container w3-border-left w3-border-right w3-border-bottom userTabs w3-hide w3-white w3-round">';
+    $str .= sprintf '<h3>Event Preferences</h3>';
+    $str .= '<ul class="w3-ul">';
+    foreach $profileIDX (sort {$PROFILE{$b}{TX_YEAR} <=> $PROFILE{$a}{TX_YEAR}} keys %PROFILE)  {
+        $str .= '<li ID="EVENT_PROFILE_BAR_'.$profileIDX.'" class="w3-bar w3-border w3-white w3-round w3-card-2">';
+        # $str .= '<div class="w3-bar-item w3-right">';
+        # $str .= '</div>';
+        $str .= '<div class="w3-bar-item">';
+        $str .= sprintf '<a ID="Profile_'.$profileIDX.'" class="w3-large" href="javascript:void(0);" onclick="profile_openMyPreferences(this, %d, %d);">My %s Event Preferences</a>', $profileIDX, $PROFILE{$profileIDX}{TX_YEAR}, $PROFILE{$profileIDX}{TX_YEAR};
+        $str .= '</div>';
+        $str .= '</li>';
+    }
+    $str .= '</ul><br>';
+    $str .= '</div>';  
 
-    # $str .= '<p class="w3-margin-top">Team Subscriptions</p>';
-    # $str .= '<div class="w3-container w3-card-2 w3-round-large w3-padding w3-border w3-white">';
-    # $str .= '<ul ID="UL_listOfSubScribedTeams" class="w3-ul w3-card-2 w3-container">';
-    # foreach $teamIDX (sort {$SUBSCRIPTION{$a}{IN_NUMBER} <=> $SUBSCRIPTION{$b}{IN_NUMBER}} keys %SUBSCRIPTION) {
-    #     $userTeamIDX = $SUBSCRIPTION{$teamIDX}{PK_USER_TEAM_IDX};
-    #     $name = substr("000".$SUBSCRIPTION{$teamIDX}{IN_NUMBER},-3,3).' - '.$SUBSCRIPTION{$teamIDX}{TX_SCHOOL};
-    #     $txCountry = $SUBSCRIPTION{$teamIDX}{TX_COUNTRY};
-    #     $str .= &_tempSubscribers($name , $txCountry , $userTeamIDX );
-    # }
-    # $str .= '<li class="w3-display-container w3-blue-grey w3-card-2" style="padding:5px 25px 5px 25px;">';
-    # $str .= '<label>Team Access Code</label>';
-    # $str .= '<input type="text" ID="sae_teamCodeEntry" style="font-family: \"Courier New\";" class="w3-input w3-border">';
-    # $str .= '<button class="w3-button w3-border w3-card-2 w3-margin w3-white " onclick="sae_subscribeToTeam('.$userIDX.', 1);">Subscribe</button>';
-    # $str .= '</li>';
-    # $str .= '</ul>';
-    # $str .= '</div>';
-    # $str .= '</div>';
-    # $str .= '</div>';
+    $str .= '</div>';
     return ($str);
 }
 sub _tempSubscribers(){
@@ -317,13 +292,13 @@ sub sae_subscribeToTeam(){
     print $q->header();
     my $location = $q->param('location');  
     my $teamCode = $q->param('teamCode');  
-    my $userIDX = $q->param('userIDX');  
-    my $Ref = new SAE::REFERENCE();
-    my $Auth = new SAE::Auth();
-    my $teamIDX = $Ref->_getTeamIDXByTeamCode($teamCode);
+    my $userIDX  = $q->param('userIDX');  
+    my $Ref      = new SAE::REFERENCE();
+    my $Auth     = new SAE::Auth();
+    my $teamIDX  = $Ref->_getTeamIDXByTeamCode($teamCode);
     if ($teamIDX>0){
         my $userTeamIDX = $Auth->_addTeamToUser($userIDX, $teamIDX);
-        my %TEAM = %{$Ref->_getTeamData($teamIDX)};
+        my %TEAM        = %{$Ref->_getTeamData($teamIDX)};
         # $name = substr("000".$TEAM{$teamIDX}{IN_NUMBER},-3,3).' - '.$TEAM{$teamIDX}{TX_SCHOOL};
         # $txCountry = $TEAM{$teamIDX}{TX_COUNTRY};
         # $str .= &_tempSubscribers($name , $txCountry , $userTeamIDX );

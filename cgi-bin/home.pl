@@ -21,6 +21,9 @@ use SAE::REGULAR;
 use SAE::ADVANCED;
 use SAE::MICRO;
 use SAE::TECH;
+use SAE::PROFILE;
+use SAE::JSONDB;
+use SAE::USER;
 
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
@@ -40,6 +43,215 @@ exit;
 # ***********************************************************************************************************************************
 # User HomePage
 # ***********************************************************************************************************************************
+sub profile_delete (){
+    my $profileIDX = $q->param('profileIDX');
+    my $JsonDB     = new SAE::JSONDB();
+
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    print $q->header();
+    $JsonDB->_delete('TB_PROFILE', qq(PK_PROFILE_IDX=$profileIDX));
+    return ($str);
+    }
+sub profile_openMyPreferences (){
+    my $profileIDX = $q->param('profileIDX');
+    my $inUserType = $q->param('inUserType');
+    my $Profile    = new SAE::PROFILE();
+    my %PROFILE    = %{$Profile->_getUserEventPreferences($profileIDX)};
+    my $txYear     = $PROFILE{TX_YEAR};
+    my $userIDX    = $PROFILE{FK_USER_IDX};
+    my $User       = new SAE::USER();
+    my %USER       = %{$User->_getUser($userIDX)}; 
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    print $q->header();
+    # my $str = $profileIDX;
+    my $str;
+    $str .= '<div class="w3-container">';    
+    $str .= '<fieldset class="w3-margin-top w3-round w3-border w3-card"><legend> Event Preferences ( <i class="w3-text-red">*Required</i> )</legend>';
+    $str .= '<i>I like to participate in the following events (Select at least one):</i><br>';
+    $str .= '<div class="w3-container">';
+    my $boEastCheck = '';
+    if ($PROFILE{BO_EAST} == 1){$boEastCheck = 'checked'}
+    my $boWestCheck = '';
+    if ($PROFILE{BO_WEST} == 1){$boWestCheck = 'checked'}
+    my $boRegCheck = '';
+    if ($PROFILE{BO_REGULAR} == 1){$boRegCheck = 'checked'}
+    my $boAdvCheck = '';
+    if ($PROFILE{BO_ADVANCE} == 1){$boAdvCheck = 'checked'}
+    my $boMicCheck = '';
+    if ($PROFILE{BO_MICRO} == 1){$boMicCheck = 'checked'}
+    my $boDrwCheck = '';
+    if ($PROFILE{BO_DRW} == 1){$boDrwCheck = 'checked'}
+    my $boTdsCheck = '';
+    if ($PROFILE{BO_TDS} == 1){$boTdsCheck = 'checked'}
+    my $boReqCheck = '';
+    if ($PROFILE{BO_REQ} == 1){$boReqCheck = 'checked'}
+    my $boPresoCheck = '';
+    if ($PROFILE{BO_PRESO} == 1){$boPresoCheck = 'checked';}
+    my $boAluCheck = '';
+    if ($PROFILE{BO_ALUMI} == 1){$boAluCheck = 'checked'}
+    my $boStuCheck = '';
+    if ($PROFILE{BO_STUDENT} == 1){$boStuCheck = 'checked'}
+    $str .= '<input ID="BO_EAST" type="checkbox" class="w3-check" data-field="BO_EAST" '.$boEastCheck.' onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>'.$txYear.' Aero-Design East</b> </label><br>';
+    $str .= '<input ID="BO_WEST" type="checkbox" class="w3-check" data-field="BO_WEST" '.$boWestCheck.' onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>'.$txYear.' Aero-Design West</b> </label><br>';
+    $str .= '</div>';
+    $str .= '</fieldset>';
+
+    $str .= '<fieldset class="second w3-margin-top w3-round w3-border w3-card"><legend> Design Report Preferences  ( <i class="w3-text-red">*Required</i> )</legend>';
+    $str .= '<i>I am volulnteering to grade design reports for the following classes (Select at least one):</i><br>';
+    $str .= '<div class="w3-container">';
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_REGULAR" '.$boRegCheck.' onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Regular Class</b> Design Reports </label><br>';
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_ADVANCE" '.$boAdvCheck.' onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Advanced Class</b> Design Reports </label><br>';
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_MICRO"   '.$boMicCheck.' onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Micro Class</b> Design Reports </label><br>';
+    $str .= '</div>';
+    $str .= '</fieldset>';
+    if ($inUserType>1){
+        $str .= '<fieldset class="second w3-round w3-border w3-card w3-margin-top w3-light-grey"><legend> Advanced Judges Preferences </legend>';
+        $str .= '<div class="w3-container">';
+        $str .= '<input type="checkbox" class="w3-check second" data-field="BO_DRW" '.$boDrwCheck.' onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>3D-Drawings</b> </label><br>';
+        $str .= '<input type="checkbox" class="w3-check second" data-field="BO_TDS" '.$boTdsCheck.' onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Technical Data Sheets (TDS)</b> </label><br>';
+        $str .= '<input type="checkbox" class="w3-check second" data-field="BO_REQ" '.$boRegCheck.' onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Rules & Requirement Compliance</b> </label><br>';
+        $str .= '</div>';
+        $str .= '</fieldset>';
+    }
+
+    $str .= '<fieldset class="second w3-margin-top w3-round w3-border w3-card"><legend> Presentation Preferences </legend>';
+    $str .= '<div class="w3-container">';
+    
+    # if ($PROFILE{BO_PRESO} == 1){$presoDisabled = ''}
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_PRESO" '.$boPresoCheck.' onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Yes</b>, I like to volunteer to support the Virtual Team Presentations ( <i>Ask event coordinators for specific details</i> )</label><br>';
+    $str .= '</div>';
+    $str .= '</fieldset>';
+    $str .= '<fieldset class="second w3-margin-top w3-round w3-border w3-card"><legend> Volunteer History (Optional)</legend>';
+    $str .= '<div class="w3-container">';
+    my $yearPlaceHolder = "Volunteered since 1986";
+    if ($USER{TX_YEAR}){$yearPlaceHolder = "Volunteered since ".$USER{TX_YEAR};}
+    my $schoolPlaceHolder = "Team/University affiliation";
+    if ($USER{TX_SCHOOL}){$schoolPlaceHolder = $USER{TX_SCHOOL}}
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_ALUMI"  '.$boAluCheck.' data-value="'.$USER{TX_YEAR}.'" onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Yes</b>, I have previously volunteered for these competition. </label> ';
+    if ($PROFILE{BO_ALUMI} == 1){
+            $str .= sprintf '<input ID="IN_SINCE" type="text" class="w3-input w3-border w3-round " data-field="IN_SINCE" onchange="profile_saveInput(this,'.$txYear.');" style="margin-left: 45px; width: 250px;" value="%s">', $USER{TX_YEAR};
+        } else {
+            $str .= sprintf '<input ID="IN_SINCE" type="text" class="w3-input w3-border w3-round " disabled data-field="IN_SINCE" onchange="profile_saveInput(this,'.$txYear.');" style="margin-left: 45px; width: 250px;" placeholder="'.$yearPlaceHolder.'">';
+        }
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_STUDENT" '.$boStuCheck.' data-value="'.$USER{TX_SCHOOL}.'" onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Yes</b>, I was a former student competitor. If yes, please identify your previous team affiliation</label> ';
+    if ($PROFILE{BO_STUDENT} == 1){
+            $str .= sprintf '<input ID="TX_SCHOOL" type="text" class="w3-input w3-border w3-round " data-field="TX_SCHOOL" onchange="profile_saveInput(this,'.$txYear.');" style="margin-left: 45px; width: 250px;" value="%s">', $USER{TX_SCHOOL};
+        } else {
+            $str .= sprintf '<input ID="TX_SCHOOL" type="text" class="w3-input w3-border w3-round " disabled data-field="TX_SCHOOL" onchange="profile_saveInput(this,'.$txYear.');" style="margin-left: 45px; width: 250px;" placeholder="'.$schoolPlaceHolder.'">';
+        }
+    $str .= '</div>';
+    $str .= '</fieldset>';
+
+    $str .= '<fieldset class="second w3-margin-top w3-round w3-border w3-card"><legend> Misc (Optional)</legend>';
+
+    $str .= '<div class="w3-container">';
+    $str .= '<label>Maximum number of Design Report I can take</label>';
+    $str .= sprintf '<input type="text" class="w3-input w3-border w3-round w3-card second" data-field="IN_LIMIT" onchange="profile_saveInput(this,'.$txYear.');" style="display: inline; margin-left: 15px; width: 80px;" value="%d">', $PROFILE{IN_LIMIT};
+    $str .= '</div>';
+    $str .= '</fieldset>';
+
+    $str .= '</div>';
+    $str .= '<div class="w3-container w3-center w3-margin-top">';
+    $str .= '<button class="w3-margin-right w3-button w3-border w3-round w3-card w3-margin-top w3-hover-green w3-pale-green second" onclick="profile_close(this, '.$profileIDX.');">Update '.$txYear.' Event Pereferences</button>';
+    $str .= '<button class="w3-margin-left w3-button w3-border w3-round w3-card w3-margin-top w3-hover-red w3-pale-red" onclick="profile_delete(this, '.$profileIDX.');">Delete '.$txYear.' Event Pereferences</button>';
+    $str .= '</div>';
+    $str .= '<br>' x 2;
+
+    return ($str);
+    return ($str);
+    }
+sub profile_save (){
+    my $userIDX = $q->param('userIDX');
+    my $field   = $q->param('field');
+    my $value   = $q->param('value');
+    my $txYear  = $q->param('txYear');
+    my $Profile = new SAE::PROFILE();
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    print $q->header();
+    $Profile->_save($userIDX, $field, $value, $txYear);
+    my $str;
+
+    return ($str);
+    }
+sub openJudgesProfile (){
+    my $userIDX = $q->param('userIDX');
+    my $inUserType = $q->param('inUserType');
+    my $User       = new SAE::USER();
+    my %USER       = %{$User->_getUser($userIDX)}; 
+    # my $Profile    = new SAE::PROFILE();
+    my @tm = localtime();
+    my $txYear = ($tm[5] + 1900);
+    # my %EVENT      = %{$Profile->_getEvents($txYear)};
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    print $q->header();
+    # my $str = $userIDX;
+    my $str;
+    $str .= '<div class="w3-container">';
+    $str .= '<h2>You\'ve been identified as a Volunteer Judge. Please update your profile and preferences for this year\'s competition</h2>';
+    
+    $str .= '<fieldset class="w3-margin-top w3-round w3-border w3-card"><legend> Event Preferences ( <i class="w3-text-red">*Required</i> )</legend>';
+    $str .= '<i>I like to participate in the following events (Select at least one):</i><br>';
+    $str .= '<div class="w3-container">';
+    $str .= '<input ID="BO_EAST" type="checkbox" class="w3-check" data-field="BO_EAST" onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>'.$txYear.' Aero-Design East</b> </label><br>';
+    $str .= '<input ID="BO_WEST" type="checkbox" class="w3-check" data-field="BO_WEST" onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>'.$txYear.' Aero-Design West</b> </label><br>';
+    $str .= '</div>';
+    $str .= '</fieldset>';
+
+    $str .= '<fieldset class="w3-margin-top w3-round w3-border w3-card"><legend> Design Report Preferences  ( <i class="w3-text-red">*Required</i> )</legend>';
+    $str .= '<i>I am volulnteering to grade design reports for the following classes (Select at least one):</i><br>';
+    $str .= '<div class="w3-container">';
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_REGULAR" disabled onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Regular Class</b> Design Reports </label><br>';
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_ADVANCE" disabled onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Advanced Class</b> Design Reports </label><br>';
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_MICRO"   disabled onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Micro Class</b> Design Reports </label><br>';
+    $str .= '</div>';
+    $str .= '</fieldset>';
+    if ($inUserType>1){
+        $str .= '<fieldset class="w3-round w3-border w3-card w3-margin-top w3-light-grey"><legend> Advanced Judges Preferences </legend>';
+        $str .= '<div class="w3-container">';
+        $str .= '<input type="checkbox" class="w3-check second" data-field="BO_DRW" disabled onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>3D-Drawings</b> </label><br>';
+        $str .= '<input type="checkbox" class="w3-check second" data-field="BO_TDS" disabled onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Technical Data Sheets (TDS)</b> </label><br>';
+        $str .= '<input type="checkbox" class="w3-check second" data-field="BO_REQ" disabled onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Rules & Requirement Compliance</b> </label><br>';
+        $str .= '</div>';
+        $str .= '</fieldset>';
+    }
+
+    $str .= '<fieldset class="second w3-margin-top w3-round w3-border w3-card"><legend> Presentations Preferences </legend>';
+    $str .= '<div class="w3-container">';
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_PRESO" disabled onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Yes</b>, I like to volunteer to support the Virtual Team Presentations ( <i>Ask event coordinators for specific details</i> )</label><br>';
+    $str .= '</div>';
+
+    $str .= '</fieldset>';
+
+    $str .= '<fieldset class="w3-margin-top w3-round w3-border w3-card"><legend> Volunteer History (Optional)</legend>';
+    $str .= '<div class="w3-container">';
+    my $yearPlaceHolder = "Volunteered since 1986";
+    if ($USER{TX_YEAR}){$yearPlaceHolder = "Volunteered since ".$USER{TX_YEAR};}
+    my $schoolPlaceHolder = "Team/University affiliation";
+    if ($USER{TX_SCHOOL}){$schoolPlaceHolder = $USER{TX_SCHOOL}}
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_ALUMI" data-value="'.$USER{TX_YEAR}.'" disabled onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Yes</b>, I have previously volunteered for these competition. </label> ';
+    $str .= '<input ID="IN_SINCE" type="text" class="w3-input w3-border w3-round w3-disabled" data-field="IN_SINCE" onchange="profile_saveInput(this,'.$txYear.');" style="margin-left: 45px; width: 250px;" disabled placeholder="'.$yearPlaceHolder.'">';
+    $str .= '<input type="checkbox" class="w3-check second" data-field="BO_STUDENT" data-value="'.$USER{TX_SCHOOL}.'" disabled onclick="profile_saveCheck(this,'.$txYear.');"><label class="w3-margin-left"><b>Yes</b>, I was a former student competitor. If yes, please identify your previous team affiliation</label> ';
+    $str .= '<input ID="TX_SCHOOL" type="text" class="w3-input w3-border w3-round w3-disabled" data-field="TX_SCHOOL" onchange="profile_saveInput(this,'.$txYear.');" style="margin-left: 45px; width: 250px;" disabled placeholder="'.$schoolPlaceHolder.'">';
+    $str .= '</div>';
+    $str .= '</fieldset>';
+
+    $str .= '<fieldset class="w3-margin-top w3-round w3-border w3-card"><legend> Misc (Optional)</legend>';
+
+    $str .= '<div class="w3-container">';
+    $str .= '<label>Maximum number of Design Report I can take</label>';
+    $str .= '<input type="text" class="w3-input w3-border w3-round w3-card second" disabled data-field="IN_LIMIT" onchange="profile_saveInput(this,'.$txYear.');" style="display: inline; margin-left: 15px; width: 80px;" value="3">';
+    $str .= '</div>';
+    $str .= '</fieldset>';
+
+
+    $str .= '</div>';
+    $str .= '<div class="w3-container w3-center w3-margin-top">';
+    $str .= '<button class="w3-button w3-border w3-round w3-card w3-margin-top w3-hover-green w3-pale-green second" disabled onclick="profile_close(this, 0);">Update Pereferences</button>';
+    $str .= '</div>';
+    $str .= '<br>' x 2;
+
+    return ($str);
+    }
 sub sae_unsubscribeToTeam(){
     print $q->header();
     my $userTeamIDX = $q->param('userTeamIDX');
@@ -47,7 +259,7 @@ sub sae_unsubscribeToTeam(){
     $Auth->_deleteUserTeam($userTeamIDX);
 
     return ($userTeamIDX);
-}
+    }
 sub sae_loadHomePage(){
     print $q->header();
     my %PANEL = (1=>'Design',2=>'Presentation' ,3=>'Penalties',4=>'Flights',5=>'Results');
@@ -64,7 +276,7 @@ sub sae_loadHomePage(){
     my $Tech   = new SAE::TECH();
     my $str = '<div class="w3-container w3-white w3-margin-top">';
     $str .= '<header class="w3-container" style="padding-top:22px">';
-    $str .= '<h5><b><i class="fa fa-dashboard"></i> My ccc Dashboard</b></h5>';
+    $str .= '<h5><b><i class="fa fa-dashboard"></i> My  Dashboard</b></h5>';
     $str .= '</header>';
 
     foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS ) {
@@ -98,99 +310,6 @@ sub sae_loadHomePage(){
             }
         $str .= '</div>';
     }
-    
-    ## - Section for when teams have to be reinspected
-
-
-    ## - Section for tam scores
-
-
-
-
-    # my %SCORE = ();
-    # foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS ) {
-    #     my $finalScore =0;
-    #     my $classIDX= $TEAMS{$teamIDX}{FK_CLASS_IDX};
-    #     my $reinspect = $Tech->_checkIfReInspectIsNeeded($location, $teamIDX);
-    #     if ($classIDX==3){
-    #         my $Obj=new SAE::MICRO();
-    #         my ($TOPS, $FLIGHTS) = $Obj->_calcTeamScore($teamIDX);
-    #         my %SCORE = %{$FLIGHTS};
-    #         my @SORTED = @$TOPS;
-    #         $finalScore = $SCORE{$SORTED[0]}{IN_FFS} + $SCORE{$SORTED[1]}{IN_FFS} + $SCORE{$SORTED[2]}{IN_FFS};
-    #     } elsif ($classIDX==2) {
-    #         my $Obj=new SAE::ADVANCED();
-    #         my ($inStd, $boAuto, $inWater, $waterFlown, $SCORES) = $Obj->_calcTeamScore($teamIDX);
-    #         my %SCORE = %{$SCORES};
-    #         my $gtvMultiplier = 2.0;
-    #         if ($boAuto<1) {$gtvMultiplier = 1.5}
-    #         my $waterScore = ($waterFlown + $gtvMultiplier*$inWater)/4;
-    #         my $SUM_PADA = 0;
-    #         foreach $flightIDX (sort {$SCORE{$a}{IN_ROUND} <=> $SCORE{$b}{IN_ROUND}} keys %SCORE) {
-    #             my $subScore = ($SCORE{$flightIDX}{APADA} + $SCORE{$flightIDX}{BPADA});
-    #             my $totalAttemptScore = $subScore - ($SCORE{$flightIDX}{IN_MINOR} * $subScore) - ($SCORE{$flightIDX}{IN_MAJOR} * $subScore);
-    #             $SUM_PADA += $totalAttemptScore;
-    #         }
-    #         $finalScore = ($waterScore + (4*$SUM_PADA));
-    #     }else {
-    #         my $Obj=new SAE::REGULAR();
-    #         my ($maxPPB, $TOPS, $SCORES) = $Obj->_calcTeamScore($teamIDX);
-    #         my %SCORE = %{$SCORES};
-    #         my @SORTED = @$TOPS;
-    #         $finalScore = $SCORE{$SORTED[0]}{IN_FFS} + $SCORE{$SORTED[1]}{IN_FFS} + $SCORE{$SORTED[2]}{IN_FFS} + $maxPPB; 
-    #     }
-    #     if ($reinspect){
-    #         $str .= sprintf '<div ID="UT_%d" class="w3-row-padding w3-margin-bottom w3-display-container w3-border w3-round w3-card-4 sae_team_dashboard_%d w3-red"><br>', $TEAMS{$teamIDX}{PK_USER_TEAM_IDX}, $teamIDX;
-    #         $str .= sprintf '<H1 class="sae_team_dashboard_header_%d blink_me">ALERT!!!<br>Reinspect required before your next flight attempt</H1>', $teamIDX;    
-    #     } else {
-    #         $str .= sprintf '<div ID="UT_%d" class="w3-row-padding w3-margin-bottom w3-display-container w3-border w3-round w3-card-4 sae_team_dashboard_%d"><br>', $TEAMS{$teamIDX}{PK_USER_TEAM_IDX}, $teamIDX;
-    #         $str .= sprintf '<H1 class="w3-hide sae_team_dashboard_header_%d blink_me">ALERT!!!<br>Reinspect required before your next flight attempt</H1>', $teamIDX; 
-    #     }
-    #     $str .= sprintf '<div class="w3-dropdown-click w3-border w3-round w3-white w3-display-topright w3-margin-top w3-margin-right" >';
-    #     $str .= sprintf '<button class="w3-button w3-round" onclick="sae_menuDropDown(%d);"><i class="fa fa-ellipsis-h" aria-hidden="true"></i></button>', $TEAMS{$teamIDX}{PK_USER_TEAM_IDX};
-    #     $str .= sprintf '<div id="subMenu_%d" class="w3-dropdown-content w3-bar-block w3-border w3-right w3-card-2" style="left: -115px!important">', $TEAMS{$teamIDX}{PK_USER_TEAM_IDX};
-    #     $str .= sprintf '<a href="javascript:void();" class="w3-bar-item w3-button" onclick="sae_unscuscribe(%d);"><i class="fa fa-times" aria-hidden="true"></i>&nbsp;Un-subscribe</a>', $TEAMS{$teamIDX}{PK_USER_TEAM_IDX};
-    #     $str .= '</div>';
-    #     $str .= '</div>';
-    #     # $str .= sprintf '<button class="w3-button w3-border w3-round w3-white w3-hover-red w3-display-topright w3-margin-top w3-margin-right" onclick="sae_unscuscribe(%d);">X</button>', $TEAMS{$teamIDX}{PK_USER_TEAM_IDX};
-    #     $str .= sprintf '<h3 class="w3-margin-left">Team #:%03d<br>%s</h3>', $TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL};
-        
-    #     foreach $idx (sort {$a <=> $b} keys %PANEL) {
-    #         my $eIDX = crypt($teamIDX, '20');
-    #         my $score = 0;
-    #         my $late = 0;
-    #         my $btn = '';
-    #         if ($idx==1){
-    #             ($score, $late) = $Design->_getOverallPaperByTeam($teamIDX);
-    #             if ($late>50){
-    #                 $score = 0;
-    #             } else {
-    #                 $score -= $late;
-    #             }
-    #             $btn = sprintf '<div class="w3-right w3-button w3-round w3-margin-top"><h6><a class="w3-text-black" style="text-decoration: none;" href="score.html?teamIDX=%s&source=%d" target="_blank">%2.4f</a><i class="fa fa-chevron-right w3-margin-left" aria-hidden="true"></i></h6></div>', $eIDX, '14', $score;
-    #         } elsif ($idx==2) {
-    #             $score = $Preso->_getPresoScoreByTeam($teamIDX, 5);
-    #             $btn = sprintf '<div class="w3-right w3-button w3-round w3-margin-top "><h6><a class="w3-text-black" style="text-decoration: none;" href="score.html?teamIDX=%s&source=%d" target="_blank">%2.4f</a><i class="fa fa-chevron-right w3-margin-left" aria-hidden="true"></i></h6></div>', $eIDX, '15', $score;
-    #         } elsif ($idx==3) {
-    #             $score = $Score->_getTotalPenaltiesByTeam($teamIDX,$location);
-    #             $btn = sprintf '<div class="w3-right w3-button w3-round w3-margin-top "><h6><a class="w3-text-black" style="text-decoration: none;" href="score.html?teamIDX=%s&source=%d" target="_blank">%2.4f</a><i class="fa fa-chevron-right w3-margin-left" aria-hidden="true"></i></h6></div>', $eIDX, '16', $score;
-    #         } elsif ($idx==5) {
-    #             $score = 'Standings';
-    #             $btn = sprintf '<button class="w3-right w3-button w3-round w3-margin-top" onclick="sae_openResultStandings(%d);"><h6>%s<i class="fa fa-chevron-right w3-margin-left" aria-hidden="true"></i></h6></button>', $TEAMS{$teamIDX}{FK_CLASS_IDX}, $score;
-    #         } else {
-    #             $score = 'Flt. Log';
-    #             # $btn = sprintf '<button class="w3-right w3-button w3-round w3-margin-top" onclick="sae_openReadOnlyFlightCard(%d,\'%03d\', %d);"><h6>%s<i class="fa fa-chevron-right w3-margin-left" aria-hidden="true"></i></h6></button>', $teamIDX, $TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{FK_CLASS_IDX}, $score;
-    #             $btn = sprintf '<button class="w3-right w3-button w3-round w3-margin-top" onclick="sae_calcFlightScores(%d, %d, %d);"><h6>%2.4f<i class="fa fa-chevron-right w3-margin-left" aria-hidden="true"></i></h6></button>', $location, $classIDX, $teamIDX, $finalScore;
-    #         }
-    #         $str .= '<div class="w3-quarter w3-margin-bottom w3-display-container w3-round">';
-    #         $str .= sprintf '<div class="w3-container %s w3-padding-16 w3-round">', $COLOR{$idx};
-    #         $str .= sprintf '<div class="w3-display-topleft w3-margin-left w3-margin-top">%s</div>', $PANEL{$idx};
-    #         $str .= $btn;
-    #         $str .= '</div>';
-    #         $str .= '</div>';
-    #     }
-    #     $str .= '</div>';
-    # }
     
     $str .= '<div class="w3-row-padding w3-margin-bottom w3-display-container w3-container w3-border w3-round w3-card-4 w3-padding-16" style="height: 90px">';
     $str .= '<span class="w3-display-left w3-margin-left">Subscription Code:<input class="w3-input w3-border w3-round" ID="sae_teamCodeEntry" style="width: 175px; "></span>';

@@ -3,6 +3,7 @@ package SAE::MAIL;
 use DBI;
 use SAE::SDB;
 use Mail::Sendmail;
+use MIME::Lite;
 
 my $dbi = new SAE::Db();
 
@@ -11,6 +12,35 @@ sub new{
 	my $self = {};
 	bless($self, $className);
 	return $self;
+}
+
+sub _sendMail_HTML(){
+    my ($self, $to, $from, $subject, $message) = @_;
+    if ($to eq $from){$from = 'reports@saestars.com'}
+    $msg = MIME::Lite->new(
+                 From     => $from,
+                 To       => $to,
+                 Subject  => $subject,
+                 Data     => $message
+                 );
+  $msg->attr("content-type" => "text/html"); 
+  $msg->send('smtp','mail.saestars.com', AuthUser=>'reports@saestars.com', AuthPass=>'reports@saestars.com');
+  return ("Email Sent Successfully to $to\n");
+
+}
+
+sub _sendMail_TEXT(){
+    my ($self, $to, $from, $subject, $message) = @_;
+    if ($to eq $from){$from = 'reports@saestars.com'}
+    $msg = MIME::Lite->new(
+                 From     => $from,
+                 To       => $to,
+                 Subject  => $subject,
+                 Data     => $message
+                 );
+  $msg->send('smtp','mail.saestars.com', AuthUser=>'reports@saestars.com', AuthPass=>'reports@saestars.com');
+  return ("Email Sent Successfully to $to\n");
+
 }
 
 sub _sendMail (){
@@ -31,7 +61,8 @@ sub _sendMail (){
     # Email Body
     print MAIL $message;
     close(MAIL);
-    return ("Email Sent Successfully\n");
+    $str .= "$to\n$from\n$subject\n$message\n";
+    return ($str."\n\nEmail Sent Successfully\n");
 }
 
 sub _getWelcomeEmailText(){

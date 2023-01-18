@@ -31,7 +31,14 @@ sub new{
 	bless($self, $className);
 	return $self;
 }
-
+sub _getTeamDetails (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT * FROM TB_TEAM WHERE PK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select ->execute( $teamIDX );
+    my %HASH = %{$select->fetchrow_hashref()};
+    return (\%HASH);
+    }
 sub _getTeamData(){
     my $self = shift;
     return (\%TEAM);

@@ -172,6 +172,15 @@ sub _batchRemoval (){
     # my $str;
     return ();
     }
+sub _assignTeamToJudge (){
+    my ($self, $userIDX, $teamIDX, $eventIDX, $inCardType) = @_;
+    my $str;
+    my $SQL = "INSERT INTO TB_CARD (FK_USER_IDX, FK_TEAM_IDX, FK_EVENT_IDX, FK_CARDTYPE_IDX) VALUES (?, ?, ?, ?)";
+    my $insert = $dbi->prepare($SQL);
+	   $insert->execute($userIDX, $teamIDX, $eventIDX, $inCardType);
+	my $newIDX = $insert->{q{mysql_insertid}} ;
+    return ($newIDX);
+    }
 sub _batchAssign (){
     my ($self, $eventIDX, $classIDX, $userIDX, $inCardType) = @_;
     my $SQL = "SELECT * FROM TB_CARD WHERE (FK_EVENT_IDX=? AND FK_CARDTYPE_IDX=?)";

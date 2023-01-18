@@ -449,21 +449,24 @@ sub tech_openSetup (){
     return ($json);
     }
 sub openInspectionModule (){
-    my $eventIDX= $q->param('eventIDX');
+    my $eventIDX    = $q->param('eventIDX');
+    my $inUserType  = $q->param('inUserType');
     # my %DATA = %{decode_json($q->param('jsonData'))};
     print $q->header();
     # my $str;
     my $str = '<div class="w3-container w3-white w3-margin-top">';
     $str .= '<header class="w3-container" style="padding-top:22px">';
-    $str .= '<h3>Technical Inspection</h3>';
+    $str .= '<h3>Technical Inspection '.$inUserType.'</h3>';
     $str .= '</header>';
     $str .= '<div class="w3-row-padding w3-margin-bottom">';
+    if ($inUserType==4){
         $str .= '<div class="w3-quarter" onClick="tech_openSetup();" style="cursor: pointer">';
             $str .= '<div class="w3-container w3-light-grey w3-padding-16  w3-border w3-round w3-margin-bottom w3-card-4">';
                 $str .= '<i class="fa fa-cogs fa-3x w3-right" aria-hidden="true"></i>';
                 $str .= '<h4 class="w3-left">Setup Inspection Rubric</h4>';
                 $str .= '</div>';
             $str .= '</div>';
+        }
         # $str .= '<div class="w3-clear"></div><hr>';
         $str .= '<div class="w3-quarter" onClick="tech_openTechInspectionTeamList();" style="cursor: pointer">';
             $str .= '<div class="w3-container w3-light-blue w3-padding-16 w3-border w3-round w3-margin-bottom w3-card-4">';

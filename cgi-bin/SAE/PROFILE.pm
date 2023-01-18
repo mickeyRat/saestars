@@ -14,6 +14,14 @@ sub new{
 	bless($self, $className);
 	return $self;
 }
+sub _getListofJudgesBySite (){
+    my ($self, $field, $txYear) = @_;
+    my $SQL= "SELECT U.TX_EMAIL FROM TB_PROFILE AS P JOIN TB_USER AS U ON P.FK_USER_IDX=U.PK_USER_IDX WHERE ($field=? AND P.TX_YEAR=?)";
+    my $select = $dbi->prepare($SQL);
+	    $select->execute( 1, $txYear);
+	my %HASH = %{$select->fetchall_hashref('TX_EMAIL')};
+    return (\%HASH);
+    }
 sub _getEventDetails (){
     my ($self, $eventIDX) = @_;
     my $SQL = "SELECT * FROM TB_EVENT WHERE PK_EVENT_IDX=?";
@@ -62,6 +70,27 @@ sub _getAvailableJudges (){
     
     return (\%HASH);
     }
+sub _getListOfTeams (){
+    my ($self, $eventIDX) = @_;
+    my $SQL = "SELECT * FROM TB_TEAM WHERE FK_EVENT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $eventIDX );
+    my %HASH = %{$select->fetchall_hashref(['FK_CLASS_IDX', 'PK_TEAM_IDX'])};
+    return (\%HASH);
+    }
+sub _getPapersAssignedToUser (){
+    my ($self, $eventIDX, $userIDX, $inCardType) = @_;
+    # my %HASH;
+    my $SQL = "SELECT FK_TEAM_IDX, IN_STATUS, PK_CARD_IDX FROM TB_CARD WHERE (FK_EVENT_IDX=? AND FK_USER_IDX=? AND FK_CARDTYPE_IDX=?)";
+	my $select = $dbi->prepare($SQL);
+       $select->execute( $eventIDX, $userIDX, $inCardType );
+    my %HASH = %{$select->fetchall_hashref('FK_TEAM_IDX')};
+    # while (my ($teamIDX, $inStatus) = $select->fetchrow_array() ){
+    # 	$HASH{$teamIDX}{IN_STATUS} = $inStatus
+    # }
+    # = %{$select->fetchall_hashref('FK_TEAM_IDX')};
+    return (\%HASH);
+    }
 sub _getAssignment(){
     my ($self, $eventIDX, $inCardType) = @_;
     my $SQL = "SELECT U.TX_LAST_NAME, U.TX_FIRST_NAME, T.IN_NUMBER, T.FK_CLASS_IDX, T.TX_SCHOOL, C.* FROM TB_CARD AS C 
@@ -71,6 +100,16 @@ sub _getAssignment(){
 	my $select = $dbi->prepare($SQL);
        $select->execute( $eventIDX, $inCardType);
     my %HASH = %{$select->fetchall_hashref(['FK_USER_IDX','PK_CARD_IDX'])};
+    return (\%HASH);
+    }
+sub _getJudgePreferenceDetails (){
+    my ($self, $userIDX, $txYear) = @_;
+    my $SQL = "SELECT U.TX_FIRST_NAME, U.TX_LAST_NAME, U.TX_SCHOOL, U.TX_YEAR, U.IN_LIMIT, P.BO_REGULAR, P.BO_ADVANCE, P.BO_MICRO, P.BO_DRW, P.BO_TDS, P.BO_REQ FROM TB_PROFILE AS P
+		JOIN TB_USER AS U ON P.FK_USER_IDX=U.PK_USER_IDX
+	    WHERE (P.FK_USER_IDX=? AND P.TX_YEAR=?)";
+   	my $select = $dbi->prepare($SQL);
+       $select->execute( $userIDX, $txYear);
+    my %HASH = %{$select->fetchrow_hashref()};
     return (\%HASH);
     }
 sub _getDesignJudges (){

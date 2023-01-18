@@ -28,6 +28,7 @@ use SAE::USER;
 use SAE::TEAM;
 use SAE::JSONDB;
 use SAE::PROFILE;
+use SAE::MAIL;
 
 
 $q = new CGI;
@@ -36,6 +37,8 @@ $qs = new CGI($ENV{'QUERY_STRING'});
 my $path = abs_path($0);
 $path =~ s/\\[^\\]+$//;
 $path =~ s/\/[^\/]+$//;
+my @tm         = localtime();
+my $txYear     = ($tm[5] + 1900);
 
 my $act = $q->param("act");
 
@@ -46,6 +49,24 @@ if ($act eq "print"){
 }
 exit;
 # ================== 2023 =========================================
+sub user_openGeneralEmailForm (){
+    print $q->header();
+    my $eventIDX     = $q->param('eventIDX');
+    my $loginUserIDX = $q->param('loginUserIDX');
+    my $field        = $q->param('field');
+    my $User         = new SAE::USER();
+    my $Mail         = new SAE::MAIL();
+    my $Profile      = new SAE::PROFILE();
+    my %USER         = %{$User->_getUserDetails($loginUserIDX)};
+    my %EMAILS       = %{$Profile->_getListofJudgesBySite($field, $txYear)};
+    my $from         = $USER{TX_EMAIL};
+    my $to           = join(", ", keys %EMAILS);
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my $str;
+    $str .= $Mail->_openEmailForm($to, $from, $subject, $message);
+
+    return ($str);
+    }
 sub user_removeJudgeFromEventList (){
     my $eventIDX= $q->param('FK_EVENT_IDX');
     my $userIDX= $q->param('FK_USER_IDX');
@@ -306,11 +327,24 @@ sub openManageJudges(){
 
     $str .= '<div class="w3-container w3-margin-top">';
     $str .= '<br><h2 class="w3-margin-top">'.$txYear.' Judge Preferences</h2>';
-    $str .= '<div class="w3-container w3-white w3-border w3-padding">';
-    $str .= '<button class="w3-border w3-round w3-button w3-margin-top w3-light-grey w3-hover-green" onclick="user_openJudgeList(this, '.$eventIDX.');">Add Judge To Event</button>';
-    $str .= '<a class="w3-border w3-text-black w3-round w3-button w3-margin-top w3-margin-left w3-hover-green" href="cgi-bin/export.pl?do=export_emailExcel&act=print&eventIDX='.$eventIDX.'" target="_blank">Export Email (*.csv)</a>';
-    $str .= '<a class="w3-border w3-text-black w3-round w3-button w3-margin-top w3-margin-right w3-hover-green" href="cgi-bin/export.pl?do=export_volunteerEmailFormat&act=print&eventIDX='.$eventIDX.'" target="_blank">Export E-mail Format (*.txt)</a>';
+    $str .= '<div class="w3-bar w3-light-grey w3-border w3-padding">';
+    $str .= '<button class="w3-bar-item w3-border w3-button w3-hover-green" onclick="user_openJudgeList(this, '.$eventIDX.');">Add Judge To Event</button>';
+    $str .= '<div class="w3-dropdown-hover">';
+    $str .= '<button class="w3-button">Send Email</button> <i class="fa fa-caret-down"></i>';
+    $str .= '<div class="w3-dropdown-content w3-bar-block w3-card-4">';
+    $str .= '<button CLASS="w3-bar-item w3-button w3-pale-yellow w3-hover-orange" onclick="user_openGeneralEmailForm(this, \'BO_EAST\');">Send Email to EAST Judges</button>';
+    $str .= '<button CLASS="w3-bar-item w3-button w3-pale-yellow w3-hover-orange" onclick="user_openGeneralEmailForm(this, \'BO_WEST\');">Send Email to WEST Judges</button>';
     $str .= '</div>';
+    $str .= '</div>';
+    $str .= '<div class="w3-dropdown-hover">';
+    $str .= '<button class="w3-button">Export</button> <i class="fa fa-caret-down"></i>';
+    $str .= '<div class="w3-dropdown-content w3-bar-block w3-card-4">';
+    $str .= '<a class="w3-bar-item w3-border w3-text-black  w3-pale-yellow w3-button w3-hover-green" href="cgi-bin/export.pl?do=export_emailExcel&act=print&eventIDX='.$eventIDX.'" target="_blank">Export Email (*.csv)</a>';
+    $str .= '<a class="w3-bar-item w3-border w3-text-black w3-pale-yellow w3-button w3-hover-green" href="cgi-bin/export.pl?do=export_volunteerEmailFormat&act=print&eventIDX='.$eventIDX.'" target="_blank">Export E-mail Format (*.txt)</a>';
+    $str .= '</div>';
+    $str .= '</div>';
+    $str .= '</div>';
+
     $str .= '<table class="w3-table-all w3-border w3-bordered">';
     $str .= '<thead>';
     $str .= '<tr>';
@@ -318,6 +352,7 @@ sub openManageJudges(){
     $str .= '<th colspan="2" class="w3-center w3-border">Event</th>';
     $str .= '<th colspan="6" class="w3-center w3-border" >Design Report Preferences</th>';
     $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Technical Presentations</th>';
+    $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Max. # of Papers</th>';
     $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Exp.<br> Level</th>';
     $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 250px; vertical-align: bottom">School Affiliation</th>';
     $str .= '</tr>';
@@ -363,6 +398,7 @@ sub openManageJudges(){
         $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_TDS"     %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boTdsCheck;
         $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_REQ"     %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boReqCheck;
         $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_PRESO"   %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boPresoCheck;
+        $str .= sprintf '<td class="w3-center w3-border">%d</td>', $JUDGES{$userIDX}{IN_LIMIT};
         $str .= sprintf '<td class="w3-center w3-border">%d</td>', $USERS{$userIDX}{TX_YEAR};
         $str .= sprintf '<td class="w3-center w3-border">%s</td>', $USERS{$userIDX}{TX_SCHOOL};
     }

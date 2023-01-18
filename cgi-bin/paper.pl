@@ -31,7 +31,7 @@ use SAE::JSONDB;
 use SAE::PROFILE;
 
 my %CLASS      = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
-my %COLOR      = (0=>'', 1=>'w3-yellow', 2=>'w3-blue');
+my %COLOR      = (0=>'w3-light-grey', 1=>'w3-yellow', 2=>'w3-blue');
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
 
@@ -51,6 +51,128 @@ if ($act eq "print"){
 }
 exit;
 #==============================================================================
+sub paper_removeTeamFromJudge (){
+    my $cardIDX = $q->param('cardIDX');
+    my $JsonDB  = new SAE::JSONDB();
+    print $q->header();
+    $JsonDB->_delete('TB_CARD',qq(PK_CARD_IDX=$cardIDX));
+    return ();
+    }
+sub paper_assignTeamToJudge (){
+    my $eventIDX   = $q->param('eventIDX');
+    my $userIDX    = $q->param('userIDX');
+    my $inCardType = $q->param('inCardType');
+    my $teamIDX    = $q->param('teamIDX');
+    my $Paper      = new SAE::PAPER();
+    my $Team       = new SAE::TEAM();
+    my %TYPE       = (1=>'Design Report', 2=>'TDS', 3=>'Drawings', 4=>'Requirements');
+    # my %DATA       = %{decode_json($q->param('jsonData'))};
+    print $q->header();
+    my %TEAM       = %{$Team->_getTeamDetails($teamIDX )};
+    my $cardIDX    = $Paper->_assignTeamToJudge($userIDX, $teamIDX, $eventIDX, $inCardType);
+    my $btn        = sprintf 'Goto %s',$TYPE{$inCardType};
+    my $card       = &t_paperCard($cardIDX, 0, $TEAM{IN_NUMBER}, $TEAM{TX_SCHOOL}, $TEAM{FK_CLASS_IDX}, $teamIDX, $inCardType, $userIDX, $btn);
+    my %DATA;
+    $DATA{CARD}        = $card;
+    $DATA{PK_CARD_IDX} = $cardIDX;
+    my $json = encode_json \%DATA;
+    return ($json);
+    # return ("hello");
+    }
+sub paper_openShowAvailableTeams (){
+    my $eventIDX   = $q->param('eventIDX');
+    my $userIDX    = $q->param('userIDX');
+    my $inCardType = $q->param('inCardType');
+    my $Profile    = new SAE::PROFILE();
+    my %USER       = %{$Profile->_getJudgePreferenceDetails($userIDX, $txYear)};
+    my %ASSIGN     = %{$Profile->_getPapersAssignedToUser($eventIDX, $userIDX, $inCardType)};
+    my %TEAMS      = %{$Profile->_getListOfTeams($eventIDX)};
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    print $q->header();
+    my $str;
+    $str .= '<div class="w3-container">';
+    # $str .= '<fieldset class="w3-panel w3-round-large"><legend> Judge\'s Preferences </legend>';
+    $str .= sprintf '<fieldset class="w3-panel w3-round-large"><legend class="w3-xlarge">%s, %s</legend>', $USER{TX_LAST_NAME}, $USER{TX_FIRST_NAME};
+    
+    $str .= '<div class="w3-row">';
+    $str .= '<div class="w3-container w3-third">';
+    $str .= sprintf '<b>Class Preference:</b>';
+    # $str .= '<ul style="w3-margin-left">';
+    if ($USER{BO_REGULAR}==1) {$str .= '<div class="w3-text-blue">Regular Class</div>';} else {$str .= '<div>&nbsp;</div>';}
+    if ($USER{BO_ADVANCE}==1) {$str .= '<div class="w3-text-blue">Advanced Class</div>';} else {$str .= '<div>&nbsp;</div>';}
+    if ($USER{BO_MICRO}==1) {$str   .= '<div class="w3-text-blue">Micro Class</div>';} else {$str .= '<div>&nbsp;</div>';}  
+    # $str .= '</ul>';
+    $str .= '</div>';
+
+    $str .= '<div class="w3-container w3-third">';
+    $str .= '<b>Experience Level</b>';
+    $str .= sprintf '<div class="w3-text-blue">Volunteered since: %d</div>', $USER{TX_YEAR};
+
+    $str .= '<b>Number of Paper willing to grade</b>';
+    $str .= sprintf '<div class="w3-text-blue">%d</div>', $USER{IN_LIMIT};
+    $str .= '</div>';
+
+    $str .= '<div class="w3-container w3-third">';
+    $str .= '<b>School Affiliation/Attended</b>';
+    if ($USER{TX_SCHOOL}){
+        $str .= sprintf '<div class="w3-text-blue">%s</div>', $USER{TX_SCHOOL};
+
+        } else {
+        $str .= sprintf '<div class="w3-text-blue">- Not Identified -</div>';
+        }
+    $str .= '</div>';
+    $str .= '</div>';
+    $str .= '</fieldset>';
+
+    my %REG = %{$TEAMS{1}};
+    my %ADV = %{$TEAMS{2}};
+    my %MIC = %{$TEAMS{3}};
+    my $height = 30;
+    $str .= '<div class="w3-row">';
+    $str .= '<div class="w3-container w3-third w3-border w3-round ">';
+    $str .= '<h5>Regular Class</h5>';
+    foreach $teamIDX (sort {$REG{$a}{IN_NUMBER} <=> $REG{$b}{IN_NUMBER}} keys %REG) {
+        $str .= '<div style="height: '.$height.'px; overflow: hidden;">';
+        my $disabled = '';
+        if ($ASSIGN{$teamIDX}{IN_STATUS} == 2){$disabled = 'disabled'}
+        my $checked = '';
+        if (exists $ASSIGN{$teamIDX}{PK_CARD_IDX}){$checked = sprintf 'checked data-key="%d"', $ASSIGN{$teamIDX}{PK_CARD_IDX}}
+        $str .= sprintf '<input '.$disabled.' type="checkbox" class="w3-check" '.$checked.' onclick="paper_addOrRemove(this, '.$userIDX.', '.$teamIDX.','.$inCardType.');" > <label>%03d-%s</label>', $REG{$teamIDX}{IN_NUMBER}, $REG{$teamIDX}{TX_SCHOOL};
+        $str .= '</div>';
+    }
+    $str .= '</div>';
+
+    $str .= '<div class="w3-container w3-third w3-border w3-round ">';
+    $str .= '<h5>Advanced Class</h5>';
+    foreach $teamIDX (sort {$ADV{$a}{IN_NUMBER} <=> $ADV{$b}{IN_NUMBER}} keys %ADV) {
+        $str .= '<div style="height: '.$height.'px; overflow: hidden;">';
+        my $disabled = '';
+        if ($ASSIGN{$teamIDX}{IN_STATUS} == 2){$disabled = 'disabled'}
+        my $checked = '';
+        if (exists $ASSIGN{$teamIDX}{PK_CARD_IDX}){$checked = sprintf 'checked data-key="%d"', $ASSIGN{$teamIDX}{PK_CARD_IDX}}
+        $str .= sprintf '<input '.$disabled.' type="checkbox" class="w3-check" '.$checked.' onclick="paper_addOrRemove(this, '.$userIDX.', '.$teamIDX.','.$inCardType.');"> <label>%03d-%s</label>', $ADV{$teamIDX}{IN_NUMBER}, $ADV{$teamIDX}{TX_SCHOOL};
+        $str .= '</div>';
+    }
+    $str .= '</div>';
+
+    $str .= '<div class="w3-container w3-third w3-border w3-round ">';
+    $str .= '<h5>Micro Class</h5>';
+    foreach $teamIDX (sort {$MIC{$a}{IN_NUMBER} <=> $MIC{$b}{IN_NUMBER}}keys %MIC) {
+        $str .= '<div style="height: '.$height.'px; overflow: hidden;">';
+        my $disabled = '';
+        if ($ASSIGN{$teamIDX}{IN_STATUS} == 2){$disabled = 'disabled'}
+        my $checked = '';
+        if (exists $ASSIGN{$teamIDX}{PK_CARD_IDX}){$checked = sprintf 'checked data-key="%d"', $ASSIGN{$teamIDX}{PK_CARD_IDX}}
+        $str .= sprintf '<input '.$disabled.' type="checkbox" class="w3-check" '.$checked.' onclick="paper_addOrRemove(this, '.$userIDX.', '.$teamIDX.','.$inCardType.');"> <label>%03d-%s</label>', $MIC{$teamIDX}{IN_NUMBER}, $MIC{$teamIDX}{TX_SCHOOL};
+        $str .= '</div>';
+    }
+    $str .= '</div>';
+    $str .= '</div>';
+
+
+    $str .= '</div>';
+    return ($str);
+    }
 sub paper_sendMail (){
     print $q->header();
     my $to      = $q->param('to');
@@ -65,7 +187,7 @@ sub properCase(){
     my $txt  = shift;
     my $case = sprintf '%s%s', uc(substr($txt,0,1)), lc(substr($txt,1));
     return($case);
-}
+    }
 sub paper_openSendReminderToAll (){
     my $eventIDX     = $q->param('eventIDX');
     my $userIDX      = $q->param('userIDX');
@@ -129,7 +251,6 @@ sub paper_openSendReminderToAll (){
     $str .= '</div>';
     return ($str);
     }
-
 sub paper_openSendReminder (){
     my $eventIDX     = $q->param('eventIDX');
     my $userIDX      = $q->param('userIDX');
@@ -460,7 +581,7 @@ sub t_JudgeView (){
         $str .= sprintf '<td class="w3-large">%s, %s<br>', $USERS{$userIDX}{TX_LAST_NAME}, $USERS{$userIDX}{TX_FIRST_NAME};
         $str .= sprintf '<a style="text-decoration: none;" href="javascript:void(0);" onclick="paper_openSendReminder(this, %d, %d);">Send Reminder</a>', $userIDX, $inCardType;
         $str .= '</td>';
-        $str .= '<td style="vertical-align: top; display: flex; flex-wrap: wrap;">';
+        $str .= '<td ID="TD_ASSIGNED_TEAM_'.$inCardType.'_'.$userIDX.'" style="vertical-align: top; display: flex; flex-wrap: wrap;">';
         foreach $cardIDX (sort {$CARDS{$userIDX}{$a}{IN_NUMBER} <=> $CARDS{$userIDX}{$b}{IN_NUMBER}} keys %{$CARDS{$userIDX}}) {
             my $inNumber  = $CARDS{$userIDX}{$cardIDX}{IN_NUMBER};
             my $txSchool  = $CARDS{$userIDX}{$cardIDX}{TX_SCHOOL};
@@ -468,26 +589,45 @@ sub t_JudgeView (){
             my $classIDX  = $CARDS{$userIDX}{$cardIDX}{FK_CLASS_IDX};
             my $teamIDX  = $CARDS{$userIDX}{$cardIDX}{FK_TEAM_IDX};
             my $inCardType  = $CARDS{$userIDX}{$cardIDX}{FK_CARDTYPE_IDX};
-            $str .= '<div ID="CARD_'.$cardIDX.'" class="w3-card-4 w3-margin-left w3-margin-bottom w3-white w3-display-container" style="width: 225px;">';
-            if ($inStatus <2){
-                $str .= '<i class="fa fa-times w3-display-topright w3-transparent w3-button w3-hover-red w3-round" aria-hidden="true" style="margin-top: 5px; margin-right: 5px;" onclick="paper_removeCardFromJudge(this, '.$cardIDX.')"></i>';
-            }
-            $str .= sprintf '<header class="w3-container %s">', $COLOR{$inStatus};
-            $str .= sprintf '<h4>#: %03d</h4>', $inNumber;
-            $str .= sprintf '</header>', $inNumber;
-            $str .= '<div class="w3-container w3-white" style="height: 43px; overflow-y: hidden">';
-            my $cutOff = 35;
-            $str .= sprintf '%s', substr($txSchool,0,$cutOff);
-            if (length($txSchool)>$cutOff){
-                $str .= '...';
-            }
-            $str .= '</div>';
-            $str .= sprintf '<button class="w3-button w3-block w3-dark-grey" style="position: relative; bottom: 0px;" onclick="grade_openAssessment(this, %d, %d, \'%s\', %d, %d, %d, %d);">%s</button>', $cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $btn;
-            $str .= '</div>';
+            $str .= &t_paperCard($cardIDX, $inStatus, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $btn);
         }
+        $str .= &t_addTeamButton($userIDX, $inCardType);
+        $str .= '</div>';
     }
     $str .= '</tbody>';
     $str .= '</table>';
+    return ($str);
+    }
+sub t_paperCard (){
+    my ($cardIDX, $inStatus, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $btn) = @_;
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my $str;
+    $str .= '<div ID="CARD_'.$cardIDX.'" class="w3-card-4 w3-margin-left w3-margin-bottom w3-white w3-display-container" style="width: 225px;">';
+    if ($inStatus <2){
+        $str .= '<i class="fa fa-times w3-display-topright w3-transparent w3-button w3-hover-red w3-round" aria-hidden="true" style="margin-top: 5px; margin-right: 5px;" onclick="paper_removeCardFromJudge(this, '.$cardIDX.')"></i>';
+    }
+    $str .= sprintf '<header class="w3-container %s">', $COLOR{$inStatus};
+    $str .= sprintf '<h4>#: %03d</h4>', $inNumber;
+    $str .= sprintf '</header>', $inNumber;
+    $str .= '<div class="w3-container w3-white" style="height: 43px; overflow-y: hidden">';
+    my $cutOff = 35;
+    $str .= sprintf '%s', substr($txSchool,0,$cutOff);
+    if (length($txSchool)>$cutOff){
+        $str .= '...';
+    }
+    $str .= '</div>';
+    $str .= sprintf '<button class="w3-button w3-block w3-dark-grey" style="position: relative; bottom: 0px;" onclick="grade_openAssessment(this, %d, %d, \'%s\', %d, %d, %d, %d);">%s</button>', $cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $btn;
+    $str .= '</div>';
+    return ($str);
+    }
+sub t_addTeamButton (){
+    my ($userIDX, $inCardType) = @_;
+    my $str;
+    $str .= '<button ID="USER_'.$userIDX.'" class="w3-container w3-margin-left w3-button" style="border: 3px dashed #ddd; width: 225px; height: 125px;" onclick="paper_openShowAvailableTeams(this, '.$userIDX.', '.$inCardType.')">';
+    $str .= '<h4 class="w3-center w3-text-light-grey">Add Paper</h4>';
+    $str .= '<div class="w3-container w3-center" style="height: 70px; overflow-y: hidden">';
+    $str .= '<i class="fa fa-3x fa-plus w3-text-light-grey" aria-hidden="true"></i>';
+    $str .= '</button>';
     return ($str);
     }
 sub view_judgeView (){

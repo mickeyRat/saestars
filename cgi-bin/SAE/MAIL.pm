@@ -13,7 +13,44 @@ sub new{
 	bless($self, $className);
 	return $self;
 }
+sub _openEmailForm (){
+    my ($self, $toEmail, $fromEmail, $subject, $message) = @_;
+    my $str;
+    $str = '<div class="w3-container">';
 
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa fa-envelope-o"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<textarea ID="EMAIL_TO" class="w3-input w3-border" style="height: auto; width: 100%;" placeholder="To">%s</textarea>', $toEmail;
+    $str .= '</div>';
+    $str .= '</div>';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa fa-pencil" aria-hidden="true"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<input ID="EMAIL_SUBJECT" class="w3-input w3-border" type="text" placeholder="Subject" value="%s">', $subject;
+    $str .= '</div>';
+    $str .= '</div>';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa fa-info-circle"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<textarea ID="EMAIL_MESSAGE" class="w3-padding" style="max-width: 100%; min-width: 100%; min-height: 360px;">%s</textarea>', $message;
+    $str .= '</div>';
+    $str .= '</div>';
+
+    $str .= '<div class="w3-row w3-section">';
+    $str .= '<div class="w3-col" style="width:50px"><i class="w3-xxlarge fa " aria-hidden="true"></i></div>';
+    $str .= '<div class="w3-rest">';
+    $str .= sprintf '<button class="w3-button w3-blue w3-border w3-card w3-round w3-padding w3-margin-right" style="width: 150px;" onclick="paper_sendMail(this, \'%s\');"><i class="w3-xlarge fa fa-paper-plane-o w3-margin-right" aria-hidden="true"> </i>Send</button>', $fromEmail;
+    $str .= '<button class="w3-button         w3-border w3-card w3-round w3-padding w3-margin-left" onclick="$(this).close();">Cancel</button>';
+    $str .= '</div><br><br>';
+    $str .= '</div>';
+
+    $str .= '</div>';
+
+    return ($str);
+    }
 sub _sendMail_HTML(){
     my ($self, $to, $from, $subject, $message) = @_;
     if ($to eq $from){$from = 'reports@saestars.com'}

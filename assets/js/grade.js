@@ -5,7 +5,25 @@ var time = now.getTime();
 
 
 // ============= 2023 ========================
-
+function  grade_teamAttributes(o, teamIDX, ) {
+    var data                    = {};
+    var ajxData                 = {}; 
+    ajxData.do                  = 'grade_teamAttributes';
+    ajxData.act                 = 'print';
+    ajxData.teamIDX             = teamIDX;
+    ajxData.table               = $(o).data('table');
+    data[$(o).data('field')]    = $(o).val();
+    ajxData['jsonData']         = JSON.stringify(data);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            $('#template_'+tempIDX).remove();
+            console.log(str);
+        }
+    });
+    }
 function grade_deleteTemplate(o, tempIDX) {
     var jsYes = confirm("Click [OK] toconfirm the action to delete this template from your library.");
     if (!jsYes){return}

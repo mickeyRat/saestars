@@ -17,8 +17,10 @@ $( d ).ready(function(){
     }
 });
 function sae_loadHomePage(){
-    var userIDX = $.cookie('userIDX');
-    var location = $.cookie('LOCATION');
+    var userIDX    = $.cookie('userIDX');
+    var location   = $.cookie('LOCATION');
+    var inUserType = $.cookie('IN_USER_TYPE');
+    var inProfile  = $.cookie('IN_PROFILE');
     $('#mainPageContent').html('<br><br><br><br><br><br><br><br>'+loading);
     $('.sae-menu_item').removeClass('w3-blue');
     $('#MENUITEM_0').addClass('w3-blue');
@@ -29,25 +31,167 @@ function sae_loadHomePage(){
         success: function(str){
             // console.log(str);
             $('#mainPageContent').html(str);
+            if (inUserType >= 1 && inProfile == 0){ openJudgesProfile(userIDX, inUserType) } 
         }
     });
 }
+function openJudgesProfile ( userIDX, inUserType ) {
+    // body...
+    console.log(userIDX);
+    $.modal("Judge's Preferences" , "90%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/home.pl',
+        data: {'do':'openJudgesProfile','act':'print','userIDX':userIDX,'inUserType':inUserType},
+        success: function(str){
+            // alert(str);
+            $('#modal_content').html(str);
+            // $('[tabindex=1]').focus();
+        }
+    });
+}
+function profile_openMyPreferences(o, profileIDX, inYear) {
+    // body...
+    console.log(profileIDX);
+    var inUserType = $.cookie('IN_USER_TYPE');
+    $.modal(inYear + " Event Preferences" , "75%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/home.pl',
+        data: {'do':'profile_openMyPreferences','act':'print','profileIDX':profileIDX,'inUserType':inUserType},
+        success: function(str){
+            // alert(str);
+            $('#modal_content').html(str);
+            // $('[tabindex=1]').focus();
+        }
+    });
+}
+function profile_delete(o, profileIDX) {
+    var jsYes = confirm("Click [ OK ] to Delete current Event Pereferences")
+    if (!jsYes){return}
+    $(o).close();
+    $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/home.pl',
+            data: {'do':'profile_delete','act':'print','profileIDX':profileIDX},
+            success: function(str){
+                $('#EVENT_PROFILE_BAR_'+profileIDX).remove();
+                $.cookie('IN_PROFILE',0);
+
+            }
+        });
+    }
+function profile_close(o, profileIDX) {
+    if ($('#BO_EAST').is(':checked') || $('#BO_WEST').is(':checked')){
+        $.cookie('IN_PROFILE',1);
+    } else {
+        $.cookie('IN_PROFILE',0);
+        $('#Profile_'+profileIDX).remove();
+        // ID="Profile_'.$profileIDX.'" 
+    }
+    $(o).close();
+    // body...
+}
+function profile_save(userIDX, field, value, txYear) {
+    $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/home.pl',
+            data: {'do':'profile_save','act':'print','userIDX':userIDX,'field':field,'value':value,'txYear':txYear},
+            success: function(str){
+            }
+        });
+    }
+function profile_saveInput(o, txYear) {
+    var userIDX  = $.cookie('userIDX');
+    var field    = $(o).data('field');
+    var value    = $(o).val();
+    console.log(userIDX);
+    console.log(field);
+    console.log(value);
+    profile_save(userIDX, field, value, txYear);
+    
+}
+function profile_adminSaveCheck (o, txYear, userIDX) {
+    var field    = $(o).data('field');
+    var value    = 0;
+    if ($(o).is(':checked')){value = 1}
+    // console.log(field + "=" + value);
+    if (field == 'BO_ALUMI' && value==1 ){
+        // var dataValue = $(o).data('value');
+        $('#IN_SINCE').prop('disabled', false).removeClass("w3-disabled");
+        $('#IN_SINCE').val($(o).data('value'));
+    } else if (field == 'BO_ALUMI' && value== 0)  {
+        $('#IN_SINCE').val('');
+        $('#IN_SINCE').prop('disabled', true).addClass("w3-disabled");
+        $('#IN_SINCE').prop('placeholder','Volunteered since 2000*');
+    }
+    if (field == 'BO_STUDENT' && value==1 ){
+        // var dataValue = $(o).data('value');
+        $('#TX_SCHOOL').prop('disabled', false).removeClass("w3-disabled");
+        $('#TX_SCHOOL').val($(o).data('value'));
+    } else if (field == 'BO_STUDENT' && value== 0)  {
+        $('#TX_SCHOOL').val('');
+        $('#TX_SCHOOL').prop('disabled', true).addClass("w3-disabled");
+        $('#TX_SCHOOL').prop('placeholder','Team/University affiliation');
+    }
+    // console.log($('#BO_EAST_'+userIDX).is(':checked'));
+    // console.log(!$('#BO_EAST_'+userIDX).is(':checked'));
+    if ($('#BO_EAST_'+userIDX).is(':checked') || $('#BO_WEST_'+userIDX).is(':checked')){
+            // console.log("Keep");
+        } else {
+            // console.log("delete");
+            $('#JUDGE_PREFERENCES_'+userIDX).fadeOut(250);
+        }
+    // console.log(txYear);
+    profile_save(userIDX, field, value, txYear);
+}
+function profile_saveCheck(o, txYear) {
+    var userIDX  = $.cookie('userIDX');
+    var field    = $(o).data('field');
+    var value    = 0;
+    if ($(o).is(':checked')){value = 1}
+    // console.log(field + "=" + value);
+    if (field == 'BO_ALUMI' && value==1 ){
+        // var dataValue = $(o).data('value');
+        $('#IN_SINCE').prop('disabled', false).removeClass("w3-disabled");
+        $('#IN_SINCE').val($(o).data('value'));
+    } else if (field == 'BO_ALUMI' && value== 0)  {
+        $('#IN_SINCE').val('');
+        $('#IN_SINCE').prop('disabled', true).addClass("w3-disabled");
+        $('#IN_SINCE').prop('placeholder','Volunteered since 2000*');
+    }
+    if (field == 'BO_STUDENT' && value==1 ){
+        // var dataValue = $(o).data('value');
+        $('#TX_SCHOOL').prop('disabled', false).removeClass("w3-disabled");
+        $('#TX_SCHOOL').val($(o).data('value'));
+    } else if (field == 'BO_STUDENT' && value== 0)  {
+        $('#TX_SCHOOL').val('');
+        $('#TX_SCHOOL').prop('disabled', true).addClass("w3-disabled");
+        $('#TX_SCHOOL').prop('placeholder','Team/University affiliation');
+    }
+    
+    if ($('#BO_EAST').is(':checked') || $('#BO_WEST').is(':checked')){
+            $('.second').prop('disabled', false);
+        } else {
+            $('.second').prop('disabled', true);
+            $('.second').prop('checked', false );
+            $('#TX_SCHOOL').val('');
+            $('#IN_SINCE').val('');
+            $('#TX_SCHOOL').prop('placeholder','Team/University Attended');
+            $('#IN_SINCE').prop('placeholder','Volunteered since 1986*');
+        }
+    console.log(txYear);
+    profile_save(userIDX, field, value, txYear);
+    }
 function sae_menuDropDown(utIDX) {
     if ($('#subMenu_'+utIDX).hasClass('w3-show')){
         $('#subMenu_'+utIDX).removeClass('w3-show');
     } else {
         $('#subMenu_'+utIDX).addClass('w3-show');
     }
-//   var x = document.getElementById("Demo");
-//   if (x.className.indexOf("w3-show") == -1) { 
-//     x.className += " w3-show";
-//   } else {
-//     x.className = x.className.replace(" w3-show", "");
-//   }
 }
 function sae_calcFlightScores(eventIDX, classIDX, teamIDX){
     $.modal("Flight Logs" , "90%");
-    
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/flight.pl',
@@ -262,19 +406,19 @@ function sae_openTeamView(obj){
     });
 }
 function sae_openStatTeamView(obj, sortBy){
-    $('#paperContentContainer').html(loading);
+    $('#tabContent').html(loading);
     $('.tablink').removeClass('w3-border-red');
     $(obj).children(":first").addClass('w3-border-red');
     sae_loadStatTeamViewContent(sortBy);
 }
 function sae_openStatView(obj, sortBy){
-    $('#paperContentContainer').html(loading);
+    $('#tabContent').html(loading);
     $('.tablink').removeClass('w3-border-red');
     $(obj).children(":first").addClass('w3-border-red');
     sae_loadStatViewContent(sortBy);
 }
 function sae_openStatBreakdown(obj){
-    $('#paperContentContainer').html(loading);
+    $('#tabContent').html(loading);
     $('.tablink').removeClass('w3-border-red');
     $(obj).children(":first").addClass('w3-border-red');
     sae_loadBreakdownViewContent();
@@ -286,7 +430,7 @@ function sae_loadBreakdownViewContent(){
         url: '../cgi-bin/main2.pl',
         data: {'do':'sae_loadBreakdownViewContent','act':'print','location':location},
         success: function(str){
-            $('#paperContentContainer').html(str);
+            $('#tabContent').html(str);
         }
     });
 }
@@ -336,7 +480,7 @@ function sae_loadStatViewContent(sBy){
         url: '../cgi-bin/main2.pl',
         data: {'do':'sae_openStatView','act':'print','location':location,'sortBy':sBy},
         success: function(str){
-            $('#paperContentContainer').html(str);
+            $('#tabContent').html(str);
         }
     });
 }
@@ -347,7 +491,7 @@ function sae_loadStatTeamViewContent(sBy){
         url: '../cgi-bin/main2.pl',
         data: {'do':'sae_openStatTeamView','act':'print','location':location,'sortBy':sBy},
         success: function(str){
-            $('#paperContentContainer').html(str);
+            $('#tabContent').html(str);
         }
     });
 }
@@ -360,7 +504,7 @@ function sae_loadJudgeViewContent(){
         url: '../cgi-bin/main2.pl',
         data: {'do':'sae_openJudgeView','act':'print','location':location},
         success: function(str){
-            $('#paperContentContainer').html(str);
+            $('#tabContent').html(str);
         }
     });
 }

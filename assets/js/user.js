@@ -4,6 +4,32 @@
 
 
 // ===============2023 ==========================================
+function user_openGeneralEmailForm (o, field) {
+    var ajxData = {};
+    ajxData.do                   = 'user_openGeneralEmailForm';
+    ajxData.act                  = 'print';
+    ajxData.eventIDX             = $.cookie('LOCATION');
+    ajxData.field                = field;
+    ajxData.loginUserIDX         = $.cookie('PK_USER_IDX');
+    console.log(ajxData);
+    $.modal("Create list by Copying", "75%");
+    // return;
+    $.ajax({
+        type: 'GET',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            
+            $('#modal_content').html(str);
+        },
+        complete: function(){
+            var scrollHeight = $('#EMAIL_TO').prop('scrollHeight');
+            console.log($('#EMAIL_TO').prop('scrollHeight'));
+            $('#EMAIL_TO').css("min-height",scrollHeight+'px')
+        }
+    });
+    }
 function user_downloadEmailList(o) {
     var ajxData = {};
     ajxData.do                   = 'user_downloadEmailList';
@@ -124,7 +150,7 @@ function user_openJudgeList (o, viewEventIDX) {
     ajxData.do          = 'user_openJudgeList';
     ajxData.act         = 'print';
     ajxData.eventIDX    = eventIDX;
-    $.modal("Create Just List for Event", "75%");
+    $.modal("List of Judges", "75%");
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/user.pl',

@@ -30,7 +30,7 @@
         var eventIDX = $.cookie('LOCATION');
         var userIDX = $.cookie('PK_USER_IDX');
         $.modal('Requirement Checks', '97%');
-        $('#modal_content').html(teamIDX);
+        // $('#modal_content').html(teamIDX); 
         $.ajax({
             type: 'POST',
             url: '../cgi-bin/student.pl',

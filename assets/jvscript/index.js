@@ -96,8 +96,9 @@ function goLogin(o){
         data: ajxData,
         success: function(str){
             var obj = JSON.parse(str);
-            console.log("Obj.STATUS = " + obj.STATUS);
-            console.log("Obj.SALT = " + obj.SALT);
+            console.log(obj);
+            // console.log("Obj.STATUS = " + obj.STATUS);
+            // console.log("Obj.SALT = " + obj.SALT);
             if (obj.STATUS == 1) {
                 var now = new Date();
                 var time = now.getTime();

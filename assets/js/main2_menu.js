@@ -190,11 +190,12 @@ function mainMenuItemClick(menuItem, obj){
 }
 function openInspectionModule(){
     // $('#mainPageContent').html(loading);
-    var eventIDX = $.cookie('FK_EVENT_IDX');
+    var eventIDX   = $.cookie('FK_EVENT_IDX');
+    var inUserType = $.cookie('IN_USER_TYPE');
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/tech.pl',
-        data: {'do':'openInspectionModule','act':'print','eventIDX':eventIDX},
+        data: {'do':'openInspectionModule','act':'print','eventIDX':eventIDX,'inUserType':inUserType},
         success: function(str){
             $('#mainPageContent').html(str);
         }

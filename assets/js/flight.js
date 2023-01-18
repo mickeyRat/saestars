@@ -566,14 +566,14 @@ function updateField(o){
 function updateTicketCheckinStatus(o, flightIDX){
     var elementID = $(o).attr('id');
     if (elementID.indexOf('FlightStatus_') == 0){
-        if ($(o).is(':checked')){
+        // if ($(o).is(':checked')){
             $('#ForScore_'+flightIDX).prop('checked', 'checked');
             // console.log("For Score");
-            clearNFSCheckBoxes();
-        } else {
-            $('#NotForScore_'+flightIDX).prop('checked', 'checked');
-            // console.log("Not For Score");
-        }
+            // clearNFSCheckBoxes();
+        // } else {
+        //     $('#NotForScore_'+flightIDX).prop('checked', 'checked');
+        //     // console.log("Not For Score");
+        // }
     }
 }
 function updateCheckItems(o){
@@ -650,11 +650,11 @@ function updateAttemptStatus(e, o, flightIDX) {
     } else {
         $('#Inspection').prop('disabled', '');
     }
-    if (value == 1){
-        $('#FlightStatus_'+flightIDX).prop('checked','checked');
-    } else {
-        $('#FlightStatus_'+flightIDX).prop('checked','');
-    }
+    // if (value == 1){
+    //     $('#FlightStatus_'+flightIDX).prop('checked','checked');
+    // } else {
+    //     $('#FlightStatus_'+flightIDX).prop('checked','');
+    // }
     if (value !=2){
         noFly = [];
         resetTags('item');

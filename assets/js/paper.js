@@ -5,6 +5,57 @@
     var time = now.getTime();
     // var nameList = [];
 }
+function paper_removeDaysLate(o, teamIDX) {
+    var ajxData          = {}; 
+    ajxData.do           = 'paper_removeDaysLate';
+    ajxData.act          = 'print';
+    ajxData.teamIDX      = teamIDX;
+   $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/paper.pl',
+        data: ajxData,
+        success: function(str){
+            $('#TEAM_LATE_'+teamIDX).html(0);
+            $(o).close();
+        }
+    });
+}
+function paper_saveDaysLate(o, teamIDX) {
+    var eventIDX         = $.cookie('LOCATION');
+    var ajxData          = {}; 
+    ajxData.do           = 'paper_saveDaysLate';
+    ajxData.act          = 'print';
+    ajxData.eventIDX     = eventIDX;
+    ajxData.teamIDX      = teamIDX;
+    ajxData.inDays       = $('#IN_DAYS').val();
+   $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/paper.pl',
+        data: ajxData,
+        success: function(str){
+            $('#TEAM_LATE_'+teamIDX).html(str);
+            $(o).close();
+        }
+    });
+}
+function paper_daysLate(o, teamIDX) {
+    var eventIDX         = $.cookie('LOCATION');
+    var ajxData          = {}; 
+    ajxData.do           = 'paper_daysLate';
+    ajxData.act          = 'print';
+    ajxData.eventIDX     = eventIDX;
+    ajxData.teamIDX      = teamIDX;
+    $.modal("Days Late", "50%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/paper.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+        }
+    });
+}
 function paper_addOrRemove (o, userIDX, teamIDX, inCardType) {    
     if ($(o).is(':checked')){
         paper_assignTeamToJudge(o, userIDX, teamIDX, inCardType);
@@ -15,7 +66,7 @@ function paper_addOrRemove (o, userIDX, teamIDX, inCardType) {
 }
 function paper_removeTeamFromJudge(cardIDX) {
     console.log(cardIDX);
-    $('#CARD_'+cardIDX).fadeOut(250);
+    $('#paper_CARD_'+cardIDX).fadeOut(250);
     var ajxData        = {};
     ajxData.do         = 'paper_removeTeamFromJudge';
     ajxData.act        = 'print';
@@ -134,7 +185,7 @@ function paper_openSendReminder(o, userIDX, inCardType) {
     });
 }
 function paper_removeCardFromJudge(o, cardIDX) {
-    $('#CARD_'+cardIDX).fadeOut(250);
+    $('#paper_CARD_'+cardIDX).fadeOut(250);
     var eventIDX       = $.cookie('LOCATION');
     var ajxData        = {};
     ajxData['do']      = 'paper_deleteUserAssignment';
@@ -146,7 +197,7 @@ function paper_removeCardFromJudge(o, cardIDX) {
         url: '../cgi-bin/paper.pl',
         data: ajxData,
         success: function(str){
-            $('#CARD_'+cardIDX).remove();
+            $('#paper_CARD_'+cardIDX).remove();
         }
     });
     }  

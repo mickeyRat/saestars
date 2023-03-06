@@ -1,9 +1,175 @@
     var d=document;
     var sid = $.cookie('SID');
-    var loading = '<div class="w3-display-container"><center class="center-screen w3-display-center"><i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i></br><span class="w3-xlarge sr-only">Loading...</span></center></div>';
-
+    var loading = '<div class="w3-display-container w3-margin-top"><center class="center-screen w3-display-center"><i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i></br><span class="w3-xlarge sr-only">Loading...</span></center></div>';
 
 //------ 2023 ---------------------------------------------------
+function tech_completeSafetyCheck (o, planeIDX,classIDX) {
+    $('.w3-modal').remove();
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_completeSafetyCheck','act':'print','planeIDX':planeIDX,'classIDX':classIDX},
+        success: function(str){
+            var obj = JSON.parse(str);
+            // console.log(str);
+            // $('#modal2_content').html(str);
+            alert("You may now put a sticker on all airframe parts for passing Safety Inspection(wings, fuselage, tail if removable, spare airframe parts, if any)");
+            // $('#TECH_PLANE_' + planeIDX).replaceWith(str);
+            $('#TECH_PLANE_' + planeIDX).replaceWith(obj.BTN);
+            // channel.publish('sae_ps_updateTeamInspectionStatus', str);
+            channel.publish('sae_ps_alertTeamInspectionStatus', str);
+        }
+    });
+}
+function tech_confirmSafetyCheck(o, planeIDX, inNumber, inSequence, classIDX) {
+    $.modal2('Team #:' + pad(inNumber,3) + '-' + pad(inSequence,2) + '::Confirm Safety Check', '75%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_confirmSafetyCheck','act':'print','planeIDX':planeIDX,'inNumber':inNumber,'inSequence':inSequence,'classIDX':classIDX},
+        success: function(str){
+            // console.log(str);
+            $('#modal2_content').html(str);
+        }
+    });
+}
+function tech_completePlaneCheck(o, planeIDX, classIDX) {
+    $('.w3-modal').remove();
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_completePlaneCheck','act':'print','planeIDX':planeIDX,'classIDX':classIDX},
+        success: function(str){
+            var obj = JSON.parse(str);
+            // console.log(str);
+            // $('#modal2_content').html(str);
+            alert("You may now put a sticker on all airframe parts for passing Requirements Checks (wings, fuselage, tail if removable, spare airframe parts, if any)");
+            $('#TECH_PLANE_' + planeIDX).replaceWith(obj.BTN);
+            // channel.publish('sae_ps_updateTeamInspectionStatus', str);
+            channel.publish('sae_ps_alertTeamInspectionStatus', str);
+        }
+    });
+}
+function tech_completeRequirementsCheck(o, planeIDX, inNumber, inSequence, classIDX) {
+    $.modal2('Team #:' + pad(inNumber,3) + '-' + pad(inSequence,2) + '::Confirm Inspection', '75%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_completeRequirementsCheck','act':'print','planeIDX':planeIDX,'inNumber':inNumber,'inSequence':inSequence,'classIDX':classIDX},
+        success: function(str){
+            // console.log(str);
+            $('#modal2_content').html(str);
+        }
+    });
+    
+}
+function tech_openInspection(o, teamIDX, inNumber, classIDX, inSequence, planeIDX) {
+    $.modal('Inspect Team #:' + pad(inNumber,3) + '-' + pad(inSequence,2), '50%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_openInspection','act':'print','teamIDX':teamIDX,'inNumber':inNumber,'classIDX':classIDX,'inSequence':inSequence,'planeIDX':planeIDX},
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+
+        }
+    });
+}
+function tech_deleteInspection(o, planeIDX) {
+    var jsYes = confirm("Click OK to confirm this DELETE AIRPLANE Action");
+    if (!jsYes){return}
+    $(o).close();
+    $('#TECH_PLANE_'+planeIDX).remove();
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_deleteInspection','act':'print','planeIDX':planeIDX},
+        success: function(str){
+            // $('#techHanger_'+teamIDX).prepend(str);
+            // console.log(str);
+            // $('#modal_content').html(str);
+            channel.publish('sae_ps_alertTeamInspectionStatus', str);
+        }
+    });
+    }
+function tech_addMainPlane(o, teamIDX, inNumber, classIDX, planeIDX) {
+    var eventIDX = $.cookie('LOCATION');
+        // $.modal('Team #:'+pad(inNumber,3)+' Add Plane', '50%');
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/tech.pl',
+            data: {'do':'tech_addPlane','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'inNumber':inNumber,'classIDX':classIDX,'planeIDX':planeIDX},
+            success: function(str){
+                var obj = JSON.parse(str);
+                // $(o).before(obj.BTN);
+                $('#techHanger_'+teamIDX + ' .planeButton_'+teamIDX+':last').before(obj.BTN)
+                channel.publish('sae_ps_alertTeamInspectionStatus', str);
+                $(o).close();
+            }
+        });
+    }
+function tech_addPada(o, teamIDX, inNumber, classIDX,) {
+    
+    var eventIDX = $.cookie('LOCATION');
+        // $.modal('Team #:'+pad(inNumber,3)+' Add Plane', '50%');
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/tech.pl',
+            data: {'do':'tech_addPada','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'inNumber':inNumber,'classIDX':classIDX},
+            success: function(str){
+                var obj = JSON.parse(str);
+                // $(o).before(obj.BTN);
+                $('#techHanger_'+teamIDX + ' .planeButton_'+teamIDX+':last').before(obj.BTN)
+                $(o).close();
+                // channel.publish('sae_ps_alertTeamInspectionStatus', str);
+            }
+        });
+}
+function tech_addPlane(o, teamIDX, inNumber, classIDX, planeIDX) {
+    // console.log(classIDX);
+    if (classIDX == 2){
+        $.modal('Team #:'+pad(inNumber,3)+' Add Plane', '50%');
+        var eventIDX = $.cookie('LOCATION');
+        // $.modal('Team #:'+pad(inNumber,3)+' Add Plane', '50%');
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/tech.pl',
+            data: {'do':'tech_addPlane_option','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'inNumber':inNumber,'classIDX':classIDX,'planeIDX':planeIDX},
+            success: function(str){
+                $('#modal_content').html(str);
+            }
+        });
+    } else {
+        tech_addMainPlane(o, teamIDX, inNumber, classIDX, planeIDX);
+    }
+    }
+function tech_reviewStudentChecklist (o, teamIDX, inNumber, classIDX) {
+    var eventIDX = $.cookie('LOCATION');
+    // ajxData.itemCount       ÷      = itemCount;
+    $.modal('Team #:'+pad(inNumber,3)+' Self-Certification Checklist', '50%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_reviewStudentChecklist','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'classIDX':classIDX},
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+
+        }
+    });}
+function tech_openTechInspectionPrecheckTeamList (o) {
+    $('#mainPageContent').html(loading);
+    var eventIDX = $.cookie('LOCATION');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_openTechInspectionPrecheckTeamList','act':'print','eventIDX':eventIDX},
+        success: function(str){
+            $('#mainPageContent').html(str);
+
+        }
+    });}
 function tech_updateCheckItem(o) {
     var ajxData = {};
     var data = {};
@@ -28,9 +194,30 @@ function tech_updateCheckItem(o) {
             // $('#modal_content').html(str);
 
         }
-    });
-}
+    });}
+function tech_passTechInspection(o, teamIDX, itemIDX, headingIDX, classIDX, inStatus, checkType, planeIDX) {
+    // console.log(planeIDX);
+    const userIDX =  $.cookie('PK_USER_IDX');
+    $('#savedMessage').show();
+    var eventIDX = $.cookie('LOCATION');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/tech.pl',
+        data: {'do':'tech_passTechInspection','act':'print','userIDX':userIDX,'eventIDX':eventIDX,'teamIDX':teamIDX,'itemIDX':itemIDX,'inStatus':inStatus,'headingIDX':headingIDX,'classIDX':classIDX,'checkType':checkType,'planeIDX':planeIDX},
+        success: function(str){
+            var obj = JSON.parse(str);
+            // console.log(str);
+            // console.log(obj.TEAM_BAR);
+            // console.log('BTN = ' + obj.BTN)
+            $('#TECH_ITEM_'+teamIDX+'_'+itemIDX).replaceWith(obj.ITEM);
+            $('#TECH_PLANE_' + planeIDX).replaceWith(obj.BTN);
+            setTimeout(function(){ $('#savedMessage').fadeOut(150); }, 250);
+            // channel.publish('sae_ps_updateTeamInspectionStatus', str);
+            channel.publish('sae_ps_alertTeamInspectionStatus', str);
+        }
+    });}
 function tech_submitTechStatus (o, teamIDX, itemIDX, headingIDX, classIDX, inStatus) {
+    const userIDX =  $.cookie('PK_USER_IDX');
     if (inStatus ==0){
         var jsYes = confirm("Are you sure?");
         if (!jsYes){return}
@@ -40,7 +227,7 @@ function tech_submitTechStatus (o, teamIDX, itemIDX, headingIDX, classIDX, inSta
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/tech.pl',
-        data: {'do':'tech_submitTechStatus','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'itemIDX':itemIDX,'inStatus':inStatus,'headingIDX':headingIDX,'classIDX':classIDX},
+        data: {'do':'tech_submitTechStatus','act':'print','userIDX':userIDX,'eventIDX':eventIDX,'teamIDX':teamIDX,'itemIDX':itemIDX,'inStatus':inStatus,'headingIDX':headingIDX,'classIDX':classIDX},
         success: function(str){
             var obj = JSON.parse(str);
             // console.log(obj.TEAM_BAR);
@@ -48,36 +235,35 @@ function tech_submitTechStatus (o, teamIDX, itemIDX, headingIDX, classIDX, inSta
             setTimeout(function(){ $('#savedMessage').fadeOut(150); }, 250);
             channel.publish('sae_ps_updateTeamInspectionStatus', str);
             channel.publish('sae_ps_alertTeamInspectionStatus', str);
-
         }
-    });
-}
-function tech_openSafetyCheck (o, teamIDX, inNumber, classIDX) {
+    });}
+function tech_openSafetyCheck (o, teamIDX, inNumber, classIDX, inSequence, planeIDX) {
+    $(o).close();
     var eventIDX = $.cookie('LOCATION');
-    // ajxData.itemCount       ÷      = itemCount;
-    $.modal('Team #:' + pad(inNumber,3), '90%');
+    // $.modal('Team #:' + pad(inNumber,3), '90%');
+    $.modal('Team #:' + pad(inNumber,3) + '-' + pad(inSequence,2) + '::SAFETY & AIRWORTHINESS CHECK', '90%');
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/tech.pl',
-        data: {'do':'tech_openSafetyCheck','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'classIDX':classIDX},
+        data: {'do':'tech_openSafetyCheck','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'classIDX':classIDX,'planeIDX':planeIDX,'inNumber':inNumber,'inSequence':inSequence},
         success: function(str){
             // console.log(str);
             $('#modal_content').html(str);
 
         }
-    });
-}
-function tech_openRequirementsCheck (o, teamIDX, inNumber, classIDX) {
-    // console.log('section number = ' + secNumber);
-    // var itemCount = $('.itemGroup_'+sectionIDX).length + 1;
+    });}
+function tech_openRequirementsCheck (o, teamIDX, inNumber, classIDX, inSequence, planeIDX) {
 
+    // console.log('planeIDX = ' + planeIDX);
+    // var itemCount = $('.itemGroup_'+sectionIDX).length + 1;
+    $(o).close();
     var eventIDX = $.cookie('LOCATION');
     // ajxData.itemCount       ÷      = itemCount;
-    $.modal('Team #:' + pad(inNumber,3), '90%');
+    $.modal('Team #:' + pad(inNumber,3) + '-' + pad(inSequence,2)+'::REQUIREMENTS CHECK', '90%');
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/tech.pl',
-        data: {'do':'tech_openRequirementsCheck','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'classIDX':classIDX},
+        data: {'do':'tech_openRequirementsCheck','act':'print','eventIDX':eventIDX,'teamIDX':teamIDX,'classIDX':classIDX,'planeIDX':planeIDX,'inNumber':inNumber,'inSequence':inSequence},
         success: function(str){
             // console.log(str);
             $('#modal_content').html(str);
@@ -86,6 +272,7 @@ function tech_openRequirementsCheck (o, teamIDX, inNumber, classIDX) {
     });
 }
 function tech_openTechInspectionTeamList (o) {
+    $('#mainPageContent').html(loading);
     var eventIDX = $.cookie('LOCATION');
     // $.modal('Add Section', '50%');
     $.ajax({
@@ -366,7 +553,7 @@ function tech_openSetup () {
                 $('.pointsFor_'+item).each(function(o) {
                     inPoints += parseFloat($(this).html());
                 });
-                console.log('Total pts for this section is '+inPoints);
+                // console.log('Total pts for this section is '+inPoints);
                 $('.sectionPoints_'+item).html(inPoints + ' Points');            
             })
 

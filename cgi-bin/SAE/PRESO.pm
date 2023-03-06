@@ -27,7 +27,14 @@ sub _getAverage(){
 # =====================================================================================================
 #  GETTERS
 # =====================================================================================================
-
+sub _getCardBinary (){
+    my ($self, $cardIDX) = @_;
+    my $SQL = "SELECT C.*, P.* FROM TB_CARD AS C JOIN TB_PAPER AS P ON C.PK_CARD_IDX=P.FK_CARD_IDX WHERE (P.FK_SUBSECTION_IDX in (?,?,?) AND PK_CARD_IDX=?)";
+    my $select = $dbi->prepare( $SQL );
+       $select->execute(91, 92, 93, $cardIDX);
+    my %HASH = %{$select->fetchall_hashref('FK_SUBSECTION_IDX')};
+    return (\%HASH);
+    }
 sub _getPresoScoreByTeam(){
     my $self = shift;
     my $teamIDX = shift;
@@ -302,7 +309,7 @@ sub _updatePaperScore(){
 sub _resetComments(){
     my $self = shift;
     my $cardIDX = shift;
-    my $SQL = "DELETE FROM TB_COMMENTS WHERE PK_CARD_IDX=?";
+    my $SQL = "DELETE FROM TB_COMMENTS WHERE FK_CARD_IDX=?";
     my $delete = $dbi->prepare($SQL);
        $delete -> execute($cardIDX);
     return;

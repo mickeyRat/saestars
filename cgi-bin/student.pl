@@ -70,12 +70,12 @@ sub student_openSafetyChecks (){
     print $q->header();
     my $Student     = new SAE::STUDENT();
     my $Tech        = new SAE::TECH();
-    my %HEAD        = %{$Tech->_getSectionHeading($txType)};
+    my %HEAD        = %{$Tech->_getSectionHeading($txType, $classIDX )};
     my %LIST        = %{$Student->_getListOfSafetyItems($teamIDX, $classIDX, $txType)};
     my %TECH        = %{$Tech->_getTeamTechList($teamIDX)};
-    my %STATUS     = (''=>'Not Started', 0=>'Not Started', 1=>'Pending', 2=>'Failed', 3=>'Passed');
+    my %STATUS     = (''=>'Not Started', 0=>'Failed', 1=>'Passed');
     # my %COLOR       = (''=>'w3-text-black', 0=>'w3-text-black', 1=>'w3-text-black', 2=>'w3-text-red', 3=>'w3-text-blue');
-    my %BGCOLOR     = (''=>'w3-light-grey', 0=>'w3-light-grey', 1=>'w3-light-grey', 2=>'w3-red', 3=>'w3-blue');
+    my %BGCOLOR     = (''=>'w3-light-grey', 0=>'w3-pale-red', 1=>'w3-light-blue');
     my $str;
     $str .= '<div class="w3-container" style="overflow-y: auto;">';
     $str .= '<h5 class="w3-container w3-border w3-round w3-border-red w3-pale-yellow w3-padding"><b>Self-Certification</b> means the team has certified that the safety and air-worthiness is in compliance with established guidelines</h5>';
@@ -89,14 +89,15 @@ sub student_openSafetyChecks (){
             foreach $itemIDX (sort {$LIST{$headingIDX}{$a}{IN_SECTION} <=> $LIST{$headingIDX}{$b}{IN_SECTION}} keys %{$LIST{$headingIDX}}) {
                 my $checked = '';
                 if ($LIST{$headingIDX}{$itemIDX}{BO_CHECK} == 1){$checked = 'checked'}
-                $str .= '<label for="ITEM_'.$itemIDX.'" >';
+                $str .= '<label for="ITEM_'.$itemIDX.'">';
+                # $str .= '<label for="ITEM_'.$itemIDX.'" >';
                 $str .= '<li class="w3-bar w3-display-container w3-border w3-white w3-round w3-margin-bottom w3-hover-pale-yellow">';
                 $str .= '<div class="w3-container">';
-                $str .= sprintf '<label>%d.%s - %s</label><br>',$inHeading, $LIST{$headingIDX}{$itemIDX}{IN_SECTION},$LIST{$headingIDX}{$itemIDX}{TX_SECTION};
                 $str .= '<input ID="ITEM_'.$itemIDX.'" '.$checked.' class="w3-check " data-field="BO_CHECK" data-index="'.$itemIDX.'" type="checkbox" onchange="student_updateCheckItem(this, '.$teamIDX.');">';
-                $str .= '<label class="w3-margin-left">Student Reviewed & Inspected</label><br>';
+                $str .= sprintf '<label  for="ITEM_'.$itemIDX.'" class="w3-margin-left" >%d.%s - %s</label><br>',$inHeading, $LIST{$headingIDX}{$itemIDX}{IN_SECTION},$LIST{$headingIDX}{$itemIDX}{TX_SECTION};
+                # $str .= '<label class="w3-margin-left">Student Reviewed & Inspected</label><br>';
                 $str .= '</div>';
-                $str .= sprintf '<div class="w3-container %s w3-border w3-round  w3-margin-top w3-padding" >Official Assessment by SAE Inspectors: <b>%s</b></div>', $BGCOLOR{$TECH{$itemIDX}{IN_STATUS}}, $STATUS{$TECH{$itemIDX}{IN_STATUS}};
+                # $str .= sprintf '<div class="w3-container %s w3-border w3-round  w3-margin-top w3-padding" >Official Assessment by SAE Inspectors: <b>%s</b></div>', $BGCOLOR{$TECH{$itemIDX}{IN_STATUS}}, $STATUS{$TECH{$itemIDX}{IN_STATUS}};
                 $str .= '</li>';
                 $str .= '</label>';
             }
@@ -111,20 +112,26 @@ sub student_openRequirementsChecks (){
     my $userIDX   = $q->param('userIDX');
     my $teamIDX   = $q->param('teamIDX');
     my $classIDX  = $q->param('classIDX');
-    my $txType="reqSectionNumber";
+    my $txType    = "reqSectionNumber";
     # my %DATA = %{decode_json($q->param('jsonData'))};
     print $q->header();
     my $Student     = new SAE::STUDENT();
     my $Tech        = new SAE::TECH();
-    my %HEAD        = %{$Tech->_getSectionHeading($txType)};
+    my %HEAD        = %{$Tech->_getSectionHeading($txType, $classIDX)};
     my %LIST        = %{$Student->_getListOfSafetyItems($teamIDX, $classIDX, $txType)};
     my %TECH        = %{$Tech->_getTeamTechList($teamIDX)};
-    my %STATUS     = (''=>'Not Started', 0=>'Not Started', 1=>'Pending', 2=>'Failed', 3=>'Passed');
+    my %STATUS     = (''=>'Not Started', 0=>'Failed', 1=>'Passed', 2=>'Pass w/Penalties');
     # my %COLOR       = (''=>'w3-text-black', 0=>'w3-text-black', 1=>'w3-text-black', 2=>'w3-text-red', 3=>'w3-text-blue');
-    my %BGCOLOR     = (''=>'w3-light-grey', 0=>'w3-light-grey', 1=>'w3-light-grey', 2=>'w3-red', 3=>'w3-blue');
+    my %BGCOLOR     = (''=>'w3-light-grey', 0=>'w3-pale-red', 1=>'w3-light-blue', 2=>'w3-pale-yellow');
     my $str;
     $str .= '<div class="w3-container" style="overflow-y: auto;">';
-    $str .= '<h5 class="w3-container w3-border w3-round w3-border-red w3-pale-yellow w3-padding"><b>Self-Certification</b> means the team has certified that the requirement line-item is in compliance with the rules</h5>';
+    $str .= '<h5 class="w3-container w3-border w3-round w3-border-red w3-pale-yellow w3-padding">';
+    $str .= '<b>INSTRUCTION:<br>To self-Certify, click on the checkbox provided below for each inspection item.</b><br>';
+    $str .= '<b>Self-Certification</b> means the team has certified that the requirement line-item is in compliance with the rules.<br>';
+    $str .= '<i class="w3-bar-item">Please reference [ Section 6.6 REQUIREMENTS CHECK & SAFETY AND AIRWORTHINESS INSPECTION PENALTIES ] in the rules document for further details<br>';
+    $str .= '<span class="w3-text-red">All penalties accrued will be deducted from the team\'s FINAL Overall Score </span>';
+    $str .= '</i>';
+    $str .= '</h5>';
     $str .= '<ul class="w3-ul">';
     foreach $headingIDX (sort {$HEAD{$a}{IN_SECTION} <=> $HEAD{$b}{IN_SECTION}} keys %HEAD) {
         $str .= '<div class="w3-container w3-light-grey w3-card w3-margin-bottom">';
@@ -135,14 +142,28 @@ sub student_openRequirementsChecks (){
             foreach $itemIDX (sort {$LIST{$headingIDX}{$a}{IN_SECTION} <=> $LIST{$headingIDX}{$b}{IN_SECTION}} keys %{$LIST{$headingIDX}}) {
                 my $checked = '';
                 if ($LIST{$headingIDX}{$itemIDX}{BO_CHECK} == 1){$checked = 'checked'}
-                $str .= '<label for="ITEM_'.$itemIDX.'" >';
-                $str .= '<li class="w3-bar w3-display-container w3-border w3-white w3-round w3-margin-bottom w3-hover-pale-yellow">';
-                $str .= '<div class="w3-container">';
-                $str .= sprintf '<label>%d.%s - %s</label><br>',$inHeading, $LIST{$headingIDX}{$itemIDX}{IN_SECTION},$LIST{$headingIDX}{$itemIDX}{TX_SECTION};
-                $str .= '<input ID="ITEM_'.$itemIDX.'" '.$checked.' class="w3-check " data-field="BO_CHECK" data-index="'.$itemIDX.'" type="checkbox" onchange="student_updateCheckItem(this, '.$teamIDX.');">';
-                $str .= '<label class="w3-margin-left">In Compliance</label><br>';
+                $str .= '<label for="ITEM_'.$itemIDX.'">';
+                # $str .= '<label for="ITEM_'.$itemIDX.'" >';
+                $str .= '<li class="w3-bar w3-display-container w3-border w3-card w3-blue w3-round w3-margin-bottom" style="padding: 0px;">';
+                $str .= '<div class="w3-row w3-white w3-round-large">';
+                $str .= sprintf '<div class="w3-col w3-xlarge w3-center w3-padding-24 w3-mobile w3-round-large w3-blue-grey" style="width: 130px;">%2.2f pts</div>', $LIST{$headingIDX}{$itemIDX}{IN_POINTS}, $BGCOLOR{$TECH{$itemIDX}{IN_STATUS}};
+                # $str .= '<div class="w3-margin-left"><input ID="ITEM_'.$itemIDX.'" '.$checked.' class="w3-check " data-field="BO_CHECK" data-index="'.$itemIDX.'" type="checkbox" onchange="student_updateCheckItem(this, '.$teamIDX.');">';
+                # $str .= '<br><label class="w3-large" for="ITEM_'.$itemIDX.'"><b>In Compliance</b></label>';
+                # $str .= '</div>';
+                # $str .= sprintf '<div class="w3-col w3-xxlarge w3-center w3-padding-24 w3-mobile" style="width: 200px;">%2.2f pts<br><span class="w3-large %s w3-padding w3-border w3-round">%s</span></div>', $LIST{$headingIDX}{$itemIDX}{IN_POINTS}, $BGCOLOR{$TECH{$itemIDX}{IN_STATUS}}, $STATUS{$TECH{$itemIDX}{IN_STATUS}};;
+                $str .= '<div class="w3-rest w3-white w3-mobile">';
+                $str .= sprintf '<div class="w3-container w3-padding-16 w3-large">';
+                $str .= '<input ID="ITEM_'.$itemIDX.'" '.$checked.' class="w3-check w3-margin-right w3-xlarge" data-field="BO_CHECK" data-index="'.$itemIDX.'" type="checkbox" onchange="student_updateCheckItem(this, '.$teamIDX.');">';
+                # $str .= sprintf '</div>';
+
+                $str .= sprintf '%d.%s - %s</div>',$inHeading, $LIST{$headingIDX}{$itemIDX}{IN_SECTION},$LIST{$headingIDX}{$itemIDX}{TX_SECTION};
+                # $str .= sprintf '<div class="w3-container w3-padding-16 w3-large">%d.%s - %s</div>',$inHeading, $LIST{$headingIDX}{$itemIDX}{IN_SECTION},$LIST{$headingIDX}{$itemIDX}{TX_SECTION};
+                # $str .= '<i class="w3-bar-item">Please reference [ Section 6.6 REQUIREMENTS CHECK & SAFETY AND AIRWORTHINESS INSPECTION PENALTIES ] in the rules document for further details<br>';
+                # $str .= '<span class="w3-text-red">All penalties accrued will be deducted from the team\'s FINAL Overall Score </span>';
+                # $str .= '</i>';
                 $str .= '</div>';
-                $str .= sprintf '<div class="w3-container %s w3-border w3-round w3-margin-top w3-padding" >Official Assessment by SAE Inspectors: <b>%s</b></div>', $BGCOLOR{$TECH{$itemIDX}{IN_STATUS}}, $STATUS{$TECH{$itemIDX}{IN_STATUS}};
+
+                $str .= '</div>';
                 $str .= '</li>';
                 $str .= '</label>';
             }

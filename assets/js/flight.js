@@ -557,7 +557,7 @@ function updateField(o){
         url: '../cgi-bin/flight.pl',
         data: ajxData,
         success: function(str){
-            // console.log(str); 
+            console.log(str); 
             setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 1000);
             // $('#modal_content').html(str);
         }

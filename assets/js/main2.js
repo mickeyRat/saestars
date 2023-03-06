@@ -231,6 +231,20 @@ function sae_openResultStandings(classIDX){
         }
     });
 }
+
+function results_openResultStandings(classIDX){
+    var location = $.cookie('LOCATION');
+    $.modal("Published Results", "90%");
+    console.log(classIDX);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/results.pl',
+        data: {'do':'results_openResultStandings','act':'print','location':location,'classIDX':classIDX},
+        success: function(str){
+            $('#modal_content').html(str);
+        }
+    });
+}
 function getUserAccess(userIDX){
     $('.saeAccess').prop('checked',false);
     $.ajax({
@@ -392,6 +406,8 @@ function openTab(tabName, obj) {
 function sae_openTeamView(obj){
     $('#paperContentContainer').html(loading);
     $('.tablink').removeClass('w3-border-red');
+    $('.paperTab').removeClass('w3-red');
+    $(obj).addClass('w3-red');
     $(obj).children(":first").addClass('w3-border-red');
     var location = $.cookie('LOCATION');
     $.ajax({
@@ -408,12 +424,16 @@ function sae_openTeamView(obj){
 function sae_openStatTeamView(obj, sortBy){
     $('#tabContent').html(loading);
     $('.tablink').removeClass('w3-border-red');
+    $('.paperTab').removeClass('w3-red');
+    $(obj).addClass('w3-red');
     $(obj).children(":first").addClass('w3-border-red');
     sae_loadStatTeamViewContent(sortBy);
 }
 function sae_openStatView(obj, sortBy){
     $('#tabContent').html(loading);
     $('.tablink').removeClass('w3-border-red');
+    $('.paperTab').removeClass('w3-red');
+    $(obj).addClass('w3-red');
     $(obj).children(":first").addClass('w3-border-red');
     sae_loadStatViewContent(sortBy);
 }
@@ -466,6 +486,8 @@ function sae_openJudgeStatsByTeam(teamIDX, cardTypeIDX){
 function sae_openJudgeView(obj, sBy){
     $('#paperContentContainer').html(loading);
     $('.tablink').removeClass('w3-border-red');
+    $('.paperTab').removeClass('w3-red');
+    $(obj).addClass('w3-red');
     $(obj).children(":first").addClass('w3-border-red');
     sae_loadJudgeViewContent(sBy);
 }
@@ -1078,6 +1100,8 @@ function sae_subscribeToTeam(userIDX, from){
 // Manage Teams
 function sae_showAddNewTeam(obj){
     $('.tablink').removeClass('w3-border-red');
+    $('.paperTab').removeClass('w3-red');
+    $(obj).addClass('w3-red');
     $(obj).children(":first").addClass('w3-border-red');
     var divName = 'TEMP_DIV_ADD_TEAMS';
     var location = $.cookie('LOCATION');
@@ -1222,6 +1246,8 @@ function sae_unsubscribeToTeam(obj, userTeamIDX){
 // =============== IMPORT FILES ==============
 function sae_showFileImport(obj){
     $('.tablink').removeClass('w3-border-red');
+    $('.paperTab').removeClass('w3-red');
+    $(obj).addClass('w3-red');
     $(obj).children(":first").addClass('w3-border-red');
     var divName = 'TEMP_DIV_FILE_IMPORT';
     var location = $.cookie('LOCATION');

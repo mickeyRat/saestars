@@ -324,7 +324,21 @@ sub openManageJudges(){
     # my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
     # $year += 1900;
     my $str;
-
+    my $count = 1;
+    my $countEast  = 0;
+    my $countWest  = 0;
+    my $countReg   = 0;
+    my $countAdv   = 0;
+    my $countMic   = 0;
+    my $countPreso = 0;
+    foreach $userIDX (keys %JUDGES) {
+        if ($JUDGES{$userIDX}{BO_EAST} == 1){$countEast++}
+        if ($JUDGES{$userIDX}{BO_WEST} == 1){$countWest++}
+        if ($JUDGES{$userIDX}{BO_REGULAR} == 1){$countReg++}
+        if ($JUDGES{$userIDX}{BO_ADVANCE} == 1){$countAdv++}
+        if ($JUDGES{$userIDX}{BO_MICRO} == 1){$countMic++}
+        if ($JUDGES{$userIDX}{BO_PRESO} == 1){$countPreso++}
+    }
     $str .= '<div class="w3-container w3-margin-top">';
     $str .= '<br><h2 class="w3-margin-top">'.$txYear.' Judge Preferences</h2>';
     $str .= '<div class="w3-bar w3-light-grey w3-border w3-padding">';
@@ -351,17 +365,18 @@ sub openManageJudges(){
     $str .= '<th rowspan="2" class=" w3-border" style=" vertical-align: bottom;">Judge</th>';
     $str .= '<th colspan="2" class="w3-center w3-border">Event</th>';
     $str .= '<th colspan="6" class="w3-center w3-border" >Design Report Preferences</th>';
-    $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Technical Presentations</th>';
+    $str .= sprintf '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Technical Presentations<br>(%d)</th>', $countPreso;
     $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Max. # of Papers</th>';
     $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Exp.<br> Level</th>';
     $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 250px; vertical-align: bottom">School Affiliation</th>';
     $str .= '</tr>';
     $str .= '<tr class="w3-white">';
-    $str .= '<th class="w3-border w3-center" style="width: 100px;">East</th>';
-    $str .= '<th class="w3-border w3-center" style="width: 100px;">West</th>';
-    $str .= '<th class="w3-border w3-center" style="width: 100px;">Reg</th>';
-    $str .= '<th class="w3-border w3-center" style="width: 100px;">Adv</th>';
-    $str .= '<th class="w3-border w3-center" style="width: 100px;">Mic</th>';
+    $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">East<br>(%d)</th>', $countEast;
+    $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">West<br>(%d)</th>', $countWest;
+    # $str .= '<th class="w3-border w3-center" style="width: 100px;">West</th>';
+    $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">Reg<br>(%d)</th>', $countReg;
+    $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">Adv<br>(%d)</th>', $countAdv;
+    $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">Mic<br>(%d)</th>', $countMic;
     $str .= '<th class="w3-border w3-center" style="width: 100px;">Drawing</th>';
     $str .= '<th class="w3-border w3-center" style="width: 100px;">TDS</th>';
     $str .= '<th class="w3-border w3-center" style="width: 100px;">Req</th>';
@@ -370,7 +385,7 @@ sub openManageJudges(){
     $str .= '<tbody>';
     foreach $userIDX (sort {lc($USERS{$a}{TX_LAST_NAME}) cmp lc($USERS{$b}{TX_LAST_NAME})} keys %JUDGES) {
         my $boEastCheck = '';
-        if ($JUDGES{$userIDX}{BO_EAST} == 1){$boEastCheck = 'checked'}
+        if ($JUDGES{$userIDX}{BO_EAST} == 1){$boEastCheck = 'checked'} 
         my $boWestCheck = '';
         if ($JUDGES{$userIDX}{BO_WEST} == 1){$boWestCheck = 'checked'}
         my $boRegCheck = '';
@@ -388,7 +403,7 @@ sub openManageJudges(){
         my $boPresoCheck = '';
         if ($JUDGES{$userIDX}{BO_PRESO} == 1){$boPresoCheck = 'checked'}
         $str .= '<tr ID="JUDGE_PREFERENCES_'.$userIDX.'">';
-        $str .= sprintf '<td><b>%s, %s</b><br><i class="w3-small">%s</i></td>', $USERS{$userIDX}{TX_LAST_NAME}, $USERS{$userIDX}{TX_FIRST_NAME}, $USERS{$userIDX}{TX_EMAIL};
+        $str .= sprintf '<td>%d: <b>%s, %s</b><br><i class="w3-small">%s</i></td>', $count++, $USERS{$userIDX}{TX_LAST_NAME}, $USERS{$userIDX}{TX_FIRST_NAME}, $USERS{$userIDX}{TX_EMAIL};
         $str .= sprintf '<td class="w3-center w3-border required"><input ID="BO_EAST_'.$userIDX.'" data-field="BO_EAST"    %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boEastCheck;
         $str .= sprintf '<td class="w3-center w3-border required"><input ID="BO_WEST_'.$userIDX.'" data-field="BO_WEST"    %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boWestCheck;
         $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_REGULAR" %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boRegCheck;

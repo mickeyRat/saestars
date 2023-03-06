@@ -26,6 +26,8 @@ use SAE::Common;
 use SAE::USER;
 use SAE::TEAM;
 
+my %CLASS = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
+
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
 
@@ -274,89 +276,117 @@ sub sae_importScheduleFile(){
     return ($str)
 }
 # =================== 2020 END   ========================================
+sub t_scorecard (){
+    my ($teamIDX, $cardIDX, $score, $judgeName, $access, $marketing, $display, $time) = @_;
+    my $str;
+    $str .= '<div ID="SCORECARD_'.$cardIDX.'" class="w3-card-4 w3-margin-left w3-margin-bottom w3-white w3-display-container" style="width: 200px;">';
+    $str .= sprintf '<header class="w3-container w3-light-grey">';
+    $str .= sprintf '<h5 class="w3-left">%2.2f pts</h5>', $score;
+    $str .= sprintf '</header>';
+    my $spaces = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+    my $mStatus = $dStatus = $tStatus = 'w3-red';
+    if ($marketing==100){$mStatus='w3-green'}
+    if ($display==100){$dStatus='w3-green'}
+    if ($time==100){$tStatus='w3-green'}
+    $str .= '<div class="w3-display-topright w3-padding w3-tiny">';
+    $str .= sprintf '<span class="w3-circle w3-border '.$mStatus.'" style="margin-left: 3px;">%s</span>', $spaces;
+    $str .= sprintf '<span class="w3-circle w3-border '.$dStatus.'" style="margin-left: 3px;">%s</span>', $spaces;
+    $str .= sprintf '<span class="w3-circle w3-border '.$tStatus.'" style="margin-left: 3px;">%s</span>', $spaces;
+    $str .= '</div>';
+    $str .= '<div class="w3-container w3-white" style="height: 43px; overflow-y: hidden">';
+    $str .= sprintf '<span class="w3-small">Judged by:</span><br>%s', $judgeName;
+    $str .= '</div>';
+    if($access==1){
+        $str .= sprintf '<button class="w3-button w3-block w3-dark-grey" style="position: relative; bottom: 0px;" onclick="sae_updateScoreCard(%d, %d);">Inspect</button>', $teamIDX, $cardIDX;
+    }
+    $str .= '</div>';
+
+    return ($str);
+    }
 sub showListOfTeam_Preso(){
     print $q->header();
     # my $dbi = new SAE::Db();
     my $str;
-    my $location = $q->param('location');
-    my $userIDX = $q->param('userIDX');
-    my $sortBy= $q->param('sortBy');
-    my $Team = new SAE::TB_TEAM();
-    my $Score = new SAE::SCORE();
-    my $Preso = new SAE::PRESO();
-    %TEAM = %{$Team->getAllRecordBy_FkEventIdx($location)};
-    %CARDS = %{$Score->_getAllPresoScoreByEvent(5, $location)};
-    %SCORES = %{$Score->_getAveragePresoScoreByEvent(5, $location)};
-    my %ADMINS = %{$Score->_getListOfAdmins()};
-    my %TODO = %{$Preso->_getToDo($location, 1)};
-    my %ROOMS = %{$Preso->_getRoomList($location)};
-    my %OWNER = %{$Score->_getCardOwner($location, 5)};
+    my $location  = $q->param('location');
+    my $userIDX   = $q->param('userIDX');
+    my $sortBy    = $q->param('sortBy');
+    my $Team      = new SAE::TB_TEAM();
+    my $Score     = new SAE::SCORE();
+    my $Preso     = new SAE::PRESO();
+    my %TEAM      = %{$Team->getAllRecordBy_FkEventIdx($location)};
+    my %CARDS     = %{$Score->_getAllPresoScoreByEvent(5, $location)};
+    my %SCORES    = %{$Score->_getAveragePresoScoreByEvent(5, $location)};
+    my %ADMINS    = %{$Score->_getListOfAdmins()};
+    my %TODO      = %{$Preso->_getToDo($location, 1)};
+    my %ROOMS     = %{$Preso->_getRoomList($location)};
+    my %OWNER     = %{$Score->_getCardOwner($location, 5)};
     my $str;
-    $str .= '<div class="w3-container w3-white w3-margin-top" style="padding-top: 15px;">';
-    $str .= '<h3>Presentations</h3>';
-    $str .= sprintf '<button class="w3-button w3-border w3-round w3-margin-left" onclick="sae_validatePreso(%d);">Expand Scorecard</button>', $location;
-    $str .= sprintf '<button class="w3-button w3-border w3-round w3-margin-left" onclick="sae_openImport(%d);">Import Excel Scoresheet</button>', $userIDX;
-    $str .= '<br>' x 2;
-    @TEAMS = sort {$a <=> $b} keys %TEAM;
-    $str .= '<table class="table table-sortable w3-table-all w3-small" >';
+    $str = '<div class="w3-container w3-white w3-margin-top" style="padding-top: 15px;">';
+    $str .= '<h2 class="w3-margin-top">Design & Technical Presentations</h2>';
+    # $str .= sprintf '<button class="w3-button w3-border w3-round w3-margin-left" onclick="sae_openImport(%d);">Import Excel Scoresheet</button>', $userIDX;
+    # $str .= '<br>' x 2;
+    $str .= '<div class="w3-container w3-margin-top  w3-card-4" style="padding:0px;">';
+    $str .= sprintf '<button class="w3-button w3-border w3-round w3-margin-left w3-margin-top" onclick="sae_validatePreso(%d);">Expand Scorecard</button>', $location;
+    $str .= '<table class="w3-table w3-bordered w3-border w3-margin-top" >';
     $str .= '<thead>';
-    $str .= '<tr class="w3-light-grey">';
-    $str .= '<th style="" data-type="int"> # School </th>';
-    $str .= '<th style="width: 100px; text-align: center;" data-type="string">Add Score</th>';
-    $str .= '<th data-type="string">Score Cards</th>';
-    $str .= '<th data-type="float">High</th>';
-    $str .= '<th data-type="float">Low</th>';
-    $str .= '<th data-type="float">Std. Dev</th>';
-    $str .= '<th data-type="float">Coeff of <br>Var</th>';
-    $str .= '<th data-type="float">Mean</th>';
+    $str .= '<tr>';
+    $str .= '<th rowspan="2" style="vertical-align: bottom; width: 300px;">Teams</th>';
+    $str .= '<th rowspan="2" style="vertical-align: bottom;">Score Card</th>';
+    $str .= '<th colspan="5" class="w3-border-left w3-center w3-light-grey">Statistics</th>';
+    $str .= '</tr>';
+    $str .= '<tr style="width: 60px;" class="w3-white">';
+    $str .= '<th style="width: 60px;" class="w3-small w3-center w3-border-left">High<br>Score</th>';
+    $str .= '<th style="width: 60px;" class="w3-small w3-center">Low<br>Score</th>';
+    $str .= '<th style="width: 60px;" class="w3-small w3-center">Std.<br>Dev</th>';
+    $str .= '<th style="width: 60px;" class="w3-small w3-center">Coeff. of Var</th>';
+    $str .= '<th style="width: 60px;" class="w3-small w3-center">Mean<br>(Avg.)</th>';
     $str .= '</tr>';
     $str .= '</thead>';
-    $str .= '<tbody>';
-    # foreach $teamIDX (@TEAMS){
     foreach $teamIDX (sort {$TEAM{$a}{IN_NUMBER} <=>$TEAM{$b}{IN_NUMBER}} keys %TEAM){
-    # foreach $teamIDX (sort {$a <=> $b} keys %TEAM){
-        $team = substr("000".$TEAM{$teamIDX}{IN_NUMBER},-3,3).' - '.$TEAM{$teamIDX}{TX_SCHOOL};
-        my $eIDX = crypt($teamIDX, '20');
-        $schedule = "Schedule";
-        my $txRoom = 'teamListAll';
-        if (exists($TODO{$teamIDX})) {
-            $txRoom =  $TODO{$teamIDX}{TX_ROOM};
-            $txRoom =~ s/\s+//g;
-            $schedule = $TODO{$teamIDX}{TX_ROOM}." (".$TODO{$teamIDX}{TX_TIME}.')';
-        } 
-        $str .= sprintf '<tr class="%s teamListAll">', $txRoom;
-        $str .= '<td nowrap ><a href="score.html?teamIDX='.$eIDX.'&source=15" target="_blank">'.$team .'</a></td>';
-        # $str .= '<td ID="TD_teamPresoTime_'.$teamIDX.'" nowrap><a href="javascript:void(0);" onclick="sae_openTeamPresoSchedule(1, '.$teamIDX.','.$TODO{$teamIDX}{PK_TODO_IDX}.')">'.$schedule.'</a></td>';
-        $str .= sprintf '<td nowrap><button class="w3-button w3-round w3-border w3-green w3-large w3-padding-small w3-hover-blue" style="width: 75px;" onclick="sae_openNewScoreCard(%d,%d);">%03d<br><span class="w3-small">Add Score</span></button></td>', $teamIDX, 0, $TEAM{$teamIDX}{IN_NUMBER};
-        $str .= '<td ID="TD_ROW_FOR_'.$teamIDX.'">';
+        my $txClass    = $CLASS{$TEAM{$teamIDX}{FK_CLASS_IDX}};
+        my $txSchool   = $TEAM{$teamIDX}{TX_SCHOOL};
+        my $inNumber   = $TEAM{$teamIDX}{IN_NUMBER};
+        $str .= '<tr>';
+        $str .= sprintf '<td><div class="w3-xlarge"><b>%03d</b></div>%s<br><b>Class:</b> <i class="w3-text-blue-grey">%s</i></td>', $inNumber, $txSchool, $txClass;
+        $str .= '<td ID="TD_PRESOCARD_'.$teamIDX.'" style="vertical-align: top; display: flex; flex-wrap: wrap;">';
         foreach $cardIDX (sort {$CARDS{$teamIDX}{$a}{IN_POINTS} <=> $CARDS{$teamIDX}{$b}{IN_POINTS}} keys %{$CARDS{$teamIDX}}) {
-            # my $txInitial =  sprintf "%s%s", substr($CARDS{$teamIDX}{$cardIDX}{TX_FIRST_NAME},0,1), substr($CARDS{$teamIDX}{$cardIDX}{TX_LAST_NAME},0,1);
-            my $txInitial =  sprintf "%s, %s", $CARDS{$teamIDX}{$cardIDX}{TX_LAST_NAME}, $CARDS{$teamIDX}{$cardIDX}{TX_FIRST_NAME};
-            # my $myCardUserIDX = $CARDS{$teamIDX}{$cardIDX}{FK_USER_IDX};
+            my %BIN   = %{$Preso->_getCardBinary($cardIDX)};
             my $myCardUserIDX = $OWNER{$cardIDX}{FK_USER_IDX};
-            $score = $CARDS{$teamIDX}{$cardIDX}{IN_POINTS};
-            # $str .= $myCardUserIDX.'-'.$userIDX;
+            my $score = $CARDS{$teamIDX}{$cardIDX}{IN_POINTS};
+            my $judgeName = sprintf '%s, %s', $CARDS{$teamIDX}{$cardIDX}{TX_LAST_NAME}, $CARDS{$teamIDX}{$cardIDX}{TX_FIRST_NAME};
             if (exists $ADMINS{$userIDX} || $myCardUserIDX == $userIDX) {
-                $str .= &_tempLink($teamIDX, $cardIDX, $score, $txInitial,1);
+                $str .= &t_scorecard($teamIDX, $cardIDX, $score, $judgeName, 1, $BIN{91}{IN_VALUE}, $BIN{92}{IN_VALUE}, $BIN{93}{IN_VALUE});
             } else {
-                $str .= &_tempLink($teamIDX, $cardIDX, $score, $txInitial,0);
+                $str .= &t_scorecard($teamIDX, $cardIDX, $score, $judgeName, 0, $BIN{91}{IN_VALUE}, $BIN{92}{IN_VALUE}, $BIN{93}{IN_VALUE});
             }
         }
+        $str .= sprintf '<button class="w3-container w3-button w3-center w3-margin-left w3-light-grey" style="border: 3px dashed #ddd; width: 150px; height: 120px; background-color: #efefef" onclick="sae_openNewScoreCard(%d,%d);">', $teamIDX, 0;
+        $str .= '<b class="w3-text-grey">Add Scorecard</b><br>';
+        $str .= '<i class="fa fa-3x fa-plus w3-text-grey" aria-hidden="true"></i>';
+        $str .= '</button>';
         $str .= '</td>';
-        
-        $str .= sprintf '<td ID="TD_TEAM_AVERAGE_SCORE_'.$teamIDX.'">%2.4f</td>', $SCORES{$teamIDX}{IN_MAX};
-        $str .= sprintf '<td ID="TD_TEAM_AVERAGE_SCORE_'.$teamIDX.'">%2.4f</td>', $SCORES{$teamIDX}{IN_MIN};
-        $str .= sprintf '<td ID="TD_TEAM_AVERAGE_SCORE_'.$teamIDX.'">%2.4f</td>', $SCORES{$teamIDX}{IN_STD};
+        my $stdTextColor = 'w3-text-black';
+        my $stdDev = $SCORES{$teamIDX}{IN_STD};
+        if ($stdDev>12){
+            $stdTextColor = 'w3-text-red';
+            } elsif ($stdDev>7) {
+                $stdTextColor = 'w3-text-yellow';
+                } else {
+                    $stdTextColor = 'w3-text-black';
+                }
+        $str .= sprintf '<td ID="TD_TEAM_MAX_SCORE_'.$teamIDX.'" class="w3-border-left " style="text-align: right;">%2.2f</td>', $SCORES{$teamIDX}{IN_MAX};
+        $str .= sprintf '<td ID="TD_TEAM_MIN_SCORE_'.$teamIDX.'" class="" style="text-align: right;">%2.2f</td>', $SCORES{$teamIDX}{IN_MIN};
+        $str .= sprintf '<td ID="TD_TEAM_STD_SCORE_'.$teamIDX.'" class="'.$stdTextColor.'" style="text-align: right;"><b>%2.2f</b></td>', $SCORES{$teamIDX}{IN_STD};
         if ($SCORES{$teamIDX}{IN_AVERAGE}!=0){
-            $str .= sprintf '<td ID="TD_TEAM_AVERAGE_SCORE_'.$teamIDX.'">%2.4f</td>', $SCORES{$teamIDX}{IN_STD}/$SCORES{$teamIDX}{IN_AVERAGE};
+            $str .= sprintf '<td ID="TD_TEAM_CVAR_SCORE_'.$teamIDX.'" class="" style="text-align: right;">%2.2f</td>', $SCORES{$teamIDX}{IN_STD}/$SCORES{$teamIDX}{IN_AVERAGE};
         } else {
-            $str .= sprintf '<td ID="TD_TEAM_AVERAGE_SCORE_'.$teamIDX.'">%2.4f</td>', 0;
+            $str .= sprintf '<td ID="TD_TEAM_CVAR_SCORE_'.$teamIDX.'" class="" style="text-align: right;">%2.2f</td>', 0;
         }
-        $str .= sprintf '<td ID="TD_TEAM_AVERAGE_SCORE_'.$teamIDX.'"><b>%2.4f<b></td>', $SCORES{$teamIDX}{IN_AVERAGE};
+        $str .= sprintf '<td ID="TD_TEAM_AVERAGE_SCORE_'.$teamIDX.'" class="" style="text-align: right;"><b>%2.4f<b></td>', $SCORES{$teamIDX}{IN_AVERAGE};
         $str .= '</tr>';
     }
-    $str .= '</tbody>';
     $str .= '</table>';
+    $str .= '</div>';
     $str .= '</div>';
     return ($str);
 }
@@ -434,64 +464,8 @@ sub sae_openNewScoreCard(){
     # $str .= '<button class="w3-button w3-border w3-margin-left w3-hover-green" onclick="sae_savePresentationScores('.$teamIDX.',0,0,\''.$divName .'\');">Save & Add Another</button>';
     $str .= '<button class="w3-button w3-border w3-margin-left w3-hover-red " onclick="$(this).close();">Exit</button>';
     $str .= '</div>';
-    
-    
-    
-    
-    
-    
-    # $str .= '<div class="w3-container w3-display-container w3-small" >';
-    # $str .= '<h4>Add Presentation Scores for #'.$teamTitle.'</h4>';
-    # $str .= '<table class="w3-table-all">';
-    # $str .= '<tr>';
-    # $str .= '<th style="width: 45%;">Title/Description</th>';
-    # $str .= '<th style="width: 10%;">Score</th>';
-    # $str .= '<th style="width: 45%;">Comments</th>';
-    # $str .= '</tr>';
-    # my $tabIndex = 1;
-    # foreach $subIDX (sort {$PRESO{$a}{IN_SUBSECTION} <=> $PRESO{$b}{IN_SUBSECTION}} keys %PRESO) {
-    #     $str .= '<tr>';
-    #     # $str .= '<tr class="w3-hide-small">';
-    #     $str .= sprintf '<td style="padding: 1px 3px;"><b class="w3-large">%d - %s</b></td>',$PRESO{$subIDX}{IN_SUBSECTION},$PRESO{$subIDX}{TX_SUBSECTION};
-    #     # $str .= sprintf '<td style="padding: 1px 3px;"><b class="w3-large">%d <span class="w3-tiny">%s</span></b><br><div class="w3-margin-left">%s</div></td>',$PRESO{$subIDX}{IN_SUBSECTION},$PRESO{$subIDX}{TX_SUBSECTION},$PRESO{$subIDX}{CL_DESCRIPTION};
-    #     # $str .= '<td nowrap style="padding: 1px 3px;">'.$PRESO{$subIDX}{IN_SUBSECTION}.'. '.$PRESO{$subIDX}{TX_SUBSECTION}.'</td>';
-    #     # $str .= '<td nowrap style="padding: 1px 3px;">'.$PRESO{$subIDX}{CL_DESCRIPTION}.'</td>';
-    #     # $str .= '<td  colspan="2" nowrap style="padding: 1px 3px;" style="text-align: right">';
-    #     if ($PRESO{$subIDX}{IN_TYPE}==0) {
-    #         $str .= '<td style="padding: 1px 3px;" style="text-align: right">';
-    #         $str .= '<input tabindex="'.($tabIndex++).'" data-key="'.$subIDX.'" ';
-    #         $str .= 'style="width: 74px; height: 40px; text-align: center" type="number" ';
-    #         $str .= 'class="inputNumber w3-border  w3-input w3-border w3-card-2" max="10" min="0" maxlength="4" onblur="sae_processValue(this);">';
-    #     } else {
-    #         $str .= '<td  colspan="2" style="padding: 1px 3px;" style="text-align: right">';
-    #         $str .= '<input data-key="'.$subIDX.'" ';
-    #         $str .= sprintf 'type="checkbox" class="w3-check w3-border inputBinary" value="100"> Yes, %s', $PRESO{$subIDX}{CL_DESCRIPTION};
-    #     }
-    #     $str .= '</td>';
-    #     $str .= '<td style="padding: 1px 3px;" >';
-    #     if ($PRESO{$subIDX}{IN_TYPE}==0) {
-    #         $str .= '<textarea tabindex="'.($tabIndex++).'" data-key="'.$subIDX.'" class="inputComments w3-input w3-border" placeholer="Comments"></textarea>';
-    #     } else {
-    #         $str .= '&nbsp;';
-    #     }
-    #     $str .= '</td>';
-    #     $str .= '</tr>';
-    #     if ($PRESO{$subIDX}{IN_TYPE}==0) {
-    #         $str .= '<tr>';
-    #         $str .= sprintf '<td colspan="3" class="w3-small">%s</td>', $PRESO{$subIDX}{CL_DESCRIPTION};
-    #         $str .= '</tr>';
-    #     }
-    # }
-    # $str .= '</table>';
-    # $str .= '<div class="w3-display-container w3-panel" style="text-align: center;">';
-    # $str .= '<button class="w3-button w3-border w3-display-center w3-hover-green" onclick="sae_savePresentationScores('.$teamIDX.',1,0,\''.$divName .'\');">Save & Exit</button>';
-    # # $str .= '<button class="w3-button w3-border w3-margin-left w3-hover-green" onclick="sae_savePresentationScores('.$teamIDX.',0,0,\''.$divName .'\');">Save & Add Another</button>';
-    # $str .= '<button class="w3-button w3-border w3-margin-left w3-hover-red " onclick="$(\'#'.$divName.'\').remove();">Exit</button>';
-    # $str .= '</div>';
-    # $str .= '<br>' x 4;
-    # $str .= '</div>';
     return ($str);
-}
+    }
 sub sae_updateScoreCard(){
     print $q->header();
     my $str;
@@ -572,7 +546,7 @@ sub sae_updateScoreCard(){
     $str .= '</div>';
     
     return ($str);
-}
+ }
 sub _tempLink(){
     my $str;
     my $teamIDX = shift;
@@ -599,11 +573,12 @@ sub _tempLink(){
     # $str .= sprintf ' href="javascript:void(0);" >%2.4f <br>(%s)</a>', $score, $initals;
     # $str .= sprintf ' href="javascript:void(0);" >%s:%2.4f</a>', $initals, $score;
     return ($str);
-}
+    }
 sub sae_savePresentationScores(){
     print $q->header();
     my $Preso = new SAE::PRESO();
     my $Score = new SAE::SCORE();
+    my $User  = new SAE::USER();
     my $teamIDX = $q->param('teamIDX');
     my $userIDX = $q->param('userIDX');
     my $location = $q->param('location');
@@ -624,29 +599,36 @@ sub sae_savePresentationScores(){
         $Preso->_saveComment($cardIDX, $teamIDX, $userIDX, \%COMMENTS);
         # $Preso->_updateComment($cardIDX, $teamIDX, $userIDX, \%COMMENTS);
     }
-    # print join(",",  values %DATA);
-    # if ($cardIDX == 0){
-    #     # $str .= "Inside of 0\n $userIDX, $teamIDX, $cardTypeIDX, $location \n";
-    #     $cardIDX=$Preso->_addPresentationScoreCard($userIDX, $teamIDX, $cardTypeIDX, $location);
-    #     $Preso->_saveAssessments($cardIDX, \%DATA);
-    #     $Preso->_saveComment($cardIDX, $teamIDX, $userIDX, \%COMMENTS);
-    # } else {
-    #     # $str .= "Perform Update\n";
-    #     $Preso->_updateAssessment($cardIDX, \%DATA);
-    #     $Preso->_resetComments($cardIDX);
-    #     $Preso->_saveComment($cardIDX, $teamIDX, $userIDX, \%COMMENTS);
-    #     # $Preso->_updateComment($cardIDX, $teamIDX, $userIDX, \%COMMENTS);
-    # }
-    
-    # print $cardIDX.' - '. $q->param('jsonComment');
-    # print $cardIDX.' - '. join ("<br>", keys %COMMENTS);
     $Preso->_updatePresoToDo($teamIDX, $location, 1, "Completed");
+    my %CARDS     = %{$Score->_getAllPresoScoreByEvent(5, $location)};
+    my %SCORES    = %{$Score->_getAveragePresoScoreByEvent(5, $location)};
     my $txInitials = $Score->_getUserInitials($userIDX);
+    my %USER       = %{$User->_getUserDetails($userIDX)};
+    my $judgeName  = sprintf '%s, %s',$USER{TX_LAST_NAME},$USER{TX_FIRST_NAME};
+    my $score      = $CARDS{$teamIDX}{$cardIDX}{IN_POINTS};
     my ( $presoScore ) = $Score->_getPresenationScoreByCard($cardIDX);
-    $str = &_tempLink($teamIDX, $cardIDX, $presoScore, $txInitials, 1);
+    # $str = &_tempLink($teamIDX, $cardIDX, $presoScore, $txInitials, 1);
+    my %BIN   = %{$Preso->_getCardBinary($cardIDX)};
     my %DATA;
-    $DATA{HTML} = $str;
-    $DATA{AVERAGE} = sprintf "%2.4f", $Score->_getAllPresoScoreByTeamIDX($teamIDX, 5, $location);
+    $DATA{HTML}    = $str;
+    $DATA{AVERAGE} = sprintf "%2.4f", $SCORES{$teamIDX}{IN_AVERAGE};
+    # $DATA{AVERAGE} = sprintf "%2.2f", $Score->_getAllPresoScoreByTeamIDX($teamIDX, 5, $location);
+    $DATA{CARD}    = &t_scorecard($teamIDX, $cardIDX, $score, $judgeName, 1, $BIN{91}{IN_VALUE}, $BIN{92}{IN_VALUE}, $BIN{93}{IN_VALUE});
+    $DATA{MAX}     = sprintf '%2.2f', $SCORES{$teamIDX}{IN_MAX};
+    $DATA{MIN}     = sprintf '%2.2f', $SCORES{$teamIDX}{IN_MIN};
+    if ($SCORES{$teamIDX}{IN_STD}>12) {
+        $DATA{STD}     = sprintf '<span class="w3-text-red"><b>%2.2f</b></span>', $SCORES{$teamIDX}{IN_STD};
+        } elsif ($SCORES{$teamIDX}{IN_STD}>7) {
+            $DATA{STD}     = sprintf '<span class="w3-text-yellow"><b>%2.2f</b></span>', $SCORES{$teamIDX}{IN_STD};
+            } else {
+                $DATA{STD}     = sprintf '<span class="w3-text-black"><b>%2.2f</b></span>', $SCORES{$teamIDX}{IN_STD};
+            }
+    
+    if ($DATA{AVERAGE}!=0){
+        $DATA{COE} = sprintf '%2.2f', $SCORES{$teamIDX}{IN_STD}/ $SCORES{$teamIDX}{IN_AVERAGE};
+        } else {
+        $DATA{COE} = 0;
+        }
     my $json = encode_json \%DATA;
     return ($json);
     # return ($str);

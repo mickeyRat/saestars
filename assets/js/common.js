@@ -44,7 +44,9 @@ jQuery.cookie = function(name, value, options) {
         return cookieValue;
     }
 };
-jQuery.modal = function(title, width, color, height){
+jQuery.modal = function(title, width, color, showSum=0){
+    color = color || '';
+    // height = height || '';
     var idName = $.randomID(256);
     if (color === null){color='w3-light-grey '}
     if (width === null ){width='75%'}
@@ -52,6 +54,9 @@ jQuery.modal = function(title, width, color, height){
         div += '<div class="w3-modal-content w3-card-4 '+color+'  w3-round-large" style="width: '+width+'; min-height: 300px; top: 10px; position: relative; top: 0%; margin-right: auto; margin-left: auto; -webkit-transform: translate(auto, 0%); transform: traslate(auto,0%);">';
             div += '<div class="w3-display-container">';
             div += '<div class="w3-bar w3-round-xlarge"><h3 style="padding: 5px 40px">'+title+'</h3>';
+            if (showSum == 1){
+                div += '<div ID="HEADER_SUM" class="w3-display-topright w3-xlarge" style="border-bottom: 1px solid #dddddd; text-align: right; width: 200px; margin-right: 100px; margin-top: 16px;">0.00</div>';
+            }
             div += '<span id="modal_x1" onclick="$(\'#'+idName+'\').remove();" class="w3-button w3-display-topright w3-hover-red w3-round" style="margin-right: 4px; margin-top: 4px;"><i class="fa fa-times fa-lg" aria-hidden="true"></i></span>';
             div += '</div>';
             div += '<div ID="modal_content" style="margin-top: 0px; padding: 4px;" class="w3-white w3-border">';

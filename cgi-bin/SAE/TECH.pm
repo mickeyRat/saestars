@@ -20,6 +20,131 @@ sub new{
     }
 
 # -------------- 2023 --------------
+sub _getTechItemDescriptions (){
+    my ($self, $classIDX) = @_;
+    my %FIELD = (1=>'R.BO_REGULAR', 2=>'R.BO_ADVANCE', 3=>'R.BO_MICRO',4=>'R.BO_PADA');
+    my $field = $FIELD{$classIDX};
+    my $SQL;
+    if ($classIDX==2) {
+        $SQL = qq(SELECT CONCAT(S.IN_SECTION,".",R.IN_SECTION) AS IN_SECTION, R.PK_TECH_REQ_IDX, R.FK_CLASS_IDX, R.TX_REQUIREMENT, R.TX_SECTION, R.IN_POINTS 
+                FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX 
+                WHERE (R.BO_ADVANCE=? or R.BO_PADA=1));
+        } else {
+            $SQL = qq(SELECT CONCAT(S.IN_SECTION,".",R.IN_SECTION) AS IN_SECTION, R.PK_TECH_REQ_IDX, R.FK_CLASS_IDX, R.TX_REQUIREMENT, R.TX_SECTION, R.IN_POINTS 
+                FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX 
+                WHERE ($field=?));
+        }
+    my $select = $dbi->prepare($SQL);
+       $select->execute(1);
+       # print $SQL;
+    my %HASH = %{$select->fetchall_hashref('PK_TECH_REQ_IDX')};
+    return (\%HASH);
+    }
+sub _getPenalizedItems (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT DISTINCT T.FK_TECH_REQ_IDX, R.IN_POINTS 
+        FROM TB_TECH AS T JOIN TB_TECH_REQ AS R ON T.FK_TECH_REQ_IDX=R.PK_TECH_REQ_IDX 
+        WHERE (T.FK_TEAM_IDX=? AND T.IN_STATUS=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $teamIDX , 2);
+    my %HASH = %{$select->fetchall_hashref('FK_TECH_REQ_IDX')};
+    return (\%HASH);
+    }
+sub _getTechPenalties (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT DISTINCT T.FK_TECH_REQ_IDX, R.IN_POINTS 
+        FROM TB_TECH AS T JOIN TB_TECH_REQ AS R ON T.FK_TECH_REQ_IDX=R.PK_TECH_REQ_IDX 
+        WHERE (T.FK_TEAM_IDX=? AND T.IN_STATUS=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $teamIDX , 2);
+    my $inTotal = 0;
+    while(my ($reqIDX, $inPoint) = $select->fetchrow_array()) {
+        $inTotal += $inPoint;
+    }
+    # my %HASH = %{$select->fetchall_hashref('FK_TECH_REQ_IDX')};
+    return ($inTotal);
+    }
+sub _getTeamCheckStatus (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT IN_COMPLETE, IN_SAFETY FROM TB_TECH_PLANE WHERE FK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $teamIDX );
+    my $totalRow = $select->rows();
+    my $reqCount = 0;
+    my $safCount = 0;
+    my $reqStatus = 0;
+    my $safStatus = 0;
+    while (my ($inComplete, $inSafety) = $select->fetchrow_array()) {
+        $reqCount += $inComplete;
+        $safCount += $inSafety;
+    }
+    if ($totalRow == $reqCount){$reqStatus = 1}
+    if ($totalRow == $safCount){$safStatus = 1}
+    return ($reqStatus, $safStatus);
+    }
+sub _getTeamDataFromPlane (){
+    my ($self, $planeIDX) = @_;
+    my $SQL ="SELECT P.*, T.IN_NUMBER, T.FK_CLASS_IDX FROM TB_TECH_PLANE AS P JOIN TB_TEAM AS T ON P.FK_TEAM_IDX=T.PK_TEAM_IDX WHERE P.PK_TECH_PLANE_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $planeIDX );
+    my %HASH = %{$select->fetchrow_hashref()};
+    return (\%HASH);
+    }
+sub _setCompleteSafetyInspection (){
+    my ($self, $planeIDX) = @_;
+    my $SQL = "UPDATE TB_TECH_PLANE SET IN_SAFETY=? WHERE PK_TECH_PLANE_IDX=?";
+    my $update = $dbi->prepare($SQL);
+       $update->execute(1, $planeIDX);
+    return ();
+    }
+sub _setInprogressSafetyInspection (){
+    my ($self, $planeIDX) = @_;
+    my $SQL = "UPDATE TB_TECH_PLANE SET IN_SAFETY=? WHERE PK_TECH_PLANE_IDX=?";
+    my $update = $dbi->prepare($SQL);
+       $update->execute(0, $planeIDX);
+    return ();
+    }
+sub _setCompleteInspection (){
+    my ($self, $planeIDX) = @_;
+    my $SQL = "UPDATE TB_TECH_PLANE SET IN_COMPLETE=? WHERE PK_TECH_PLANE_IDX=?";
+    my $update = $dbi->prepare($SQL);
+       $update->execute(1, $planeIDX);
+    return ();
+    }
+sub _setInprogressInspection (){
+    my ($self, $planeIDX) = @_;
+    my $SQL = "UPDATE TB_TECH_PLANE SET IN_COMPLETE=? WHERE PK_TECH_PLANE_IDX=?";
+    my $update = $dbi->prepare($SQL);
+       $update->execute(0, $planeIDX);
+    return ();
+    }
+sub _getCompleteConfirmation (){
+    my ($self, $planeIDX, $txType) = @_;
+    # my $SQL = "SELECT T.PK_TECH_IDX, T.IN_STATUS, R.TX_REQUIREMENT, R.TX_SECTION, R.IN_POINTS FROM TB_TECH AS T JOIN TB_TECH_REQ AS R ON T.FK_TECH_REQ_IDX=R.PK_TECH_REQ_IDX WHERE FK_TECH_PLANE_IDX=?";
+    my $SQL = "SELECT S.PK_TECH_REQ_IDX, T.PK_TECH_IDX, T.IN_STATUS, S.TX_REQUIREMENT, S.TX_SECTION, S.IN_POINTS, R.IN_SECTION AS IN_SECTION, S.IN_SECTION AS IN_SUBSECTION, 
+        R.TX_SECTION AS TX_TITLE FROM TB_TECH AS T 
+    JOIN TB_TECH_REQ AS S ON T.FK_TECH_REQ_IDX=S.PK_TECH_REQ_IDX 
+    JOIN TB_TECH_REQ_SECTION AS R ON R.PK_TECH_REQ_SECTION_IDX=S.FK_TECH_REQ_SECTION_IDX 
+    WHERE (FK_TECH_PLANE_IDX=? AND TX_TYPE=?)";
+    # print $SQL;
+    # print $planeIDX;
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $planeIDX, $txType );
+    my %HASH = %{$select->fetchall_hashref('PK_TECH_REQ_IDX')};
+    return (\%HASH);
+    }
+sub _getTeamCertificationStatus (){
+    my ($self, $teamIDX) = @_;
+    my $str;
+
+    return ();
+    }
+# sub _getCertStatus (){
+#     my ($self, $teamIDX) = @_;
+#     my $str;
+
+#     return ();
+#     }
 sub _getCertificationStatus (){
     my ($self, $teamIDX) = @_;
     my $SQL = "SELECT * FROM TB_TECH_STUDENT WHERE FK_TEAM_IDX=?";
@@ -29,25 +154,48 @@ sub _getCertificationStatus (){
     return (\%HASH);
     }
 sub _getTechSafetyCheckStatus(){
-    my ($self, $teamIDX, $inSafetyStatus, $classIDX) = @_;
+    # my ($self, $teamIDX, $inSafetyStatus, $classIDX) = @_;
+    # my $txSafety = 'Safety Check<br>Not Started';
+    # if ($inSafetyStatus == 1) {      # Inspection has begun (no Failed)
+    #     $colorSafetyStatus = 'w3-yellow';
+    #     $txSafety = 'Safety Check<br>In-Progress';
+    # } elsif ($inSafetyStatus == 2) { # Inspection has begun, and the team needs to be reinspected
+    #     $colorSafetyStatus = 'w3-pale-red';
+    #     $txSafety = 'Safety Check: <b class="w3-text-red">Failed</b><br>Re-Check Required';
+    # } elsif ($inSafetyStatus == 3) { # Passed
+    #     $colorSafetyStatus = 'w3-light-blue';
+    #     $txSafety = 'Safety Check<br>Complete';
+    # } else {                           # Have not attempted inspection yet
+    #     $colorSafetyStatus = 'w3-white';
+    #     $txSafety = 'Safety Check<br>Not Started';
+    # }
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT  SUM(P.IN_SAFETY) AS IN_SAFETY, COUNT(T.FK_CLASS_IDX) AS IN_ROW
+        FROM TB_TECH_PLANE AS P JOIN TB_TEAM AS T ON P.FK_TEAM_IDX=T.PK_TEAM_IDX
+        WHERE FK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $teamIDX );
+    my ($inComplete, $totalRow) = $select->fetchrow_array();
+    my $colorSafetyStatus = 'w3-white';
     my $txSafety = 'Safety Check<br>Not Started';
-    if ($inSafetyStatus == 1) {      # Inspection has begun (no Failed)
+    if ($totalRow > 0 && $totalRow != $inComplete){
         $colorSafetyStatus = 'w3-yellow';
-        $txSafety = 'Safety Check<br>In-Progress';
-    } elsif ($inSafetyStatus == 2) { # Inspection has begun, and the team needs to be reinspected
-        $colorSafetyStatus = 'w3-pale-red';
-        $txSafety = 'Safety Check: <b class="w3-text-red">Failed</b><br>Re-Check Required';
-    } elsif ($inSafetyStatus == 3) { # Passed
+        $txSafety = 'Safety Check<br>in-Progress';
+    } elsif ($totalRow > 0 && $totalRow == $inComplete) {
         $colorSafetyStatus = 'w3-light-blue';
         $txSafety = 'Safety Check<br>Complete';
-    } else {                           # Have not attempted inspection yet
+    } else {
         $colorSafetyStatus = 'w3-white';
         $txSafety = 'Safety Check<br>Not Started';
     }
+    $SQL = "SELECT FK_CLASS_IDX FROM TB_TEAM WHERE PK_TEAM_IDX=?";
+       $select = $dbi->prepare($SQL);
+       $select->execute( $teamIDX );
+    my ($classIDX) = $select->fetchrow_array();
     my $str;
-    $str .= sprintf '<div ID="TeamRequirementsCheck_%d" class="w3-container '.$colorSafetyStatus.' w3-padding-16 w3-border w3-card-2 w3-round" style="cursor: pointer" onclick="student_openSafetyChecks(this, %d, %d)">', $teamIDX, $teamIDX, $classIDX;
+    $str .= sprintf '<div ID="TeamSafetyCheck_%d" class="w3-container '.$colorSafetyStatus.' w3-padding-16 w3-border w3-card-2 w3-round" style="cursor: pointer" onclick="student_openSafetyChecks(this, %d, %d)">', $teamIDX, $teamIDX, $classIDX;
     $str .= '<div class="w3-left">';
-    $str .= sprintf '<i class="fa fa-check-square-o fa-fw fa-2x"><span class="w3-margin-left w3-large">Safety</span></i>';
+    $str .= sprintf '<i class="fa fa-medkit fa-fw fa-2x"><span class="w3-margin-left w3-large">Safety</span></i>';
     $str .= '</div>';
     $str .= sprintf '<div class="w3-right"><i class="fa fa-chevron-right fa-3x w3-margin-left" aria-hidden="true"></i></div>';
     $str .= '<div class="w3-clear"></div>';
@@ -57,23 +205,31 @@ sub _getTechSafetyCheckStatus(){
     return ($str );
     }
 sub _getTechRequirementsCheckStatus(){
-    my ($self, $teamIDX, $inspectionStatus, $classIDX) = @_;
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT  SUM(P.IN_COMPLETE) AS IN_COMPLETE, COUNT(T.FK_CLASS_IDX) AS IN_ROW
+        FROM TB_TECH_PLANE AS P JOIN TB_TEAM AS T ON P.FK_TEAM_IDX=T.PK_TEAM_IDX
+        WHERE FK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $teamIDX );
+    my ($inComplete, $totalRow) = $select->fetchrow_array();
     my $colorReqStatus = 'w3-white';
     my $txReq = 'Requirements Check<br>Not Started';
-    if ($inspectionStatus == 1) {      # Inspection has begun (no Failed)
+    if ($totalRow > 0 && $totalRow != $inComplete){
         $colorReqStatus = 'w3-yellow';
         $txReq = 'Requirements Check<br>in-Progress';
-    } elsif ($inspectionStatus == 2) { # Inspection has begun, and the team needs to be reinspected
-        $colorReqStatus = 'w3-pale-red';
-        $txReq = 'Req. Check: <b class="w3-text-red">Failed</b><br>Re-Check Required';
-    } elsif ($inspectionStatus == 3) { # Passed
+    } elsif ($totalRow > 0 && $totalRow == $inComplete) {
         $colorReqStatus = 'w3-light-blue';
         $txReq = 'Requirements Check<br>Complete';
-    } else {                           # Have not attempted inspection yet
+    } else {
         $colorReqStatus = 'w3-white';
         $txReq = 'Requirements Check<br>Not Started';
     }
+    $SQL = "SELECT FK_CLASS_IDX FROM TB_TEAM WHERE PK_TEAM_IDX=?";
+       $select = $dbi->prepare($SQL);
+       $select->execute( $teamIDX );
+    my ($classIDX) = $select->fetchrow_array();
     my $str;
+    # $str .= qq($totalRow, $inComplete);
     $str .= sprintf '<div ID="TeamRequirementsCheck_%d" class="w3-container '.$colorReqStatus.' w3-padding-16 w3-border w3-card-2 w3-round" style="cursor: pointer" onclick="student_openRequirementsChecks(this, %d, %d)">', $teamIDX, $teamIDX, $classIDX;
     $str .= '<div class="w3-left">';
     $str .= sprintf '<i class="fa fa-check-square-o fa-fw fa-2x"><span class="w3-margin-left w3-large">Requirements</span></i>';
@@ -83,7 +239,7 @@ sub _getTechRequirementsCheckStatus(){
     $str .= sprintf '<h5>%s</h5>', $txReq;
     # $str .= sprintf '<h4>Re-Inspection Required after flight attempt # %02d</h4>', $TECH{$inspectIDX}{IN_ROUND};
     $str .= '</div>';
-    return ($str );
+    return ($str);
     }
 sub getInspectionPenalties(){
     my ($teamIDX) = @_;
@@ -109,14 +265,16 @@ sub _getTeamInspectionStatus (){
 sub getTeamSafetyStatus(){
     my ($teamIDX, $classIDX) = @_;
     my $txType="safetySectionNumber";
-    my $SQL;
-    if ($classIDX == 3){
-       $SQL = "SELECT REQ.* FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.TX_TYPE=? AND REQ.BO_MICRO=?)";
-    } elsif ($classIDX == 2) {
-       $SQL = "SELECT REQ.* FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.TX_TYPE=? AND REQ.BO_ADVANCE=?)";
-    } else {
-       $SQL = "SELECT REQ.* FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.TX_TYPE=? AND REQ.BO_REGULAR=?)";
-    }
+    my %FIELD = (1=>'REQ.BO_REGULAR', 2=>'REQ.BO_ADVANCE', 3=>'REQ.BO_MICRO',4=>'REQ.BO_PADA');
+    my $field = $FIELD{$classIDX};
+    my $SQL = "SELECT REQ.* FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.TX_TYPE=? AND $field=?)";
+    # if ($classIDX == 3){
+    #    $SQL = "SELECT REQ.* FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.TX_TYPE=? AND REQ.BO_MICRO=?)";
+    # } elsif ($classIDX == 2) {
+    #    $SQL = "SELECT REQ.* FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.TX_TYPE=? AND REQ.BO_ADVANCE=?)";
+    # } else {
+    #    $SQL = "SELECT REQ.* FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.TX_TYPE=? AND REQ.BO_REGULAR=?)";
+    # }
     my $select = $dbi->prepare($SQL);
        $select->execute( $txType, 1 );
     my $required = $select->rows;
@@ -151,58 +309,117 @@ sub _getTeamSafetyStatus(){
     $str = &getTeamSafetyStatus($teamIDX, $classIDX);
     return ($str);
     }
+sub _getPlaneInspectionStatus (){
+    my ($self, $planeIDX) = @_;
+    my $SQL = "SELECT IN_COMPLETE, IN_SAFETY FROM TB_TECH_PLANE WHERE PK_TECH_PLANE_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $planeIDX );
+    my ($reqStatus, $safetyStatus) = $select->fetchrow_array();
+    return ($reqStatus, $safetyStatus);
+    }
+
+sub getPlaneInspectionStatus (){
+    # my ($planeIDX) = @_;
+    # my $SQL = "SELECT IN_COMPLETE, IN_SAFETY FROM TB_TECH_PLANE WHERE PK_TECH_PLANE_IDX=?";
+    # my $select = $dbi->prepare($SQL);
+    #    $select->execute( $planeIDX );
+    # my ($reqStatus, $safetyStatus) = $select->fetchrow_array()
+    # return ($reqStatus, $safetyStatus);
+    # my $str;
+    # # print "$planeIDX, $classIDX\n\n"; 
+    # my $SQL;
+    # my $boClass;
+    # my %REQ_LIST;
+    # my %REQ_REQ;
+    # my $boStatus = 0; # Not started
+    # my $txType = 'reqSectionNumber';
+    # if ($classIDX == 1){
+    #     $boClass = 'BO_REGULAR'
+    # } elsif ($classIDX == 2) {
+    #     $boClass = 'BO_ADVANCE'
+    # } else {
+    #     $boClass = 'BO_MICRO';
+    # }
+    # # Creating a list of all requirement check items and create two hashes for complete list and required list.
+    # my $SQL = "SELECT R.PK_TECH_REQ_IDX, S.BO_CHECK FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX WHERE  ($boClass=? AND S.TX_TYPE=? AND S.BO_CHECK=?)";
+    # my $select = $dbi->prepare($SQL);
+    #    $select->execute( 1, $txType, 1 );
+    # my $reqTotal = $select->rows();
+    
+
+    # $SQL    = "SELECT COUNT(T.IN_STATUS) AS IN_COUNT FROM TB_TECH AS T 
+    #  JOIN TB_TECH_REQ AS R ON T.FK_TECH_REQ_IDX=R.PK_TECH_REQ_IDX
+    #  JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX
+    #  WHERE (T.FK_TECH_PLANE_IDX=? AND S.TX_TYPE=? AND S.BO_CHECK=?)";
+    # $select = $dbi->prepare($SQL);
+    # $select ->execute( $planeIDX, $txType, 1);
+    # my ($checkedTotal) = $select->fetchrow_array();
+
+    # $SQL = "SELECT COUNT(T.IN_STATUS) AS IN_COUNT FROM TB_TECH AS T 
+    #  JOIN TB_TECH_REQ AS R ON T.FK_TECH_REQ_IDX=R.PK_TECH_REQ_IDX
+    #  JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX
+    #  WHERE (T.FK_TECH_PLANE_IDX=? AND S.TX_TYPE=? and S.BO_CHECK=? and T.IN_STATUS=?)";
+    # $select = $dbi->prepare($SQL);
+    # $select ->execute( $planeIDX , $txType, 1, 0);
+    # my ($failedTotal) = $select->fetchrow_array();
+
+    # if ( $checkedTotal> 0 )  {$boStatus = 1} #In Progress
+    # if ( $failedTotal > 0 && $checkedTotal == $reqTotal)  {$boStatus = 2} # FAILED
+    # if ( $failedTotal ==0 && $checkedTotal == $reqTotal) { $boStatus = 3 } # PASSED
+    # if ( $checkedTotal==0)  {$boStatus = 0} # Not started
+
+    # # printf "reqTotal     = %10d\n", $reqTotal;
+    # # printf "checkedTotal = %10d\n", $checkedTotal;
+    # # printf "failedTotal  = %10d\n", $failedTotal;
+    # # printf "boStatus     = %10d\n", $boStatus;
+    # return ($boStatus);
+    }
 sub getInsptectionStatus (){
     my ($teamIDX, $classIDX) = @_;
-    my $SQL = "SELECT * FROM TB_TECH WHERE FK_TEAM_IDX=? AND IN_STATUS!=?";
-    my $passed = $dbi->prepare($SQL);
-       $passed->execute( $teamIDX, 2 );
-    my %PASSED = %{$passed->fetchall_hashref('FK_TECH_REQ_IDX')};
-    # print join(";", keys %PASSED)."\n\n";
-    my $SQL = "SELECT * FROM TB_TECH WHERE FK_TEAM_IDX=? AND IN_STATUS=?";
-       $failed = $dbi->prepare($SQL);
-       $failed->execute( $teamIDX, 2 );
-    my %FAILED = %{$failed->fetchall_hashref('FK_TECH_REQ_IDX')};
-
-    if ($classIDX == 1){
-       $SQL = "SELECT * FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.BO_CHECK=? AND BO_REGULAR=?)";
-    } elsif ($classIDX == 2) {
-       $SQL = "SELECT * FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.BO_CHECK=? AND BO_ADVANCE=?)";
-    } else {
-       $SQL = "SELECT * FROM TB_TECH_REQ AS REQ JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX WHERE (SEC.BO_CHECK=? AND BO_MICRO=?)";
-    }
+    my $SQL;
+    my $boClass;
+    my %REQ_LIST;
+    my %REQ_REQ;
+    my $boStatus = 0; # Not started
+    my $txType = 'reqSectionNumber';
+    # if ($classIDX == 1){
+    #     $boClass = 'BO_REGULAR'
+    # } elsif ($classIDX == 2) {
+    #     $boClass = 'BO_ADVANCE'
+    # } else {
+    #     $boClass = 'BO_MICRO';
+    # }
+    my %FIELD = (1=>'BO_REGULAR', 2=>'BO_ADVANCE', 3=>'BO_MICRO',4=>'BO_PADA');
+    my $boClass = $FIELD{$classIDX};
+    # Creating a list of all requirement check items and create two hashes for complete list and required list.
+    my $SQL = "SELECT R.PK_TECH_REQ_IDX, S.BO_CHECK FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX WHERE  ($boClass=? AND S.TX_TYPE=? AND S.BO_CHECK=?)";
     my $select = $dbi->prepare($SQL);
-       $select->execute( 1, 1 );
-    my %REQUIRED = %{$select->fetchall_hashref('PK_TECH_REQ_IDX')};
-    my $boStatus = 0;
-    my $failed   = 0;
-    my $passed   = 0;
-    my $required = scalar (keys %REQUIRED);
-    foreach $requireIDX (sort keys %REQUIRED){
-        if (exists $FAILED{$requireIDX}){$failed ++}
-        if (exists $PASSED{$requireIDX}){$passed ++}
-    }
-    my $total = $failed + $passed;
-    # print "Class                  = $classIDX\n";
-    # print "Number of requirements = $required\n";
-    # print "Number of failed       = $failed\n";
-    # print "Number of passed       = $passed\n";
-    # print "Total Performed        = $total\n";
-    if ($total > 0 && $total < $required){
-        if ($failed ==0 && $passed > 0) {
-            $boStatus = 1;
-        } elsif ($failed > 0) {
-            $boStatus = 2;
-        }
-    } elsif ($total == $required) {
-        if ($failed > 0) {
-            $boStatus=2;
-        } else {
-            $boStatus = 3;
-        }
-    } else {
-        $boStatus=0;
-    }
+       $select->execute( 1, $txType, 1 );
+    my $reqTotal = $select->rows();
+
+    $SQL    = "SELECT COUNT(T.IN_STATUS) AS IN_COUNT FROM TB_TECH AS T 
+     JOIN TB_TECH_REQ AS R ON T.FK_TECH_REQ_IDX=R.PK_TECH_REQ_IDX
+     JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX
+     WHERE (T.FK_TEAM_IDX=? AND S.TX_TYPE=? AND S.BO_CHECK=?)";
+    $select = $dbi->prepare($SQL);
+    $select ->execute( $teamIDX, $txType, 1);
+    my ($checkedTotal) = $select->fetchrow_array();
+
+    $SQL = "SELECT COUNT(T.IN_STATUS) AS IN_COUNT FROM TB_TECH AS T 
+     JOIN TB_TECH_REQ AS R ON T.FK_TECH_REQ_IDX=R.PK_TECH_REQ_IDX
+     JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX
+     WHERE (T.FK_TEAM_IDX=? AND S.TX_TYPE=? and S.BO_CHECK=? and T.IN_STATUS=?)";
+    $select = $dbi->prepare($SQL);
+    $select ->execute( $teamIDX , $txType, 1, 0);
+    my ($failedTotal) = $select->fetchrow_array();
+
+
+    if ( $checkedTotal> 0 )  {$boStatus = 1} #In Progress
+    if ( $failedTotal > 0 && $checkedTotal == $reqTotal)  {$boStatus = 2} # FAILED
+    if ( $failedTotal ==0 && $checkedTotal == $reqTotal) { $boStatus = 3 } # PASSED
+    if ( $checkedTotal==0)  {$boStatus = 0} # Not started
     return ($boStatus);
+
     }
 sub _getInsptectionStatus (){
     my ($self, $hash) = @_;
@@ -234,73 +451,132 @@ sub _getTeamList (){
     return (\%HASH);
     }
 sub _getTeamTechList (){
+    # my ($self, $teamIDX) = @_;
+    # my $SQL = "SELECT * FROM TB_TECH WHERE FK_TEAM_IDX=?";
+    # my $select = $dbi->prepare($SQL);
+    #    $select->execute( $teamIDX );
+    # my %HASH = %{$select->fetchall_hashref('FK_TECH_REQ_IDX')};
+    # return (\%HASH);
+    my ($self, $planeIDX) = @_;
+    my $SQL = "SELECT * FROM TB_TECH WHERE FK_TECH_PLANE_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $planeIDX );
+    my %HASH = %{$select->fetchall_hashref('FK_TECH_REQ_IDX')};
+    return (\%HASH);
+    }
+sub _getStudentTechList (){
     my ($self, $teamIDX) = @_;
-    my $SQL = "SELECT * FROM TB_TECH WHERE FK_TEAM_IDX=?";
+    my $SQL = "SELECT * FROM TB_TECH_STUDENT WHERE FK_TEAM_IDX=?";
     my $select = $dbi->prepare($SQL);
        $select->execute( $teamIDX );
     my %HASH = %{$select->fetchall_hashref('FK_TECH_REQ_IDX')};
     return (\%HASH);
     }
+sub _getRequiredTechList (){
+    my ($self, $classIDX) = @_;
+    my %FIELD = (1=>'R.BO_REGULAR', 2=>'R.BO_ADVANCE', 3=>'R.BO_MICRO',4=>'R.BO_PADA');
+    my $field = $FIELD{$classIDX};
+    my $SQL = qq(SELECT CONCAT(S.IN_SECTION,".",R.IN_SECTION) AS IN_SECTION, R.PK_TECH_REQ_IDX, R.FK_CLASS_IDX, R.TX_REQUIREMENT, R.TX_SECTION, R.IN_POINTS 
+                FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX 
+                WHERE ($field=? AND S.BO_CHECK=?));
+    # if ($classIDX == 3){
+    #         # $SQL = "SELECT R.* FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX WHERE (R.BO_MICRO=? AND S.BO_CHECK=?)";
+    #         $SQL = qq(SELECT CONCAT(S.IN_SECTION,".",R.IN_SECTION) AS IN_SECTION, R.PK_TECH_REQ_IDX, R.FK_CLASS_IDX, R.TX_REQUIREMENT, R.TX_SECTION, R.IN_POINTS 
+    #             FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX 
+    #             WHERE (R.BO_MICRO=? AND S.BO_CHECK=?));
+    #     } elsif ($classIDX == 2) {
+    #         # $SQL = "SELECT R.* FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX WHERE (R.BO_ADVANCE=? AND S.BO_CHECK=?)";
+    #         $SQL = qq(SELECT CONCAT(S.IN_SECTION,".",R.IN_SECTION) AS IN_SECTION, R.PK_TECH_REQ_IDX, R.FK_CLASS_IDX, R.TX_REQUIREMENT, R.TX_SECTION, R.IN_POINTS 
+    #             FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX 
+    #             WHERE (R.BO_ADVANCE=? AND S.BO_CHECK=?));
+    #     } else {
+    #         # $SQL = "SELECT R.* FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX WHERE (R.BO_REGULAR=? AND S.BO_CHECK=?)";
+    #         $SQL = qq(SELECT CONCAT(S.IN_SECTION,".",R.IN_SECTION) AS IN_SECTION, R.PK_TECH_REQ_IDX, R.FK_CLASS_IDX, R.TX_REQUIREMENT, R.TX_SECTION, R.IN_POINTS 
+    #             FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX 
+    #             WHERE (R.BO_REGULAR=? AND S.BO_CHECK=?));
+    #         # $SQL = "SELECT S.IN_SECTION AS SECTION, R.IN_SECTION AS SUBSECTION, R.PK_TECH_REQ_IDX, R.FK_CLASS_IDX, R.TX_REQUIREMENT, R.TX_SECTION, R.IN_POINTS 
+    #         #     FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX 
+    #         #     WHERE (R.BO_REGULAR=? AND S.BO_CHECK=?)";
 
+    #     }
+    # print "<br><br>$SQL";
+    my $select = $dbi->prepare($SQL);
+       $select->execute(1,1) || die "Did not work $0";
+    my %HASH = %{$select->fetchall_hashref('PK_TECH_REQ_IDX')};
+    # print join(", ", keys %HASH);
+    return (\%HASH);
+    }
+sub _getSafetyList (){
+    my ($self, $classIDX, $txType) = @_;
+    my $str;
+    my %FIELD = (1=>'BO_REGULAR', 2=>'BO_ADVANCE', 3=>'BO_MICRO',4=>'BO_PADA');
+    my $field = $FIELD{$classIDX};
+    my $SQL = qq(SELECT CONCAT(S.IN_SECTION,".", R.IN_SECTION) AS IN_SECTION, R.PK_TECH_REQ_IDX, R.TX_REQUIREMENT, R.TX_SECTION, R.IN_SECTION AS IN_ORDER
+            FROM TB_TECH_REQ AS R JOIN TB_TECH_REQ_SECTION AS S ON R.FK_TECH_REQ_SECTION_IDX=S.PK_TECH_REQ_SECTION_IDX 
+            WHERE (S.TX_TYPE=? AND $field=?));
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $txType, 1 );
+       # print $SQL;
+    my %HASH = %{$select->fetchall_hashref('PK_TECH_REQ_IDX')};
+    return (\%HASH);
+    }
 sub _getReqList (){
     my ($self, $classIDX) = @_;
     # my $SQL = "SELECT SEC.TX_SECTION AS TX_TITLE, SEC.IN_SECTION AS IN_HEAD, REQ.* FROM TB_TECH_REQ AS REQ 
     #     JOIN TB_TECH_REQ_SECTION AS SEC ON REQ.FK_TECH_REQ_SECTION_IDX=SEC.PK_TECH_REQ_SECTION_IDX  
     #     WHERE SEC.TX_TYPE=?";
-    my $SQL;
-    if ($classIDX == 3){
-            $SQL = "SELECT * FROM TB_TECH_REQ WHERE BO_MICRO=?";
-        } elsif ($classIDX == 2) {
-            $SQL = "SELECT * FROM TB_TECH_REQ WHERE BO_ADVANCE=?";
-        } else {
-            $SQL = "SELECT * FROM TB_TECH_REQ WHERE BO_REGULAR=?";
-        }
-    
+    my %FIELD = (1=>'BO_REGULAR', 2=>'BO_ADVANCE', 3=>'BO_MICRO',4=>'BO_PADA');
+    my $field = $FIELD{$classIDX};
+    my $SQL = "SELECT * FROM TB_TECH_REQ WHERE $field=?";;
+    # if ($classIDX == 3){
+    #         $SQL = "SELECT * FROM TB_TECH_REQ WHERE BO_MICRO=?";
+    #     } elsif ($classIDX == 2) {
+    #         $SQL = "SELECT * FROM TB_TECH_REQ WHERE BO_ADVANCE=?";
+    #     } else {
+    #         $SQL = "SELECT * FROM TB_TECH_REQ WHERE BO_REGULAR=?";
+    #     }
+    # print $SQL;
     my $select = $dbi->prepare($SQL);
        $select->execute( 1 );
     my %HASH = %{$select->fetchall_hashref(['FK_TECH_REQ_SECTION_IDX','PK_TECH_REQ_IDX'])};
     return (\%HASH);
     }
 sub _getSectionHeading (){
-    my ($self, $txType) = @_;
-    my $SQL = "SELECT * FROM TB_TECH_REQ_SECTION WHERE TX_TYPE=?";
+    my ($self, $txType, $classIDX) = @_;
+    my %FIELD = (1=>'BO_REGULAR', 2=>'BO_ADVANCE', 3=>'BO_MICRO',4=>'BO_PADA');
+    my $field = $FIELD{$classIDX};
+    # my $SQL = "SELECT * FROM TB_TECH_REQ_SECTION WHERE TX_TYPE=?";
+    my $SQL;
+    if ($classIDX==2){
+            $SQL = "SELECT S.* FROM TB_TECH_REQ_SECTION AS S JOIN TB_TECH_REQ AS R ON S.PK_TECH_REQ_SECTION_IDX=R.FK_TECH_REQ_SECTION_IDX WHERE (TX_TYPE=? AND (BO_ADVANCE=1 or BO_PADA=1))";
+        } else {
+            $SQL = "SELECT S.* FROM TB_TECH_REQ_SECTION AS S JOIN TB_TECH_REQ AS R ON S.PK_TECH_REQ_SECTION_IDX=R.FK_TECH_REQ_SECTION_IDX WHERE (TX_TYPE=? AND $field=1)";
+        }
     my $select = $dbi->prepare($SQL);
-       $select->execute( $txType );
+       $select->execute( $txType);
     my %HASH = %{$select->fetchall_hashref('PK_TECH_REQ_SECTION_IDX')};
-
+    # print $SQL;
+    # print $classIDX;
     return (\%HASH);
     }
 sub _submitTechInspectionStatus (){
-    my ($self, $teamIDX, $itemIDX, $inStatus, $eventIDX) = @_;
+    my ($self, $teamIDX, $itemIDX, $inStatus, $eventIDX, $userIDX, $planeIDX) = @_;
     # my $eventIDX=31;
     my $str;
-    my $SQL = "SELECT * FROM TB_TECH WHERE (FK_TEAM_IDX=? AND FK_TECH_REQ_IDX=?)";
+    my $SQL = "SELECT * FROM TB_TECH WHERE (FK_TECH_PLANE_IDX=? AND FK_TECH_REQ_IDX=?)";
+    # my $SQL = "SELECT * FROM TB_TECH WHERE (FK_TEAM_IDX=? AND FK_TECH_REQ_IDX=?)";
     my $select = $dbi->prepare($SQL);
-       $select->execute( $teamIDX, $itemIDX );
+       $select->execute( $planeIDX, $itemIDX );
        $rows = $select->rows;
-    my $boPenalty = 0;
-    if ($inStatus == 2){$boPenalty =1}
-    if ($inStatus == 0) {
-        $SQL = "DELETE FROM TB_TECH WHERE (FK_TEAM_IDX=? AND FK_TECH_REQ_IDX=?)";
-        my $delete = $dbi->prepare($SQL);
-           $delete->execute($teamIDX, $itemIDX);
-        } else {
-            if ($rows ==0){
-                $SQL = "INSERT INTO TB_TECH (FK_TEAM_IDX, FK_TECH_REQ_IDX, FK_EVENT_IDX, IN_STATUS, BO_PENALTY) VALUES (?, ?, ?, ?, ?)";
-                my $insert = $dbi->prepare($SQL);
-                   $insert->execute($teamIDX, $itemIDX, $eventIDX, $inStatus, $boPenalty);
-            } else {
-                if ($inStatus == 2) {
-                        $SQL = "UPDATE TB_TECH SET IN_STATUS=?, BO_PENALTY=? WHERE (FK_TEAM_IDX=? AND FK_TECH_REQ_IDX=?)";
-                        my $update = $dbi->prepare($SQL);
-                           $update->execute($inStatus, $boPenalty, $teamIDX, $itemIDX);
-                    } else {
-                        $SQL = "UPDATE TB_TECH SET IN_STATUS=? WHERE (FK_TEAM_IDX=? AND FK_TECH_REQ_IDX=?)";
-                        my $update = $dbi->prepare($SQL);
-                           $update->execute($inStatus, $teamIDX, $itemIDX);
-                    }
-            }
-        }
+    if ($rows ==0 ){
+        $SQL = "INSERT INTO TB_TECH (FK_TEAM_IDX, FK_TECH_REQ_IDX, FK_EVENT_IDX, IN_STATUS, FK_USER_IDX, FK_TECH_PLANE_IDX) VALUES (?, ?, ?, ?, ?, ?)";
+        my $insert = $dbi->prepare($SQL);
+           $insert->execute($teamIDX, $itemIDX, $eventIDX, $inStatus, $userIDX, $planeIDX);
+    } else {
+        $SQL = "UPDATE TB_TECH SET IN_STATUS=?, FK_USER_IDX=? WHERE (FK_TEAM_IDX=? AND FK_TECH_REQ_IDX=?)";
+        my $update = $dbi->prepare($SQL);
+           $update->execute($inStatus, $userIDX, $teamIDX, $itemIDX);
+    }
     return ($str);
     }
 
@@ -401,6 +677,46 @@ sub getMyReinspection (){
             }
         }
     return ($str);
+    }
+sub _addPlane (){
+    my ($self, $teamIDX, $inSequence) = @_;
+    my $str;
+    my $SQL = "INSERT INTO TB_TECH_PLANE (FK_TEAM_IDX, IN_SEQUENCE) VALUES (?, ?)";
+    my $insert = $dbi->prepare($SQL);
+        $insert->execute($teamIDX, $inSequence);
+    my $newIDX = $insert->{q{mysql_insertid}} ;
+    return ($newIDX);
+    }
+sub _addPada (){
+    my ($self, $teamIDX, $inSequence) = @_;
+    my $str;
+    my $SQL = "INSERT INTO TB_TECH_PLANE (FK_TEAM_IDX, IN_SEQUENCE, BO_PADA) VALUES (?, ?, ?)";
+    my $insert = $dbi->prepare($SQL);
+        $insert->execute($teamIDX, $inSequence, 1);
+    my $newIDX = $insert->{q{mysql_insertid}} ;
+    return ($newIDX);
+    }
+sub _getPlaneCount (){
+    my ($self, $teamIDX, $Pada) = @_;
+    my $SQL = "SELECT MAX(IN_SEQUENCE) AS IN_COUNT FROM TB_TECH_PLANE WHERE FK_TEAM_IDX=? AND BO_PADA=?";
+    my $select = $dbi->prepare($SQL);
+
+       $select->execute($teamIDX, $Pada);
+    my ($inCount) = $select->fetchrow_array();
+    # if ($inCount){
+    #     return($inCount);
+    # } else {
+    #     return (0);
+    # }
+    return ($inCount);
+    }
+sub _getTechPlanes (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT * FROM TB_TECH_PLANE WHERE FK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($teamIDX);
+    my %HASH = %{$select->fetchall_hashref('PK_TECH_PLANE_IDX')}; 
+    return (\%HASH);
     }
 # -------------- 2023 --------------
 

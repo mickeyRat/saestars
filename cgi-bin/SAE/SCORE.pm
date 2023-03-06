@@ -461,7 +461,8 @@ sub _getTeamDataWithCrypt(){
         $HASH{$eIDX}{IN_NUMBER} = $inNumber;
         $HASH{$eIDX}{TX_SCHOOL} = $txSchool;
         $HASH{$eIDX}{FK_CLASS_IDX} = $classIDX;
-        $HASH{$eIDX}{TX_FULLNAME} = substr("000".$inNumber, -3,3).' - '.$txSchool;
+        $HASH{$eIDX}{TX_FULLNAME} = sprintf "%03d - %s", $inNumber, $txSchool;
+        # $HASH{$eIDX}{TX_FULLNAME} = substr("000".$inNumber, -3,3).' - '.$txSchool;
     }
     return(\%HASH);
 }

@@ -262,9 +262,10 @@ function sae_updateScoreCard(teamIDX, cardIDX){
 }
 // function sae_savePresentationScores(o, teamIDX, close, cardIDX){
 function sae_savePresentationScores(o, close, cardIDX){
-    var userIDX = $.cookie('PK_USER_IDX');
+    var totalCheck = 0;
+    var userIDX  = $.cookie('PK_USER_IDX');
     var location = $.cookie('LOCATION');
-    var teamIDX = $('#fkTeamIdx option:selected').val();
+    var teamIDX  = $('#fkTeamIdx option:selected').val();
     var obj = {};
     var cmt = {};
     $('.inputBinary').each(function(i){
@@ -272,6 +273,7 @@ function sae_savePresentationScores(o, close, cardIDX){
         // console.log("inputBinary data-key="+$(this).data('key')+"\n");
         if ($(this).is(":checked")){
             obj[$(this).data('key')] = 100;
+            totalCheck++
         } else {
             obj[$(this).data('key')] = 0;
         }
@@ -280,7 +282,8 @@ function sae_savePresentationScores(o, close, cardIDX){
         // console.log(i);
         // console.log("inputNumber data-key="+$(this).data('key')+"\n");
         var value = $(this).val();
-        obj[$(this).data('key')]=$(this).val()*10;
+        if (value>0){totalCheck++}
+        obj[$(this).data('key')]=value*10;
         // console.log("value="+value+"\n");
         $(this).val('');
     });
@@ -292,10 +295,12 @@ function sae_savePresentationScores(o, close, cardIDX){
     });
     var jsonData = JSON.stringify( obj );
     var jsonComment = JSON.stringify( cmt );
+    if (totalCheck==0){alert("No assessment made."); return;} else {$(o).close();}
     // console.log (divName);
     // console.log(jsonComment);
     // return
-    
+    console.log(userIDX);
+    // $(o).close();
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/preso.pl',
@@ -303,13 +308,24 @@ function sae_savePresentationScores(o, close, cardIDX){
         success: function(str){
             // console.log(str);
             var data = JSON.parse(str);
+            console.log(data);
             if (close==1){
                 // $('#'+divName).remove();
                 $(o).close();
                 $('#A_CARDIDX_'+cardIDX).remove();
             }
-            $('#TD_ROW_FOR_'+teamIDX).append(data.HTML);
+            // $('#TD_ROW_FOR_'+teamIDX).append(data.HTML);
             $('#TD_TEAM_AVERAGE_SCORE_'+teamIDX).html(data.AVERAGE);
+            $('#TD_TEAM_MAX_SCORE_'+teamIDX).html(data.MAX);
+            $('#TD_TEAM_MIN_SCORE_'+teamIDX).html(data.MIN);
+            $('#TD_TEAM_STD_SCORE_'+teamIDX).html(data.STD);
+            $('#TD_TEAM_CVAR_SCORE_'+teamIDX).html(data.COE);
+            if (cardIDX>0){
+                $('#SCORECARD_'+cardIDX).replaceWith(data.CARD);
+            } else {
+                $('#TD_PRESOCARD_'+teamIDX).prepend(data.CARD);
+            }
+
             $('[tabindex=1]').focus();
         }
     });
@@ -325,6 +341,7 @@ function sae_deleteScore(o, cardIDX){
         data: {'do':'sae_deleteScore','act':'print','cardIDX':cardIDX,'teamIDX':teamIDX,'location':location},
         success: function(str){
             $('#A_CARDIDX_'+cardIDX).remove();
+            $('#SCORECARD_'+cardIDX).fadeOut(250);
             $(o).close();
             $('#TD_TEAM_AVERAGE_SCORE_'+teamIDX).html(str);
         }

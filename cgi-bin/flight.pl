@@ -470,7 +470,7 @@ exit;
         if ($field eq 'IN_DISTANCE' && $inZone == 0){$w3Class .= ' w3-disabled'}
         my $data    = sprintf 'data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" data-field="%s"', $flightIDX, $field;
         $str = sprintf '<td class="cell w3-display-container" style="min-height: 40px;">';
-        $str .= sprintf '<input type="number" class="'.$w3Class.'" '.$data.' style="'.$style.'" value="%2.1f" onchange="updateField(this);">', $value;
+        $str .= sprintf '<input type="number" class="'.$w3Class.'" '.$data.' style="'.$style.'" min="0" value="%2.1f" onchange="updateField(this);">', $value;
         $str .= sprintf '</td>';
         return ($str);
         }
@@ -753,7 +753,7 @@ exit;
         if (exists $DATA{'IN_EPOCH'}) {
             my $Flight = new SAE::FLIGHT();
             $DATA{'IN_DENSITY'} = $Flight->_getDensityAltitude($eventIDX, $DATA{IN_EPOCH});
-            print "getDensityAltitude = $DATA{'IN_DENSITY'}";
+            # print "getDensityAltitude = $DATA{'IN_DENSITY'}";
         }
         
         my $str;
@@ -1213,21 +1213,21 @@ exit;
             $str .= '</tr>';
             
         }
-        $str .= '<t/body>';
+        $str .= '</tbody>';
         $str .= '</table>';
 
-        $str .= '<ul class="w3-ul">';
-        foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS){
-            if ($TEAMS{$teamIDX}{IN_NUMBER} < 200) {next}
-            my $txFlightStatus = $TEAMS{$teamIDX}{TX_FLIGHT_BUTTON};
-            # my $btn = $Flight->_tempFlightLogButton($teamIDX, $TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL}, $TEAMS{$teamIDX}{TX_NAME}, $TEAMS{$teamIDX}{TX_COUNTRY}, $TEAMS{$teamIDX}{FK_CLASS_IDX}, $TEAMS{$teamIDX}{IN_FLIGHT_STATUS});
-            if ($TEAMS{$teamIDX}{TX_FLIGHT_BUTTON}) {
-                $str .=  $txFlightStatus;
-            } else {
-                $str .= $Flight->_tempCheckOutButton($teamIDX, 1);
-            }
-        }
-        $str .= '</ul>';
+        # $str .= '<ul class="w3-ul">';
+        # foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS){
+        #     if ($TEAMS{$teamIDX}{IN_NUMBER} < 200) {next}
+        #     my $txFlightStatus = $TEAMS{$teamIDX}{TX_FLIGHT_BUTTON};
+        #     # my $btn = $Flight->_tempFlightLogButton($teamIDX, $TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL}, $TEAMS{$teamIDX}{TX_NAME}, $TEAMS{$teamIDX}{TX_COUNTRY}, $TEAMS{$teamIDX}{FK_CLASS_IDX}, $TEAMS{$teamIDX}{IN_FLIGHT_STATUS});
+        #     if ($TEAMS{$teamIDX}{TX_FLIGHT_BUTTON}) {
+        #         $str .=  $txFlightStatus;
+        #     } else {
+        #         $str .= $Flight->_tempCheckOutButton($teamIDX, 1);
+        #     }
+        # }
+        # $str .= '</ul>';
         $str .= '</div>';
         return ($str);
         }

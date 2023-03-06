@@ -15,6 +15,40 @@ sub new{
 # ===============================================================
 # GET
 # ===============================================================
+sub _deleteDaysLate (){
+    my ($self, $teamIDX) = @_;
+    my $str;
+    my $SQL = "DELETE FROM TB_LATE WHERE FK_TEAM_IDX=?";
+    my $delete = $dbi->prepare($SQL);
+       $delete->execute($teamIDX);
+    return ();
+    }
+sub _saveDaysLate (){
+    my ($self, $eventIDX, $teamIDX, $inDays) = @_;
+    my $SQL = "SELECT IN_DAYS FROM TB_LATE WHERE FK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+    $select->execute($teamIDX);
+    my $row = $select->rows();
+    if ($rows>0){
+        my $SQL = "UPDATE TB_DAYS SET IN_DAYS=? WHERE FK_TEAM_IDX=?";
+        my $update = $dbi->prepare($SQL);
+        $update->execute($inDays, $teamIDX);
+    } else {
+        my $SQL = "INSERT INTO TB_LATE (FK_EVENT_IDX, FK_TEAM_IDX, IN_DAYS) VAlUES (?, ?, ?)";
+        my $insert = $dbi->prepare($SQL);
+        $insert -> execute($eventIDX, $teamIDX, $inDays);
+    }
+    return ();
+    }
+sub _getDaysLate (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT IN_DAYS FROM TB_LATE WHERE FK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+    $select->execute($teamIDX);
+    my $row = $select->rows();
+    my ($inDays) = $select->fetchrow_array();
+    return ($inDays);
+    }
 sub _getCardIDX(){
     my ($self, $teamIDX, $userIDX) = @_;
     my $SQL = "SELECT PK_CARD_IDX FROM TB_CARD WHERE (FK_CARDTYPE_IDX=? AND FK_TEAM_IDX=? AND FK_USER_IDX=?)";
@@ -26,11 +60,8 @@ sub _getCardIDX(){
 sub _getOverallPaperByTeam(){
     my $self = shift;
     my $teamIDX = shift;
-    my $score = &_calculateOverallPaperByTeam($teamIDX,1);
-    $score += &_calculateOverallPaperByTeam($teamIDX,2);
-    $score += &_calculateOverallPaperByTeam($teamIDX,3);
-    $score += &_calculateOverallPaperByTeam($teamIDX,4);
-    my $late = &_calculateLatePenalty($teamIDX);
+    my $score   = &_getTeamDesignScore($teamIDX);
+    my $late    = &_calculateLatePenalty($teamIDX);
     return ($score, $late);
 }
 sub _calculateLatePenalty(){
@@ -69,9 +100,49 @@ sub _calculateOverallPaperByTeam(){
         my $MaxSectionScore = $PaperTotal * $inWeight /100;
         $sectionScore = ($inWeight/100) * ($average / 100) * $PaperTotal;
         $score += $sectionScore;
+        printf "%d\n", $sectionIDX;
     }
+    # printf "   Score = %2.4f\n\n", $score;
     return ($score);
 }
+sub _getTeamDesignScore (){
+    my ($teamIDX) = @_;
+    my $Rubric=new SAE::RUBRIC();
+    my %SECTION = %{$Rubric->_getSectionList()};
+    my $SQL    = "SELECT CARD.FK_CARDTYPE_IDX, SUB.FK_SECTION_IDX, AVG(PAPER.IN_VALUE) AS IN_AVERAGE FROM TB_PAPER AS PAPER 
+        JOIN TB_CARD AS CARD ON PAPER.FK_CARD_IDX=CARD.PK_CARD_IDX 
+        JOIN TB_SUBSECTION AS SUB ON PAPER.FK_SUBSECTION_IDX=SUB.PK_SUBSECTION_IDX
+        WHERE (CARD.FK_TEAM_IDX=?)
+        GROUP BY CARD.FK_CARDTYPE_IDX, SUB.FK_SECTION_IDX";
+    my $select = $dbi->prepare($SQL);
+       $select -> execute($teamIDX);
+    my %SCORE  = %{$select->fetchall_hashref(['FK_CARDTYPE_IDX','FK_SECTION_IDX'])};
+
+       $SQL    = "SELECT * FROM TB_CARDTYPE";
+    my $select = $dbi->prepare($SQL);
+       $select->execute();
+    my %POINTS = %{$select->fetchall_hashref('PK_CARDTYPE_IDX')};
+    my $sectionScore = 0;
+    for ($inType = 1; $inType<=4; $inType++) {
+        # printf "%d\n", $inType;
+        my $PaperTotal = $POINTS{$inType}{IN_POINTS};
+        my $score = 0;
+        foreach $sectionIDX (sort {$a<=>$b} keys %{$SECTION{$inType}}){
+            my $inWeight = $SECTION{$inType}{$sectionIDX}{IN_WEIGHT};
+            my $average = $SCORE{$inType}{$sectionIDX}{IN_AVERAGE};
+            # my $MaxSectionScore = $PaperTotal * $inWeight /100;
+            $score += ($inWeight/100) * ($average / 100) * $PaperTotal;
+            # printf "%5d, PaperTotal=%2.4f, Weight=%03.1f, Average=%03.4f, Score=%03.4f\n", $sectionIDX, $PaperTotal, $inWeight, $average, $score;
+        }
+        $sectionScore = $score;
+        $inFinalScore += $sectionScore;
+        # printf "\n==== SECTION SCORE = %2.4f\n", $sectionScore;
+        
+    }
+    # printf "\n==== FINAL SCORE = %2.4f\n", $inFinalScore;
+    # print "\n\n\a";
+    return ($inFinalScore);
+    }
 
 # ===============================================================
 # SAVES

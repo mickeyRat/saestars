@@ -70,6 +70,18 @@ sub _getAvailableJudges (){
     
     return (\%HASH);
     }
+sub _getPaperAssignmentCount (){
+    my ($self, $eventIDX, $inCardType) = @_;
+    my %HASH;
+    my $SQL = "SELECT FK_TEAM_IDX, COUNT(FK_TEAM_IDX) AS IN_COUNT  FROM TB_CARD WHERE FK_EVENT_IDX=? AND FK_CARDTYPE_IDX=? GROUP BY FK_TEAM_IDX";
+	my $select = $dbi->prepare($SQL);
+       $select->execute( $eventIDX, $inCardType );
+    while (my ($teamIDX, $inCount) = $select->fetchrow_array()) {
+    	$HASH{$teamIDX} = $inCount;
+    }
+    # my %HASH = %{$select->fetchall_hashref('FK_TEAM_IDX')}; 
+    return (\%HASH);
+    }
 sub _getListOfTeams (){
     my ($self, $eventIDX) = @_;
     my $SQL = "SELECT * FROM TB_TEAM WHERE FK_EVENT_IDX=?";
@@ -104,7 +116,7 @@ sub _getAssignment(){
     }
 sub _getJudgePreferenceDetails (){
     my ($self, $userIDX, $txYear) = @_;
-    my $SQL = "SELECT U.TX_FIRST_NAME, U.TX_LAST_NAME, U.TX_SCHOOL, U.TX_YEAR, U.IN_LIMIT, P.BO_REGULAR, P.BO_ADVANCE, P.BO_MICRO, P.BO_DRW, P.BO_TDS, P.BO_REQ FROM TB_PROFILE AS P
+    my $SQL = "SELECT U.TX_FIRST_NAME, U.TX_LAST_NAME, U.TX_SCHOOL, U.TX_YEAR, P.IN_LIMIT, P.BO_REGULAR, P.BO_ADVANCE, P.BO_MICRO, P.BO_DRW, P.BO_TDS, P.BO_REQ FROM TB_PROFILE AS P
 		JOIN TB_USER AS U ON P.FK_USER_IDX=U.PK_USER_IDX
 	    WHERE (P.FK_USER_IDX=? AND P.TX_YEAR=?)";
    	my $select = $dbi->prepare($SQL);

@@ -88,10 +88,19 @@ sub _getClassPreference(){
 }
 sub _getListOfJudges(){
     my $self =  shift;
-    my $location = shift;
-    my $SQL = "SELECT U.PK_USER_IDX, U.BO_EXTRA, U.TX_FIRST_NAME, U.TX_LAST_NAME, U.TX_EMAIL, U.TX_YEAR FROM TB_USER AS U JOIN TB_PREF AS P ON U.PK_USER_IDX=P.FK_USER_IDX WHERE P.FK_EVENT_IDX=?";
+    my $eventIDX = shift;
+
+    my $SQL = "SELECT IN_YEAR, TX_EVENT FROM TB_EVENT WHERE PK_EVENT_IDX=?";
     my $select = $dbi->prepare($SQL);
-       $select->execute($location);
+       $select->execute($eventIDX);
+    my ($inYear, $txSite) = $select->fetchrow_array();
+    my $field = "P.BO_".uc($txSite);
+
+    $SQL = "SELECT U.PK_USER_IDX, U.BO_EXTRA, U.TX_FIRST_NAME, U.TX_LAST_NAME, U.TX_EMAIL, P.IN_SINCE AS TX_TEAR
+        FROM TB_USER AS U JOIN TB_PROFILE AS P ON U.PK_USER_IDX=P.FK_USER_IDX WHERE (P.TX_YEAR=? AND $field=?)";
+    # my $SQL = "SELECT U.PK_USER_IDX, U.BO_EXTRA, U.TX_FIRST_NAME, U.TX_LAST_NAME, U.TX_EMAIL, U.TX_YEAR FROM TB_USER AS U JOIN TB_PREF AS P ON U.PK_USER_IDX=P.FK_USER_IDX WHERE P.FK_EVENT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($inYear, 1);
     %HASH = %{$select->fetchall_hashref('PK_USER_IDX')};
     return (\%HASH);
 }

@@ -24,6 +24,9 @@ use SAE::TECH;
 use SAE::PROFILE;
 use SAE::JSONDB;
 use SAE::USER;
+use SAE::REG_SCORE;
+use SAE::ADV_SCORE;
+use SAE::MIC_SCORE;
 
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
@@ -273,18 +276,23 @@ sub sae_loadHomePage(){
     my $Design = new SAE::DESIGN();
     my $Preso  = new SAE::PRESO();
     my $Score  = new SAE::SCORE();
+    my $Reg    = new SAE::REG_SCORE();
+    my $Adv    = new SAE::ADV_SCORE();
+    my $Mic    = new SAE::MIC_SCORE();
     my $Tech   = new SAE::TECH();
     my $str = '<div class="w3-container w3-white w3-margin-top">';
     $str .= '<header class="w3-container" style="padding-top:22px">';
     $str .= '<h5><b><i class="fa fa-dashboard"></i> My  Dashboard</b></h5>';
     $str .= '</header>';
 
+
     foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS ) {
         my $classIDX            = $TEAMS{$teamIDX}{FK_CLASS_IDX};
         my $inSafetyStatus      = $Tech->_getTeamSafetyStatus($teamIDX, $classIDX);
         my $inRequirementStatus = $Tech->_getTeamInspectionStatus($teamIDX, $classIDX);
+        
         $str .= '<div class="w3-row-padding w3-padding w3-border w3-round w3-margin-top w3-card-4 w3-light-grey">';
-        $str .= sprintf '<header class="w3-container w3-light-grey"><span class="w3-xxlarge">%03d</span><br><h3 style="padding: 0; margin: 0;">%s</h3></header>', $TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL};
+        $str .= sprintf '<header class="w3-container w3-light-grey"><span class="w3-xxlarge">%03d</span> - <span class="w3-xlarge" style="padding: 0; margin: 0;">%s</span></header>', $TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL};
         $str .= sprintf '<div ID="TeamReuirements_%d" class="w3-half w3-margin-bottom">', $teamIDX;
         $str .= $Tech->_getTechRequirementsCheckStatus($teamIDX, $inRequirementStatus, $classIDX);
         $str .= '</div>';
@@ -297,16 +305,58 @@ sub sae_loadHomePage(){
         $str .= '</div>';
         $str .= '<div class="w3-clear"></div>';
         foreach $panelIDX (sort {$a <=> $b} keys %PANEL) {
-            $str .= '<div class="w3-quarter w3-margin-top">';
-                $str .= sprintf '<div class="w3-container %s w3-padding-16 w3-border w3-card-2 w3-round">', $COLOR{$panelIDX};
-                $str .= '<div class="w3-left">';
-                $str .= sprintf '<i class="fa %s w3-xxlarge"></i>', $ICON{$panelIDX};
-                $str .= '</div>';
-                $str .= sprintf '<div class="w3-right"><h3>%2.4f</h3></div>', 0;
-                $str .= '<div class="w3-clear"></div>';
-                $str .= sprintf '<h4>%s</h4>', $PANEL{$panelIDX};
-                $str .= '</div>';
-                $str .= '</div>';
+            my $Score = 0;
+            my $late  = 0;
+            my $eIDX = crypt($teamIDX, '20');
+            my $source = 14;
+            if ($panelIDX == 1){
+                my ( $raw, $late )= $Design->_getOverallPaperByTeam($teamIDX);
+                $Score = $raw - $late;
+                $source = 14;
+            } elsif ($panelIDX == 2) {
+                $Score = $Preso->_getPresoScoreByTeam($teamIDX, 5);
+                $source = 15;
+            } elsif ($panelIDX == 3) {
+                $Score = $Tech->_getTechPenalties($teamIDX);
+                $source = 16;
+            } elsif ($panelIDX >=4) {
+                $source = 17;
+                if ($classIDX==1){
+                    $Score = $Reg->_getScore($teamIDX);
+                } elsif ($classIDX==2) {
+                    $Score = $Adv->_getScore($teamIDX);
+                } elsif ($classIDX==3) {
+                    $Score = $Mic->_getScore($teamIDX);
+                }
+            }
+            if ($Score<0){$Score=0}
+            if ($panelIDX<=4){
+                    $str .= '<div class="w3-quarter w3-margin-top">';
+                    $str .= sprintf '<div class="w3-container %s w3-padding-16 w3-border w3-card-2 w3-round">', $COLOR{$panelIDX};
+                    $str .= '<div class="w3-left">';
+                    $str .= sprintf '<i class="fa %s w3-xxlarge"></i>', $ICON{$panelIDX};
+                    $str .= '</div>';
+                    $str .= sprintf '<div class="w3-right"><a href="score.html?teamIDX=%s&source=%d" target="_blank"><h3>%2.4f</h3></a></div>', $eIDX, $source, $Score;
+                    # $str .= '<div class="w3-clear"> '.$teamIDX.' - '.$panelIDX .'</div>';
+                    $str .= '<div class="w3-clear"></div>';
+                    $str .= sprintf '<h4>%s</h4>', $PANEL{$panelIDX};
+                    # $str .= '</a>';
+                    $str .= '</div>';
+                    $str .= '</div>';
+                } else {
+                    $str .= sprintf '<div class="w3-quarter w3-margin-top" >';
+                    $str .= sprintf '<div class="w3-container %s w3-padding-16 w3-border w3-card-2 w3-round">', $COLOR{$panelIDX};
+                    $str .= '<div class="w3-left">';
+                    $str .= sprintf '<i class="fa %s w3-xxlarge"></i>', $ICON{$panelIDX};
+                    $str .= '</div>';
+                    $str .= sprintf '<div class="w3-right"><a style="text-decoration: none;" href="javascript:void(0);" onclick="sae_openResultStandings(%d);"><h3>[ View ]</h3></a></div>',$classIDX;
+                    # $str .= '<div class="w3-clear"> '.$teamIDX.' - '.$panelIDX .'</div>';
+                    $str .= '<div class="w3-clear"></div>';
+                    $str .= sprintf '<h4>%s</h4>', $PANEL{$panelIDX};
+                    # $str .= '</a>';
+                    $str .= '</div>';
+                    $str .= '</div>';
+                }
             }
         $str .= '</div>';
     }

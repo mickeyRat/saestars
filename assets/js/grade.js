@@ -314,8 +314,8 @@ function grade_openHelp (o, subIDX, inSection, cardIDX, teamIDX) {
 }
 function grade_openAssessment (o, cardIDX, inNumber, txSchool, classIDX, teamIDX, inCardType, adminUserIDX) {
     // body...
-    console.log('adminUserIDX      = ' + adminUserIDX);
-    console.log('logged In userIDX = ' + $.cookie('PK_USER_IDX'));
+    // console.log('adminUserIDX      = ' + adminUserIDX);
+    // console.log('logged In userIDX = ' + $.cookie('PK_USER_IDX'));
     var eventIDX = $.cookie('LOCATION');
     var userIDX = $.cookie('PK_USER_IDX');
     var txFirstName = $.cookie('TX_FIRST_NAME');

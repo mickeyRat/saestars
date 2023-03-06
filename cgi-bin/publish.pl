@@ -14,6 +14,14 @@ use SAE::ADVANCED;
 use SAE::SCORE;
 use SAE::ECR;
 use SAE::AWARD;
+use SAE::REG_SCORE;
+use SAE::ADV_SCORE;
+use SAE::MIC_SCORE;
+use SAE::DESIGN;
+use SAE::PRESO;
+use SAE::TECH;
+
+
 
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
@@ -98,7 +106,7 @@ sub sae_generateSuperlativeScores(){
         &viewFastestTimeToTurn($eventIDX, $classIDX, $publishIDX);
     }
     return ($links);
-}
+    }
 sub viewFastestTimeToTurn(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my $Obj;
@@ -109,7 +117,7 @@ sub viewFastestTimeToTurn(){
         $Score->_generateviewFastestTimeToTurn($eventIDX, $classIDX, $teamIDX, $publishIDX);
     }
     return ($str);
-}
+    }
 sub viewMostEffectiveVolumeDelivered(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my $Obj;
@@ -120,8 +128,7 @@ sub viewMostEffectiveVolumeDelivered(){
         $Score->_generateMostEffectiveVolumeDelivered($eventIDX, $classIDX, $teamIDX, $publishIDX);
     }
     return ($str);
-}
-
+    }
 sub viewClosestToTargetCenter(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my $Obj;
@@ -132,7 +139,7 @@ sub viewClosestToTargetCenter(){
         $Score->_generateClosestToTargetCenter($eventIDX, $classIDX, $teamIDX, $publishIDX);
     }
     return ($str);
-}
+    }
 sub viewMostPadaInZone(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my $Obj;
@@ -143,7 +150,7 @@ sub viewMostPadaInZone(){
         $Score->_generatePadaInZone($eventIDX, $classIDX, $teamIDX, $publishIDX);
     }
     return ($str);
-}
+    }
 sub viewHeaviestPayload(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my $Obj;
@@ -154,7 +161,7 @@ sub viewHeaviestPayload(){
         $Score->_getHeaviestPayloadFlown($eventIDX, $classIDX, $teamIDX, $publishIDX);
     }
     return ($str);
-}
+    }
 sub viewMostBall(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my $Obj;
@@ -165,7 +172,7 @@ sub viewMostBall(){
         $Score->_getMostBallFlown($eventIDX, $classIDX, $teamIDX, $publishIDX);
     }
     return ($str);
-}
+    }
 sub viewBestPayloadRatio(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my $Obj;
@@ -176,7 +183,7 @@ sub viewBestPayloadRatio(){
         $Score->_getBestPayloadRatio($eventIDX, $classIDX, $teamIDX, $publishIDX);
     }
     return ($str);
-}
+    }
 sub viewMostPayload(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my $Obj;
@@ -193,8 +200,7 @@ sub viewMostPayload(){
         $Score->_getMostPayload($eventIDX, $classIDX, $teamIDX, $publishIDX);
     }
     return ($str);
-}
-
+    }
 sub viewDesignReport(){ # Name of the method is derived from the label of the section head in the publish.pl file
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my $Obj;
@@ -212,7 +218,7 @@ sub viewDesignReport(){ # Name of the method is derived from the label of the se
         $Score->_designScores($eventIDX, $classIDX, $teamIDX, $publishIDX);
     }
     return ($str);
-}
+    }
 sub viewPresentationScores(){ # Name of the method is derived from the label of the section head in the publish.pl file
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my $Obj;
@@ -229,7 +235,7 @@ sub viewPresentationScores(){ # Name of the method is derived from the label of 
         $Score->_presoScores($eventIDX, $classIDX, $teamIDX, $publishIDX);
     }
     return ($str);
-}
+    }
 sub viewMissionPerformanceScores(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     if ($classIDX==3){
@@ -242,53 +248,62 @@ sub viewMissionPerformanceScores(){
 }
 sub assembleRegularClass(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
-    my $Obj = new SAE::REGULAR($eventIDX);
-    my %TEAM = %{$Obj->_getTeamList()};
+    my $Reg = new SAE::REG_SCORE();
+    my %TEAM = %{$Reg->_getTeamList($eventIDX)};
     foreach $teamIDX (sort keys %TEAM) {
-        my ($maxPPB, $TOPS, $SCORES) = $Obj->_calcTeamScore($teamIDX);
-        my %SCORE = %{$SCORES};
-        my @SORTED = @$TOPS;
-        my $top3FLights = $SCORE{$SORTED[0]}{IN_FFS} + $SCORE{$SORTED[1]}{IN_FFS} + $SCORE{$SORTED[2]}{IN_FFS} + $maxPPB;
-        $Obj->_savePerformanceScores($publishIDX, $teamIDX, $top3FLights);
+        my $Score = $Reg->_getScore($teamIDX);
+        $Reg->_savePerformanceScores($publishIDX, $teamIDX, $Score);
     }
 
     return ($str);
 }
 sub assembleAdvancedClass(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
-    my $Obj = new SAE::ADVANCED($eventIDX);
-    my %TEAM = %{$Obj->_getTeamList()};
+    my $Adv = new SAE::ADV_SCORE();
+    my %TEAM = %{$Adv->_getTeamList($eventIDX)};
     foreach $teamIDX (sort keys %TEAM) {
-        my ($inStd, $boAuto, $inWater, $waterFlown, $SCORES) = $Obj->_calcTeamScore($teamIDX);
-        my %SCORE = %{$SCORES};
-        my $gtvMultiplier = 2.0;
-        if ($boAuto<1) {$gtvMultiplier = 1.5}
-        my $waterScore = ($waterFlown + $gtvMultiplier*$inWater)/4;
-        my $SUM_PADA = 0;
-        foreach $flightIDX (sort {$SCORE{$a}{IN_ROUND} <=> $SCORE{$b}{IN_ROUND}} keys %SCORE) {
-            my $subScore = ($SCORE{$flightIDX}{APADA} + $SCORE{$flightIDX}{BPADA});
-            my $totalAttemptScore = $subScore - ($SCORE{$flightIDX}{IN_MINOR} * $subScore) - ($SCORE{$flightIDX}{IN_MAJOR} * $subScore);
-               $SUM_PADA += $totalAttemptScore;
-        }
-        my $finalFlightScore = ($waterScore + (4*$SUM_PADA));
-        $Obj->_savePerformanceScores($publishIDX, $teamIDX, $waterScore, (4*$SUM_PADA), $finalFlightScore);
+        my $flightScore    = $Adv->_getScore($teamIDX);
+        my $gtvScore       = $Adv->_getGtvScore($teamIDX);
+        my $Score          = $flightScore + $gtvScore;
+        $Adv->_savePerformanceScores($publishIDX, $teamIDX, $flightScore, $gtvScore, $Score);
     }
 }
 sub assembleMicroClass(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
-    my $Obj = new SAE::MICRO($eventIDX);
-    my %TEAM = %{$Obj->_getTeamList()};
+    my $Mic = new SAE::MIC_SCORE();
+    my %TEAM = %{$Mic->_getTeamList($eventIDX)};
     foreach $teamIDX (sort keys %TEAM) {
-        my ($TOPS, $FLIGHTS) = $Obj->_calcTeamScore($teamIDX);
-        my %SCORE = %{$FLIGHTS};
-        my @SORTED = @$TOPS;
-        my $top3FLights = $SCORE{$SORTED[0]}{IN_FFS} + $SCORE{$SORTED[1]}{IN_FFS} + $SCORE{$SORTED[2]}{IN_FFS};
-        # $TEAM{$teamIDX}{IN_FFS} = $top3FLights;
-        $Obj->_savePerformanceScores($publishIDX, $teamIDX, $top3FLights);
+        my $Score = $Mic->_getScore($teamIDX);
+        $Mic->_savePerformanceScores($publishIDX, $teamIDX, $Score);
     }
     return ($str);
 }
-sub viewOverallPerformance(){
+sub viewOverallPerformance (){
+    my ($eventIDX, $classIDX, $publishIDX) = @_;
+    my $Design  = new SAE::DESIGN();
+    my $Preso   = new SAE::PRESO();
+    my $Tech    = new SAE::TECH();
+    my $Obj;
+    if ($classIDX==3) {
+        $Obj = new SAE::MIC_SCORE();
+    } elsif ($classIDX==2) {
+        $Obj = new SAE::ADV_SCORE();
+    } else {
+        $Obj = new SAE::REG_SCORE();
+    }
+    my %TEAMS = %{$Obj->_getTeamList($eventIDX)};
+    foreach $teamIDX (keys %TEAMS) {
+        my ( $raw, $late ) = $Design->_getOverallPaperByTeam($teamIDX);
+        my $DesginScore    = ($raw + $late);
+        my $PresoScore     = $Preso->_getPresoScoreByTeam($teamIDX, 5);
+        my $PenaltyScore   = $Tech->_getTechPenalties($teamIDX);
+        my $MissionScore   = $Obj->_getScore($teamIDX);
+        my $inOverall      = $DesginScore + $PresoScore + $MissionScore - $PenaltyScore;
+        $Obj->_saveOverallScores($publishIDX, $teamIDX, $DesginScore, $PresoScore, $MissionScore, $PenaltyScore, $inOverall );
+    }
+    return ();
+    }
+sub viewOverallPerformance_OBE(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     
     my $Obj;

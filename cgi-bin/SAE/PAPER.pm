@@ -15,6 +15,14 @@ sub new{
 	return $self;
 }
 # ==== 2023 ===============================================
+sub _getDocuments (){
+    my ($self, $eventIDX) = @_;
+    my $SQL="SELECT FK_TEAM_IDX, TX_KEYS, TX_PAPER, IN_PAPER FROM TB_UPLOAD WHERE FK_EVENT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($eventIDX);
+    my %HASH = %{$select->fetchall_hashref(['FK_TEAM_IDX','IN_PAPER'])}; 
+    return (\%HASH);
+    }
 sub _getEmailList (){
     my ($self, $eventIDX, $inCardType) = @_;
     my $SQL = "SELECT DISTINCT U.TX_EMAIL FROM TB_CARD AS C 

@@ -10,9 +10,15 @@ use Cwd 'abs_path';
 
 #---- SAE MODULES -------
 use SAE::SCORE;
+use SAE::DESIGN;
+use SAE::TECH;
+use SAE::STUDENT;
 use SAE::RUBRIC;
 use SAE::HOME;
 use SAE::REFERENCE;
+use SAE::REG_SCORE;
+use SAE::ADV_SCORE;
+use SAE::MIC_SCORE;
 use List::Util qw(sum first) ;
 
 $q = new CGI;
@@ -40,35 +46,35 @@ sub average(){
 }
 sub viewMyScoreCard(){
     print $q->header();
-    my $eIDX = $q->param('teamIDX');
+    my $eIDX     = $q->param('teamIDX');
     my $location = $q->param('location');
-    my $tileIDX = $q->param('source');
-    my $Score = new SAE::SCORE();
+    my $tileIDX  = $q->param('source');
+    my $Score    = new SAE::SCORE();
     # my $Home = new SAE::HOME();
     # %TILES = %{$Home->_getTiles()};
-    %TEAMS = %{$Score->_getTeamDataWithCrypt($location)};
+    my %TEAMS = %{$Score->_getTeamDataWithCrypt($location)};
     my $str;
     my $txFullName = $TEAMS{$eIDX}{TX_FULLNAME};
     my $teamIDX = $TEAMS{$eIDX}{PK_TEAM_IDX};
     my $classIDX = $TEAMS{$eIDX}{FK_CLASS_IDX};
    
     if ($tileIDX == 14){
-        $str .= &_displayReportScores($teamIDX, $classIDX, $txFullName, $tileIDX);
+        $str = &_displayReportScores($teamIDX, $classIDX, $txFullName);
     } elsif ($tileIDX == 15) {
         $str = &_displayPresoScores($teamIDX, $classIDX, $txFullName, $tileIDX);
     } elsif ($tileIDX == 16) {
         $str = &_displayPenalties($teamIDX, $classIDX, $txFullName, $tileIDX, $location );
     } elsif ($tileIDX == 17){
         if ($classIDX==1){
-            $str = &_displayRegularFlights( $teamIDX, $classIDX, $txFullName, $tileIDX, $location );
+            $str = &_showRegularClassFlightLog($teamIDX, $classIDX, $txFullName);
         } elsif ($classIDX==2) {
-            $str = &_displayAdvancedFlights( $teamIDX, $classIDX, $txFullName, $tileIDX, $location );
+            $str = &_showAdvancedClassFlightLog( $teamIDX, $classIDX, $txFullName );
         } else {
-            $str = &_displayMicroFlights( $teamIDX, $classIDX, $txFullName, $tileIDX, $location );
+            $str = &_showMicroClassFlightLog( $teamIDX, $classIDX, $txFullName );
         }
     }
     return ($str);
-};
+    };
 sub _displayPresoScores(){
     my $teamIDX = shift;
     my $classIDX = shift;
@@ -175,23 +181,26 @@ sub _displayPresoScores(){
     return ($str);
 }
 sub _displayReportScores(){
-    my $teamIDX = shift;
-    my $classIDX = shift;
-    my $txFullName = shift;
-    my $tileIDX = shift;
-    my $Score = new SAE::SCORE();
-    my $Rubric=new SAE::RUBRIC();
-    my $Home = new SAE::HOME();
+    my $teamIDX      = shift;
+    my $classIDX     = shift;
+    my $txFullName   = shift;
+    # my $tileIDX = shift;
+    my $Score        = new SAE::SCORE();
+    my $Design       = new SAE::DESIGN();
+    my $Rubric       = new SAE::RUBRIC();
+    my $Home         = new SAE::HOME();
     # my $Ref = new SAE::REFERENCE();
-    my %SECTION = %{$Rubric->_getSectionList()};
-    my %SUB = %{$Rubric->_getSubSectionList()};
-    my %JUDGES = %{$Score->_getJudgesForPaper($teamIDX)};
-    my ($overallScore, $late) = $Score->_getOverallPaperByTeam($teamIDX);
-    my %TILES = %{$Home->_getTiles()};
-    my %CTYPE = %{$Rubric->_getRubricType()};
-    my %COMMENTS = %{$Score->_getComments( $teamIDX )};
-    my $cardTypeIDX = 1;
+    my %SECTION      = %{$Rubric->_getSectionList()};
+    my %SUB          = %{$Rubric->_getSubSectionList()};
+    my %JUDGES       = %{$Score->_getJudgesForPaper($teamIDX)};
+    # my ($overallScore, $late) = $Score->_getOverallPaperByTeam($teamIDX);
+    my ($overallScore, $late) = $Design->_getOverallPaperByTeam($teamIDX);
+    my %TILES        = %{$Home->_getTiles()};
+    my %CTYPE        = %{$Rubric->_getRubricType()};
+    my %COMMENTS     = %{$Score->_getComments( $teamIDX )};
+    my $cardTypeIDX  = 1;
     my $str;
+
     # my %LATE = %{$Ref->_getLateReportListByTeamIDX($teamIDX)};
     $str .= sprintf "<h3>%s<br>", $txFullName;
     $str .= sprintf "Report Score: <u>%2.4f</u> pts<br>", $overallScore;
@@ -300,63 +309,51 @@ sub _displayReportScores(){
     return ($str);
 }
 sub _displayPenalties(){
-    my $teamIDX = shift;
-    my $classIDX = shift;
+    my $teamIDX    = shift;
+    my $classIDX   = shift;
     my $txFullName = shift;
-    my $tileIDX = shift;
-    my $location = shift;
-    my $Score = new SAE::SCORE();
-    my %PEN = %{$Score->_getPenaltiesByTeam($teamIDX, $location )};
-    my $overallScore = $Score->_getAllPenaltiesByTeam($teamIDX);
+    my $txType     = "reqSectionNumber";
+    # my $tileIDX = shift;
+    my $eventIDX   = shift;
+    my $Tech       = new SAE::TECH();
+    # my $Student    = new SAE::STUDENT();
+    my $inTotal    = $Tech->_getTechPenalties($teamIDX);
+
+    my %TECH        = %{$Tech->_getTechItemDescriptions($classIDX)};
+    my %ITEM        = %{$Tech->_getPenalizedItems($teamIDX)};
+
+    # my $Score = new SAE::SCORE();
+    # my %PEN = %{$Score->_getPenaltiesByTeam($teamIDX, $eventIDX )};
+    # my $overallScore = $Score->_getAllPenaltiesByTeam($teamIDX);
     my $str;
-    $str .= sprintf "<h3>%s<br>", $txFullName;
-    $str .= sprintf "Total Deduction: <u>%2.4f</u> pts</h3>", $overallScore;
-    $str .= '<h4>Penalty Details </h4>';
-    
-    # $str .= ($#JUDGE + 1);
-    $str .= '<div class="w3-container w3-round w3-margin-top w3-border">';
-    $str .= '<h3>'.$CTYPE{$cardTypeIDX}{TX_TITLE}.'</h3>';
-    $str .= '<table class="w3-table w3-bordered w3-small">';
-    $str .= '<tr class="w3-hide-small">';
-    $str .= '<th>Title<br>Description</th>';
-    # $str .= '<th>Description</th>';
-    $str .= '<th style="width: 7%;text-align: right">Structural<br>Changes</th>';
-    $str .= '<th style="width: 7%;text-align: right">Machanical<br>Changes</th>';
-    $str .= '<th style="width: 7%;text-align: right">Electronic<br>Changes</th>';
-    $str .= '<th style="width: 7%;text-align: right">Misc<br>Changes</th>';
-    $str .= '<th style="width: 7%;text-align: right">Span<br>Modifications</th>';
-    $str .= '<th style="width: 7%;text-align: right">Chord<br>Modifications</th>';
-    $str .= '<th style="width: 7% ; text-align: right; ">Total<br>Deductions</th>';
+    $str .= '<h2 class="w3-center">Tech Inspection Penalties</h2>';
+    $str .= sprintf "<h3 class='w3-center'>%s<br>", $txFullName;
+    # $str .= sprintf "Total Points Deducted: <span class='w3-text-red'>%2.2f</span></h3>", -1*$inTotal;
+    $str .= '<div class="w3-container">';
+    $str .= '<table class="w3-table-all">';
+    $str .= '<tr>';
+    $str .= '<th><br>Section</th>';
+    $str .= '<th>Rules<br>Ref.</th>';
+    $str .= '<th>Description of<br>Inspected Item</th>';
+    $str .= '<th>Inspection<br>status</th>';
+    $str .= '<th style="width: 90px; text-align: right;"><br>Points</th>';
     $str .= '</tr>';
-    foreach $ecrIDX (sort keys %PEN){
-        $str .= '<tr class="w3-hide-small">';
-        $str .= sprintf '<td>%s<br>%s</td>', $PEN{$ecrIDX}{TX_ECR}, $PEN{$ecrIDX}{CL_DESCRIPTION};
-        # $str .= sprintf '<td>%s</td>', ;
-        $str .= sprintf '<td style="text-align: right">%2.1f</td>', $PEN{$ecrIDX}{IN_STRUCTURE}*-1;
-        $str .= sprintf '<td style="text-align: right">%2.1f</td>', $PEN{$ecrIDX}{IN_MECHANICAL}*-1;
-        $str .= sprintf '<td style="text-align: right">%2.1f</td>', $PEN{$ecrIDX}{IN_ELECTRONIC}*-1;
-        $str .= sprintf '<td style="text-align: right">%2.1f</td>', $PEN{$ecrIDX}{IN_MISC}*-1;
-        $str .= sprintf '<td style="text-align: right">%2.1f</td>', $PEN{$ecrIDX}{IN_SPAN}*-1;
-        $str .= sprintf '<td style="text-align: right">%2.1f</td>', $PEN{$ecrIDX}{IN_CHORD}*-1;
-        $str .= sprintf '<td style="text-align: right" class="w3-text-red"><b>%2.1f</b></td>', $PEN{$ecrIDX}{IN_DEDUCTION}*-1;
-        $str .= '</tr>';
-        $str .= '<tr class="w3-hide-medium w3-hide-large">';
-        $str .= '<td>';
-        $str .= sprintf '<b>Title:</b> <span>%s</span><br>',$PEN{$ecrIDX}{TX_ECR};
-        $str .= sprintf '<b>Description:</b> <span>%s</span><br>',$PEN{$ecrIDX}{CL_DESCRIPTION};
-        $str .= sprintf '<b>Structural Changes:</b> <span>%2.1f</span><br>',$PEN{$ecrIDX}{IN_STRUCTURE}*-1;
-        $str .= sprintf '<b>Machanical Changes:</b> <span>%2.1f</span><br>',$PEN{$ecrIDX}{IN_MECHANICAL}*-1;
-        $str .= sprintf '<b>Electronic Changes:</b> <span>%2.1f</span><br>',$PEN{$ecrIDX}{IN_ELECTRONIC}*-1;
-        $str .= sprintf '<b>Misc Changes:</b> <span>%2.1f</span><br>',$PEN{$ecrIDX}{IN_MISC}*-1;
-        $str .= sprintf '<b>Span Modifications:</b> <span>%2.1f</span><br>',$PEN{$ecrIDX}{IN_SPAN}*-1;
-        $str .= sprintf '<b>Chord Modifications:</b> <span>%2.1f</span><br>',$PEN{$ecrIDX}{IN_CHORD}*-1;
-        $str .= sprintf '<b>Deduction:</b> <span class="w3-text-red"><b>%2.1f</b></span><br>',$PEN{$ecrIDX}{IN_DEDUCTION}*-1;
-        $str .= '</td>';
-        $str .= '</tr>';
+    foreach $reqIDX (sort {$TECH{$a}{IN_SECTION} cmp $TECH{$b}{IN_SECTION}} keys %TECH) {
+        if (exists $ITEM{$reqIDX}){
+            $str .= '<tr>';
+            $str .= sprintf '<td>%s</td>', $TECH{$reqIDX}{IN_SECTION};
+            $str .= sprintf '<td>%s</td>', $TECH{$reqIDX}{TX_REQUIREMENT};
+            $str .= sprintf '<td>%s</td>', $TECH{$reqIDX}{TX_SECTION};
+            $str .= sprintf '<td>Pass with Penalty</td>';
+            $str .= sprintf '<td style="text-align: right;">%2.2f</td>', $TECH{$reqIDX}{IN_POINTS};
+            $str .= '</tr>';
+        }
     }
-    $str .= '<tr class="w3-pale-red">';
-    $str .= sprintf '<td class="w3-padding w3-large w3-text-red" colspan="8" style="text-align: right">Total Deduction : %2.2f pts</td>', $overallScore;
+    $str .= '<tr>';
+    $str .= '<th colspan="4" style="text-align: right;">Total Points Deducted:</th>';
+    $str .= sprintf '<th style="text-align: right;">%2.2f</th>', -1*$inTotal;
     $str .= '</tr>';
+    $str .= '</div>';
     return ($str);
 }
 sub _displayMicroFlights(){
@@ -572,6 +569,36 @@ sub _displayRegularFlights( $teamIDX, $classIDX, $txFullName, $tileIDX, $locatio
     $str .= '</div>';
     return ($str);
 }
+sub _showRegularClassFlightLog (){
+        my $teamIDX  = shift;
+        my $classIDX = shift;
+        my $teamName = shift;
+        my $Score    = new SAE::REG_SCORE();
+        my $str = '<h1>Flight Log</h1>';
+        $str .= sprintf '<h2>%s</h2>', $teamName;
+        $str .= $Score->_getTeamScores($teamIDX);
+        return($str);
+    }
+sub _showAdvancedClassFlightLog (){
+        my $teamIDX  = shift;
+        my $classIDX = shift;
+        my $teamName = shift;
+        my $Score    = new SAE::ADV_SCORE();
+        my $str = '<h1>Flight Log</h1>';
+        $str .= sprintf '<h2>%s</h2>', $teamName;
+        $str .= $Score->_getTeamScores($teamIDX);
+        return($str);
+    }
+sub _showMicroClassFlightLog (){
+        my $teamIDX  = shift;
+        my $classIDX = shift;
+        my $teamName = shift;
+        my $Score    = new SAE::MIC_SCORE();
+        my $str = '<h1>Flight Log</h1>';
+        $str .= sprintf '<h2>%s</h2>', $teamName;
+        $str .= $Score->_getTeamScores($teamIDX);
+        return($str);
+    }
 sub _publish(){
     
 }

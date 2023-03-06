@@ -93,7 +93,7 @@ foreach $element ($dom->find('script[id="app-root-state"]')->each) {
                 $pressure  = $hashref->{imperial}->{pressure};
                 $humidity  = $hashref->{humidity};
                 $station   = $hashref->{stationID};
-                $epoch  = $hashref->{epoch};
+                $epoch     = $hashref->{epoch};
                 # printf "wind-dir: %s\n", $windDir;
                 # print 'stationID: '.$station."\n";
                 # printf "temperature: %2.2f deg F\n",$temp;
@@ -236,15 +236,16 @@ sub _densityAltitude(){
 # }
 
 sub _saveData(){
-    my $temp = shift;
-    my $press = shift;
-    my $rh = shift;
-    my $time = shift;
-    my $elev = shift;
+    my $temp     = shift;
+    my $press    = shift;
+    my $rh       = shift;
+    my $time     = shift;
+    my $elev     = shift;
     my $eventIDX = shift;
-    my $den = shift;
-    my $station = shift;
-    my $wdir = shift;
+    my $den      = shift;
+    my $station  = shift;
+    my $wdir     = shift;
+    my $epoch    = shift;
     # my $den = &_calculateDensityAltitude($temp, $press);
     # print "\n\n";
     printf "-" x 111;
@@ -252,9 +253,9 @@ sub _saveData(){
     printf "-" x 111;
     printf "\n%15.2f%15.2f%15.2f%20s%15.2f%15.2f%12s\n", $temp, $press, $rh, $time, $elev, $den, $wdir;
     # print " \$temp=$temp\t\$press=$press\t  \$time=$time\t  \$elev=$elev\t \$den=$den\t";
-    my $SQL = "INSERT INTO TB_WEATHER (FK_EVENT_IDX, IN_TEMP, IN_PRES, IN_RH, IN_DENSITY, IN_ELEVATION, TS_LOCAL, TX_KEY, TX_WINDDIR) VALUES (?,?,?,?,?,?,?, ?,?)";
+    my $SQL = "INSERT INTO TB_WEATHER (FK_EVENT_IDX, IN_TEMP, IN_PRES, IN_RH, IN_DENSITY, IN_ELEVATION, TS_LOCAL, TX_KEY, TX_WINDDIR, IN_EPOCH) VALUES (?,?,?,?,?,?,?, ?,?,?)";
     my $insert = $dbi->prepare($SQL);
-       $insert->execute($eventIDX, $temp, $press, $rh, $den, $elev, $time, $station, $wdir);
+       $insert->execute($eventIDX, $temp, $press, $rh, $den, $elev, $time, $station, $wdir, $epoch );
 
 }
 

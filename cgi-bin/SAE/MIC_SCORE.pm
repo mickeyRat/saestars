@@ -74,6 +74,43 @@ sub new{
 	    }
 		return ($sumOfTopThree);
 		}
+sub _savePerformanceScores(){
+    my ($self, $publishIDX, $teamIDX, $inFlight) = @_;
+    my $SQL = "INSERT INTO TB_SCORE (FK_PUBLISH_IDX, FK_TEAM_IDX, IN_FLIGHT) VALUES (?, ?, ?)";
+    my $insert = $dbi->prepare($SQL);
+       $insert->execute($publishIDX, $teamIDX, $inFlight);
+    return;
+}
+sub _saveOverallScores(){
+    my ($self, $publishIDX, $teamIDX, $inDesign, $inPres, $inFlight, $inPenalty, $inOverall) = @_;
+    my $SQL = "INSERT INTO TB_SCORE (FK_PUBLISH_IDX, FK_TEAM_IDX, IN_DESIGN, IN_PRESO, IN_FLIGHT, IN_PENALTY, IN_OVERALL) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    my $insert = $dbi->prepare($SQL);
+       $insert->execute($publishIDX, $teamIDX, $inDesign, $inPres, $inFlight, $inPenalty, $inOverall);
+    return;
+}
+sub _getTeamList (){
+    my ($self, $eventIDX) = @_;
+    my $SQL  = "SELECT * FROM TB_TEAM WHERE (FK_EVENT_IDX=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $eventIDX, 3 );
+    my %HASH = %{$select->fetchall_hashref('PK_TEAM_IDX')}; 
+    return (\%HASH);
+    }
+sub _getScore(){
+	my ($self, $teamIDX) = @_;
+    # my $Score = new SAE::MIC_SCORE();
+    my %LOGS = %{&getFlightLogs($teamIDX)};
+    my %SCORE;
+    foreach $flightIDX (sort {$LOGS{$a}{IN_ROUND} <=> $LOGS{$b}{IN_ROUND}} keys %LOGS){
+        %SCORE = (%SCORE, %{&calculateFlightScore($flightIDX)});
+    }
+    my $str;
+    my $maxWs = 0;
+    my $maxWeight = 0;
+    my %PEN = (0=>'-', 1=>'Yes');
+    my $top3 = &getTop3(\%SCORE);
+    return ($top3);
+    }
 
 sub _getTeamScores(){
 	my ($self, $teamIDX) = @_;

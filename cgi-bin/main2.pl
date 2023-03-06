@@ -68,11 +68,11 @@ sub sae_openWeather(){
     $str .= '<table class="w3-table-all w3-border w3-small">';
     $str .= '<tr class="w3-hide-small">';
     $str .= '<th style="width: 25%;">Date - Time</th>';
-    $str .= '<th style="width: 10%;">Event<br>Elevation</th>';
-    $str .= '<th style="width: 10%;">Temperature</th>';
-    $str .= '<th style="width: 10%;">Pressure</th>';
-    $str .= '<th style="width: 10%;">Rel. Humidity</th>';
-    # $str .= '<th style="width: 10%;">Site<br>Elevation</th>';
+    $str .= '<th style="width: 10%;">Site<br>Elevation</th>';
+    $str .= '<th style="width: 10%;"><br>Temperature</th>';
+    $str .= '<th style="width: 10%;"><br>Pressure</th>';
+    $str .= '<th style="width: 10%;">Relative<br>Humidity</th>';
+    $str .= '<th style="width: 10%;">Wind<br>Direction</th>';
     $str .= '<th style="width: 15%;">Calculated<br>Density-Altitude</th>';
     # $str .= '<th style="width: 15%;">Adjusted<br>Density-Altitude</th>';
     $str .= '</tr>';
@@ -84,6 +84,7 @@ sub sae_openWeather(){
         $str .= sprintf '<td>%2.2f in.</td>', $WEATHER{$weatherIDX}{IN_PRES};
         $str .= sprintf '<td>%2.2f%</td>', $WEATHER{$weatherIDX}{IN_RH};
         # $str .= sprintf '<td>%2.1f ft.</td>', $WEATHER{$weatherIDX}{IN_ELEVATION};
+        $str .= sprintf '<td>%s</td>', $WEATHER{$weatherIDX}{TX_WINDDIR};
         $str .= sprintf '<td>%2.2f ft.</td>', $WEATHER{$weatherIDX}{IN_DENSITY};
         # $str .= sprintf '<td>%2.2f ft.</td>', ($WEATHER{$weatherIDX}{IN_ELEVATION} + $WEATHER{$weatherIDX}{IN_DENSITY});
 
@@ -96,6 +97,7 @@ sub sae_openWeather(){
         $str .= sprintf '<b>Pressure</b>: <span class="w3-text-blue">%2.2f in.</span><br>',$WEATHER{$weatherIDX}{IN_PRES};
         $str .= sprintf '<b>Rel. Humidity</b>: <span class="w3-text-blue">%2.2f %</span><br>',$WEATHER{$weatherIDX}{IN_RH};
         # $str .= sprintf '<b>Site Elev.</b>: <span class="w3-text-blue">%2.1f ft.</span><br>',$WEATHER{$weatherIDX}{IN_ELEVATION};
+        $str .= sprintf '<b>Wind Direction:</b>: <span class="w3-text-blue">%s</span><br>',$WEATHER{$weatherIDX}{TX_WINDDIR};
         $str .= sprintf '<b>Calculated Den-Alt</b>: <span class="w3-text-blue">%2.2f ft.</span><br>',$WEATHER{$weatherIDX}{IN_DENSITY};
         # $str .= sprintf '<b>Adjusted Den-Alt</b>: <span class="w3-text-blue">%2.2f ft.</span><br>',($WEATHER{$weatherIDX}{IN_ELEVATION} + $WEATHER{$weatherIDX}{IN_DENSITY});
         $str .= '</td>';

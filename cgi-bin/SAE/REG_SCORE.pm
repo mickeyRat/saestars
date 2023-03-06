@@ -60,10 +60,9 @@ sub _getTop3(){
 	return ($sumOfTopThree);
 	}
 
-
-
 sub calculatePayloadPrediction (){
-	my ($teamIDX, $actual, $densityAltitude) = @_;
+	my ($teamIDX, $actual, $den) = @_;
+    # print qq(\$teamIDX=$teamIDX<br> \$actual=$actual<br> \$den=$den <br>);
 	my $SQL = "SELECT IN_SLOPE, IN_YINT FROM TB_TEAM WHERE PK_TEAM_IDX=?";
     my $select = $dbi->prepare($SQL);
        $select->execute($teamIDX);
@@ -97,7 +96,49 @@ sub convertInchesToFeet(){
 	my $str = sprintf "%02d'-%02d\"", $feet, $in;
 	return ($str);
 	}
-
+sub _savePerformanceScores(){
+    my ($self, $publishIDX, $teamIDX, $inFlight) = @_;
+    my $SQL = "INSERT INTO TB_SCORE (FK_PUBLISH_IDX, FK_TEAM_IDX, IN_FLIGHT) VALUES (?, ?, ?)";
+    my $insert = $dbi->prepare($SQL);
+       $insert->execute($publishIDX, $teamIDX, $inFlight);
+    return;
+}
+sub _saveOverallScores(){
+    my ($self, $publishIDX, $teamIDX, $inDesign, $inPres, $inFlight, $inPenalty, $inOverall) = @_;
+    my $SQL = "INSERT INTO TB_SCORE (FK_PUBLISH_IDX, FK_TEAM_IDX, IN_DESIGN, IN_PRESO, IN_FLIGHT, IN_PENALTY, IN_OVERALL) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    my $insert = $dbi->prepare($SQL);
+       $insert->execute($publishIDX, $teamIDX, $inDesign, $inPres, $inFlight, $inPenalty, $inOverall);
+    return;
+}
+sub _getTeamList (){
+    my ($self, $eventIDX) = @_;
+    my $SQL  = "SELECT * FROM TB_TEAM WHERE (FK_EVENT_IDX=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $eventIDX, 1 );
+    my %HASH = %{$select->fetchall_hashref('PK_TEAM_IDX')}; 
+    return (\%HASH);
+    }
+sub _getScore (){
+    my ($self, $teamIDX) = @_;
+    my %LOGS = %{&getFlightLogs($teamIDX)};
+    my %SCORE;
+    foreach $flightIDX (sort {$LOGS{$a}{IN_ROUND} <=> $LOGS{$b}{IN_ROUND}} keys %LOGS){
+        %SCORE = (%SCORE, %{&calculateFlightScore($flightIDX)});
+    }
+    my $str;
+    my $maxWs = 0;
+    my $maxWeight = 0;
+    my %PEN = (0=>'-', 1=>'Yes');
+    foreach $flightIDX (sort {$SCORE{$a}{IN_ROUND} <=> $SCORE{$b}{IN_ROUND}} keys %SCORE) {
+        if ($SCORE{$flightIDX}{IN_WEIGHT} > $maxWeight){
+            $maxWs = $SCORE{$flightIDX}{IN_WS};
+            $maxWeight = $SCORE{$flightIDX}{IN_WEIGHT};
+        }
+    }
+    my $top3 = &getTop3(\%SCORE);
+    my $Score = ($top3 + $maxWs);
+    return ($Score);
+    }
 sub _getTeamScores (){
     my ($self, $teamIDX) = @_;
     my %LOGS = %{&getFlightLogs($teamIDX)};
@@ -164,30 +205,33 @@ sub _getTeamScores (){
 sub calculateFlightScore (){
     my ($flightIDX) = @_;
     my %DATA;
-    my $Flight = new SAE::FLIGHT();
-	my %FLIGHT = %{$Flight->_getFlightTicketDetails($flightIDX)};
+    my $Flight   = new SAE::FLIGHT();
+	my %FLIGHT   = %{$Flight->_getFlightTicketDetails($flightIDX)};
 	my $inWeight = $FLIGHT{IN_WEIGHT};
-	my $inMajor = $FLIGHT{IN_PEN_LANDING};
-	my $inMinor = $FLIGHT{IN_PEN_MINOR};
-	my $inRound = $FLIGHT{IN_ROUND};
-	my $inSpan = $FLIGHT{IN_SPAN};
+	my $inMajor  = $FLIGHT{IN_PEN_LANDING};
+	my $inMinor  = $FLIGHT{IN_PEN_MINOR};
+	my $inRound  = $FLIGHT{IN_ROUND};
+	my $inSpan   = $FLIGHT{IN_SPAN};
+    my $teamIDX  = $FLIGHT{FK_TEAM_IDX};
 	my $den = &getDensityAltitude($flightIDX);
+    # printf "den = %2.8f<br>",$den;
     my ($predicted, $ppb) = &calculatePayloadPrediction($teamIDX, $inWeight, $den);
+    # printf "predicted = %2.8f<br>",$predicted;
     my $inRawScore = (($inWeight/2) + $ppb) ;
     my $fs = $inRawScore* (1-($inMinor * 0.25)) * (1-($inMajor* 0.5));
     $DATA{$flightIDX}{PK_FLIGHT_IDX} = $flightIDX;
-    $DATA{$flightIDX}{FK_TEAM_IDX} = $teamIDX;
-    $DATA{$flightIDX}{IN_WEIGHT} = $inWeight;
-    $DATA{$flightIDX}{IN_ROUND} = $inRound;
-    $DATA{$flightIDX}{IN_MINOR} = $inMinor;
-    $DATA{$flightIDX}{IN_MAJOR} = $inMajor;
-    $DATA{$flightIDX}{IN_DENSITY} = $den;
-    $DATA{$flightIDX}{IN_PREDICTED} = $predicted;
-    $DATA{$flightIDX}{IN_BONUS} = $ppb;
-    $DATA{$flightIDX}{IN_RAW} = $inRawScore;
-    $DATA{$flightIDX}{IN_FS} = $fs;
-    $DATA{$flightIDX}{IN_SPAN} = &convertInchesToFeet($inSpan);
-    $DATA{$flightIDX}{IN_WS} = &getWingSpanScore($inSpan);
+    $DATA{$flightIDX}{FK_TEAM_IDX}   = $teamIDX;
+    $DATA{$flightIDX}{IN_WEIGHT}     = $inWeight;
+    $DATA{$flightIDX}{IN_ROUND}      = $inRound;
+    $DATA{$flightIDX}{IN_MINOR}      = $inMinor;
+    $DATA{$flightIDX}{IN_MAJOR}      = $inMajor;
+    $DATA{$flightIDX}{IN_DENSITY}    = $den;
+    $DATA{$flightIDX}{IN_PREDICTED}  = $predicted;
+    $DATA{$flightIDX}{IN_BONUS}      = $ppb;
+    $DATA{$flightIDX}{IN_RAW}        = $inRawScore;
+    $DATA{$flightIDX}{IN_FS}         = $fs;
+    $DATA{$flightIDX}{IN_SPAN}       = &convertInchesToFeet($inSpan);
+    $DATA{$flightIDX}{IN_WS}         = &getWingSpanScore($inSpan);
     return (\%DATA);
 	}
 sub getFlightLogs (){

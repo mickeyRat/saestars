@@ -29,6 +29,7 @@ use SAE::USER;
 use SAE::PAPER;
 use SAE::JSONDB;
 use SAE::PROFILE;
+use SAE::DESIGN;
 
 my %CLASS      = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
 my %COLOR      = (0=>'w3-light-grey', 1=>'w3-yellow', 2=>'w3-blue');
@@ -87,6 +88,7 @@ sub paper_openShowAvailableTeams (){
     my %USER       = %{$Profile->_getJudgePreferenceDetails($userIDX, $txYear)};
     my %ASSIGN     = %{$Profile->_getPapersAssignedToUser($eventIDX, $userIDX, $inCardType)};
     my %TEAMS      = %{$Profile->_getListOfTeams($eventIDX)};
+    my %COUNT      = %{$Profile->_getPaperAssignmentCount($eventIDX, $inCardType)};
     # my %DATA = %{decode_json($q->param('jsonData'))};
     print $q->header();
     my $str;
@@ -94,7 +96,7 @@ sub paper_openShowAvailableTeams (){
     # $str .= '<fieldset class="w3-panel w3-round-large"><legend> Judge\'s Preferences </legend>';
     $str .= sprintf '<fieldset class="w3-panel w3-round-large"><legend class="w3-xlarge">%s, %s</legend>', $USER{TX_LAST_NAME}, $USER{TX_FIRST_NAME};
     
-    $str .= '<div class="w3-row">';
+    $str .= '<div class="w3-row w3-row-padding">';
     $str .= '<div class="w3-container w3-third">';
     $str .= sprintf '<b>Class Preference:</b>';
     # $str .= '<ul style="w3-margin-left">';
@@ -128,10 +130,13 @@ sub paper_openShowAvailableTeams (){
     my %ADV = %{$TEAMS{2}};
     my %MIC = %{$TEAMS{3}};
     my $height = 30;
-    $str .= '<div class="w3-row">';
-    $str .= '<div class="w3-container w3-third w3-border w3-round ">';
-    $str .= '<h5>Regular Class</h5>';
+    my $divHeight = 500;
+    $str .= '<div class="w3-row w3-row-padding w3-margin-bottom">';
+    $str .= '<div class="w3-container w3-third w3-border w3-round w3-margin-bottom" style="padding: 0px;">';
+    $str .= '<header class="w3-light-grey" style="margin-top: -10px;"><h5 class="w3-center w3-padding-small">Regular Class</h5></header>';
+    $str .= '<div class="w3-container" style="height: '.$divHeight.'px; overflow-y: scroll">';
     foreach $teamIDX (sort {$REG{$a}{IN_NUMBER} <=> $REG{$b}{IN_NUMBER}} keys %REG) {
+        if ($COUNT{$teamIDX}>2 && !exists $ASSIGN{$teamIDX}){next}
         $str .= '<div style="height: '.$height.'px; overflow: hidden;">';
         my $disabled = '';
         if ($ASSIGN{$teamIDX}{IN_STATUS} == 2){$disabled = 'disabled'}
@@ -141,10 +146,13 @@ sub paper_openShowAvailableTeams (){
         $str .= '</div>';
     }
     $str .= '</div>';
+    $str .= '</div>';
 
-    $str .= '<div class="w3-container w3-third w3-border w3-round ">';
-    $str .= '<h5>Advanced Class</h5>';
+    $str .= '<div class="w3-container w3-third w3-border w3-round " style="padding: 0px;">';
+    $str .= '<header class="w3-light-grey" style="margin-top: -10px;"><h5 class="w3-center w3-padding-small">Advanced Class</h5></header>';
+    $str .= '<div class="w3-container" style="height: '.$divHeight.'px; overflow-y: scroll">';
     foreach $teamIDX (sort {$ADV{$a}{IN_NUMBER} <=> $ADV{$b}{IN_NUMBER}} keys %ADV) {
+        if ($COUNT{$teamIDX}>2 && !exists $ASSIGN{$teamIDX}){next}
         $str .= '<div style="height: '.$height.'px; overflow: hidden;">';
         my $disabled = '';
         if ($ASSIGN{$teamIDX}{IN_STATUS} == 2){$disabled = 'disabled'}
@@ -154,10 +162,13 @@ sub paper_openShowAvailableTeams (){
         $str .= '</div>';
     }
     $str .= '</div>';
+    $str .= '</div>';
 
-    $str .= '<div class="w3-container w3-third w3-border w3-round ">';
-    $str .= '<h5>Micro Class</h5>';
+    $str .= '<div class="w3-container w3-third w3-border w3-round " style="padding: 0px;">';
+    $str .= '<header class="w3-light-grey" style="margin-top: -10px;"><h5 class="w3-center w3-padding-small">Micro Class</h5></header>';
+    $str .= '<div class="w3-container" style="height: '.$divHeight.'px; overflow-y: scroll">';
     foreach $teamIDX (sort {$MIC{$a}{IN_NUMBER} <=> $MIC{$b}{IN_NUMBER}}keys %MIC) {
+        if ($COUNT{$teamIDX}>2 && !exists $ASSIGN{$teamIDX}){next}
         $str .= '<div style="height: '.$height.'px; overflow: hidden;">';
         my $disabled = '';
         if ($ASSIGN{$teamIDX}{IN_STATUS} == 2){$disabled = 'disabled'}
@@ -169,6 +180,8 @@ sub paper_openShowAvailableTeams (){
     $str .= '</div>';
     $str .= '</div>';
 
+    $str .= '</div>';
+    $str .= '<br>';
 
     $str .= '</div>';
     return ($str);
@@ -386,7 +399,7 @@ sub paper_openAutoAssign (){
             $str .= '<li class="w3-bar w3-border w3-white w3-round">';
             $str .= '<div class="w3-bar-item w3-right">';
             # $str .= sprintf '<button class="w3-border w3-round w3-button w3-pale-green w3-hover-green" onclick="paper_autoAssign(this, %d, %d);">Auto Assign</button><br>', $classIDX, $inCardType;
-            $str .= sprintf '<button class="w3-border w3-round w3-button w3-pale-red w3-hover-red w3-margin-top" onclick="paper_batchRemoval(this, %d, %d);">Bacth Removal</button>', $classIDX, $inCardType;
+            $str .= sprintf '<button class="w3-border w3-round w3-button w3-pale-red w3-hover-red w3-margin-top" onclick="paper_batchRemoval(this, %d, %d);">Batch Removal</button>', $classIDX, $inCardType;
             $str .= '</div>';
             $str .= '<div class="w3-bar-item" >';
             $str .= sprintf '<h4>%s Class: %s</h4>', $CLASS{$classIDX}, $TYPE{$inCardType};
@@ -402,7 +415,7 @@ sub paper_openAutoAssign (){
             # $str .= "$inCardType, $txYear, $site, $classIDX<br>";
             $str .= '<li class="w3-bar w3-border w3-white w3-round">';
             $str .= '<div class="w3-bar-item w3-right">';
-            $str .= sprintf '<button class="w3-border w3-round w3-button w3-pale-red w3-hover-red w3-margin-top" onclick="paper_batchRemoval(this, %d, %d);">Bacth Removal</button>', $classIDX, $inCardType;
+            $str .= sprintf '<button class="w3-border w3-round w3-button w3-pale-red w3-hover-red w3-margin-top" onclick="paper_batchRemoval(this, %d, %d);">Batch Removal</button>', $classIDX, $inCardType;
             $str .= '</div>';
             $str .= '<div class="w3-bar-item">';
             $str .= sprintf '<h4>%s Class: %s</h4>', $CLASS{$classIDX}, $TYPE{$inCardType};
@@ -602,7 +615,7 @@ sub t_paperCard (){
     my ($cardIDX, $inStatus, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $btn) = @_;
     # my %DATA = %{decode_json($q->param('jsonData'))};
     my $str;
-    $str .= '<div ID="CARD_'.$cardIDX.'" class="w3-card-4 w3-margin-left w3-margin-bottom w3-white w3-display-container" style="width: 225px;">';
+    $str .= '<div ID="paper_CARD_'.$cardIDX.'" class="w3-card-4 w3-margin-left w3-margin-bottom w3-white w3-display-container" style="width: 225px;">';
     if ($inStatus <2){
         $str .= '<i class="fa fa-times w3-display-topright w3-transparent w3-button w3-hover-red w3-round" aria-hidden="true" style="margin-top: 5px; margin-right: 5px;" onclick="paper_removeCardFromJudge(this, '.$cardIDX.')"></i>';
     }
@@ -628,6 +641,38 @@ sub t_addTeamButton (){
     $str .= '<div class="w3-container w3-center" style="height: 70px; overflow-y: hidden">';
     $str .= '<i class="fa fa-3x fa-plus w3-text-light-grey" aria-hidden="true"></i>';
     $str .= '</button>';
+    return ($str);
+    }
+sub paper_removeDaysLate (){
+    my $teamIDX= $q->param('teamIDX');
+    my $Design     = new SAE::DESIGN();
+    $Design->_deleteDaysLate($teamIDX);
+    print $q->header();
+    return ();
+    }
+sub paper_saveDaysLate (){
+    my $eventIDX   = $q->param('eventIDX');
+    my $inDays     = $q->param('inDays');
+    my $teamIDX    = $q->param('teamIDX');
+    my $Design     = new SAE::DESIGN();
+    $Design->_saveDaysLate($eventIDX , $teamIDX , $inDays );
+    print $q->header();
+    return ($inDays);
+    }
+sub paper_daysLate (){
+    my $teamIDX= $q->param('teamIDX');
+    my $Design     = new SAE::DESIGN();
+    my $inDays     = $Design->_getDaysLate($teamIDX);
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    print $q->header();
+    my $str;
+    $str .= '<div class="w3-container w3-light-grey w3-card w3-padding">';
+    $str .= sprintf 'Number of Days Late: <input ID="IN_DAYS" class="w3-input w3-border w3-round "type="number" value="%d">', $inDays;
+    $str .= '</div><br><Br>';
+    $str .= '<div class="w3-container w3-center w3-margin-top">';
+    $str .= sprintf '<button class="w3-button w3-border w3-round w3-hover-red w3-margin-right" onclick="paper_removeDaysLate(this, %d);">Remove Late Penalty</button>', $teamIDX;
+    $str .= sprintf '<button class="w3-button w3-border w3-round w3-pale-green w3-hover-green w3-margin-left" onclick="paper_saveDaysLate(this, %d);">Save Late Penalty</button>', $teamIDX;
+    $str .= '</div>';
     return ($str);
     }
 sub view_judgeView (){
@@ -657,17 +702,21 @@ sub view_teamView (){
     # print $q->header();
     my $str;
     my $Paper      = new SAE::PAPER();
+    my $Design     = new SAE::DESIGN();
     my %TEAMS      = %{$Paper->_getTeamList($eventIDX)};
-    
+    my %DOCS       = %{$Paper->_getDocuments($eventIDX)};
+
     # my %JUDGE      = %{$Paper->_getAllJudges()};
     my %ASSIGNMENT = %{$Paper->_getJudgeAssignment($eventIDX)};
     my $str;
-    
+
+    my %DOCLABEL   = (1=>'Design Rpt', 2=>'TDS', 3=>'Drawings');    
     # $str .= '<div class="w3-container w3-margin-top w3-padding">';
     # $str .= '<h2 class="w3-margin-top">Manage Paper</h2>';
     $str .= '<table class="w3-table-all w3-bordered w3-white" style="width: 100%; margin: 0px;">';
     $str .= '<tr>';
     $str .= '<th style="vertical-align: middle"># - School</th>';
+    $str .= '<th>Documents</th>';
     $str .= '<th style="width: 400px;">';
     $str .= '<button class="w3-button w3-border w3-round w3-card w3-hover-green" onclick="paper_openAutoAssign(this, 1);">Design: Auto Assignment</button>';
     $str .= '</th>';
@@ -683,6 +732,7 @@ sub view_teamView (){
 
     $str .= '</tr>';
     foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS) {
+        my $inDays     = $Design->_getDaysLate($teamIDX);
         my %DESIGN     = %{$ASSIGNMENT{1}{$teamIDX}};
         my %TDS        = %{$ASSIGNMENT{2}{$teamIDX}};
         my %DRAWING    = %{$ASSIGNMENT{3}{$teamIDX}};
@@ -691,9 +741,20 @@ sub view_teamView (){
         my $title      = "$CLASS{$classIDX} Class Judge Assignment";
         my $inNumber   = $TEAMS{$teamIDX}{IN_NUMBER};
         my %TARGET     = (1=>'designReport_'.$teamIDX, 2=>'tds_'.$teamIDX, 3=>'3dDrawing_'.$teamIDX, 4=>'Requirements_'.$teamIDX);
-        my $txSchool = sprintf '<b>%03d</b>-%s<br><i class="w3-small">%s - %s Class</i>',$TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL}, $TEAMS{$teamIDX}{TX_COUNTRY}, $CLASS{$classIDX };
+        my $txSchool   = sprintf '<b>%03d</b>-%s<br><i class="w3-small">%s - %s Class</i>',$TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL}, $TEAMS{$teamIDX}{TX_COUNTRY}, $CLASS{$classIDX };
+        my $daysLate   = sprintf '<br><span class="w3-text-blue" style="text-decoration: underline; cursor: pointer;" onclick="paper_daysLate(this, %d);">Days Late: <i ID="TEAM_LATE_'.$teamIDX.'">%d</i></span>', $teamIDX, $inDays;
         $str .= '<tr>';
-        $str .= sprintf '<td>%s</td>', $txSchool;
+        $str .= sprintf '<td>%s<br>%s</td>', $txSchool, $daysLate;
+        $str .= '<td>';
+        for ($x=1; $x<=3; $x++){
+            if (exists $DOCS{$teamIDX}{$x}){
+                $link = '<i class="fa fa-file-o" aria-hidden="true"></i><a href="read.html?fileID='.$DOCS{$teamIDX}{$x}{TX_KEYS}.'&location='.$eventIDX.'" target="report" onclick="window.open(\'read.html?fileIDdoc='.$REPORT{$teamIDX}{$DOC{$inCardType}}{TX_KEYS}.'&location='.$eve.'\',\'report\',\'width=1000,height=600\')"> Download</a>';
+                $str .= sprintf '<div class="w3-margin-left" style="display: inline-block; width: 100px; text-align: w3-right">%s: </div>- %s<br>', $DOCLABEL{$x}, $link ;
+            } else {
+                $str .= sprintf '<div class="w3-margin-left" style="display: inline-block; width: 100px; text-align: w3-right">%s: </div>-<br>', $DOCLABEL{$x};
+            }
+        }
+        $str .= '</td>';
         # $str .= sprintf '<td></td>';
         $str .= sprintf '<td nowrap>';
         $str .= sprintf '<div class="w3-container tag-name %s">', $TARGET{1};

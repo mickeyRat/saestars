@@ -192,6 +192,7 @@ function openInspectionModule(){
     // $('#mainPageContent').html(loading);
     var eventIDX   = $.cookie('FK_EVENT_IDX');
     var inUserType = $.cookie('IN_USER_TYPE');
+    // console.log(inUserType);
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/tech.pl',

@@ -37,6 +37,57 @@ sub calculate_Bpada(){
     		return (0, 0);
     	}
     }
+sub _savePerformanceScores(){
+    my ($self, $publishIDX, $teamIDX, $inPayload, $inPada, $inFlight) = @_;
+    my $SQL = "INSERT INTO TB_SCORE (FK_PUBLISH_IDX, FK_TEAM_IDX, IN_PAYLOAD, IN_PADA, IN_FLIGHT) VALUES (?, ?, ?, ?,?)";
+    my $insert = $dbi->prepare($SQL);
+       $insert->execute($publishIDX, $teamIDX, $inPayload, $inPada, $inFlight);
+    return;
+}
+sub _saveOverallScores(){
+    my ($self, $publishIDX, $teamIDX, $inDesign, $inPres, $inFlight, $inPenalty, $inOverall) = @_;
+    my $SQL = "INSERT INTO TB_SCORE (FK_PUBLISH_IDX, FK_TEAM_IDX, IN_DESIGN, IN_PRESO, IN_FLIGHT, IN_PENALTY, IN_OVERALL) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    my $insert = $dbi->prepare($SQL);
+       $insert->execute($publishIDX, $teamIDX, $inDesign, $inPres, $inFlight, $inPenalty, $inOverall);
+    return;
+}
+sub _getTeamList (){
+    my ($self, $eventIDX) = @_;
+    my $SQL  = "SELECT * FROM TB_TEAM WHERE (FK_EVENT_IDX=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $eventIDX, 2 );
+    my %HASH = %{$select->fetchall_hashref('PK_TEAM_IDX')}; 
+    return (\%HASH);
+    }
+sub _getScore (){
+    my ($self, $teamIDX) = @_;
+    my %LOGS = %{&getFlightLogs($teamIDX)};
+    my %SCORE;
+    foreach $flightIDX (sort {$LOGS{$a}{IN_ROUND} <=> $LOGS{$b}{IN_ROUND}} keys %LOGS){
+        %SCORE = (%SCORE, %{&calculateFlightScore($flightIDX)});
+    }
+    my $str;
+    my $maxWs = 0;
+    my $maxWeight = 0;
+    my %PEN = (0=>'-', 1=>'Yes');
+    my $maxWater = 0;
+    foreach $flightIDX (sort {$SCORE{$a}{IN_ROUND} <=> $SCORE{$b}{IN_ROUND}} keys %SCORE) {
+        $maxWater += $SCORE{$flightIDX}{IN_EFF_WATER};
+    }
+    my $top3 = &getTop3(\%SCORE);
+    return ($top3);
+}
+sub _getGtvScore (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT IN_STD, BO_AUTO, IN_WATER FROM TB_TEAM WHERE PK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($teamIDX);
+    my ($inStd, $boAuto, $inWater) = $select->fetchrow_array();   
+    my $gtvMultiplier = 2.0;
+    if ($boAuto<1) {$gtvMultiplier = 1.5}
+    my $gtvScore = ($gtvMultiplier*$inWater)/4;
+    return ($gtvScore);
+    }
 sub _getTeamScores (){
     my ($self, $teamIDX) = @_;
     my %LOGS = %{&getFlightLogs($teamIDX)};

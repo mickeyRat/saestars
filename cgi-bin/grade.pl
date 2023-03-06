@@ -263,8 +263,17 @@ sub grade_openAssessment(){
     my $disabled = '';
     # my $classDisabled = '';
     # if ($adminUserIDX != $userIDX){$disabled = 'disabled'; $classDisabled = 'w3-disabled'}
-    $str .= '<button class="w3-button w3-border w3-round w3-light-grey" onclick="grade_loadInstructions(this);">Instructions</button>';
-    $str .= '<a class="w3-button w3-border w3-round w3-text-black  w3-light-grey w3-margin-left" href="read.html?fileID='.$REPORT{$teamIDX}{$DOC{$inCardType}}{TX_KEYS}.'&location='.$eventIDX.'" target="report" onclick="window.open(\'read.html?fileIDdoc='.$REPORT{$teamIDX}{$DOC{$inCardType}}{TX_KEYS}.'&location='.$eve.'\',\'report\',\'width=1000,height=600\')">Download</a>';
+    # $str .= 'inCardType='.$inCardType;
+    # $str .= '  ID='.$REPORT{$teamIDX}{$inCardType}{TX_KEYS};
+    if ($inCardType==4){$inCardType=1}
+    $str .= '<button class="w3-button w3-border w3-round w3-light-grey" onclick="grade_loadInstructions(this);">Instructions '.$inCardType.'</button>';
+    if ($inCardType==4){
+        # $inCardType=1
+        $str .= '<a class="w3-button w3-border w3-round w3-text-black  w3-light-grey w3-margin-left" href="read.html?fileID='.$REPORT{$teamIDX}{1}{TX_KEYS}.'&location='.$eventIDX.'" target="report" onclick="window.open(\'read.html?fileIDdoc='.$REPORT{$teamIDX}{$DOC{1}}{TX_KEYS}.'&location='.$eve.'\',\'report\',\'width=1000,height=600\')">Download</a>';    
+    } else {
+        $str .= '<a class="w3-button w3-border w3-round w3-text-black  w3-light-grey w3-margin-left" href="read.html?fileID='.$REPORT{$teamIDX}{$inCardType}{TX_KEYS}.'&location='.$eventIDX.'" target="report" onclick="window.open(\'read.html?fileIDdoc='.$REPORT{$teamIDX}{$DOC{$inCardType}}{TX_KEYS}.'&location='.$eve.'\',\'report\',\'width=1000,height=600\')">Download</a>';
+    }
+    # $str .= $REPORT{$teamIDX}{$inCardType}{TX_KEYS}.'<a class="w3-button w3-border w3-round w3-text-black  w3-light-grey w3-margin-left" href="read.html?fileID='.$REPORT{$teamIDX}{$inCardType}{TX_KEYS}.'&location='.$eventIDX.'" target="report" onclick="window.open(\'read.html?fileIDdoc='.$REPORT{$teamIDX}{$DOC{$inCardType}}{TX_KEYS}.'&location='.$eve.'\',\'report\',\'width=1000,height=600\')">Download</a>';
     if ($adminUserIDX == $userIDX){
         $str .= sprintf '<button class="w3-button w3-border w3-round w3-card-4 w3-yellow w3-margin-left" onclick="grade_setAssessmentStatus(this, %d, %d, %d, %d);">Exit & Save as Draft</button>', $cardIDX , 1, $classIDX, $inCardType ;
         $str .= sprintf '<button class="w3-button w3-border w3-round w3-card-4 w3-blue w3-margin-left" onclick="grade_setAssessmentStatus(this, %d, %d, %d, %d);">Save as Final</button>', $cardIDX , 2, $classIDX, $inCardType ; #2= Status of the assessment.  2=Complete; 1=Draft; 0=Not Started

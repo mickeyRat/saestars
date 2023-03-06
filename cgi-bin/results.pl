@@ -65,6 +65,35 @@ sub sae_viewPublishedResults(){
     $str .= '</div>';
     return ($str);
 }
+sub results_openResultStandings(){
+    my $location = $q->param('location');
+    my $classIDX = $q->param('classIDX');
+    my $Scores = new SAE::SCORE();
+    my %LIST = %{$Scores->_getPublishedListByClass($location, $classIDX)};
+    my %CLASS = (1=>'Regular Class', 2=>'Advanced Class', 3=>'Micro Class');
+    print $q->header(); 
+    my $str;
+    $str .= '<div class="w3-container">';
+    $str .= sprintf '<h3>%s</h3>', $CLASS{$classIDX};
+    $str .= '<ul class="w3-ul">';
+    foreach $publishIDX (sort {$a<=>$b} keys %LIST) {
+        $str .= '<li class="w3-bar w3-margin-bottom w3-border w3-round w3-card-2">';
+        # $str .= '<span onclick="this.parentElement.style.display=\'none\'" class="w3-bar-item w3-button w3-xlarge w3-right">&times;</span>';
+        # $str .= '<img src="img_avatar2.png" class="w3-bar-item w3-circle" style="width:85px">';
+        $str .= '<i class="fa fa-trophy w3-bar-item fa-2x" aria-hidden="true"></i>';
+        $str .= '<div class="w3-bar-item">';
+        $str .= sprintf '<span class="w3-large"><a href="post.html?fileID=%s" target="_blank">%s</a></span><br>', $LIST{$publishIDX}{TX_FILE}, $LIST{$publishIDX}{TX_TITLE};
+        $str .= sprintf '<span>Generated on %s ( <i>v.%d</i> )</span>', $LIST{$publishIDX}{TX_TIME}, $publishIDX;
+        # if ($LIST{$publishIDX}{FK_TILES_IDX} == 17) {
+        #     $str .= sprintf '<span>Round %d</span>', $LIST{$publishIDX}{IN_ROUND};
+        # }
+        $str .= '</div>';
+        $str .= '</li>';
+    }
+    $str .= '</ul>';
+    $str .= '</div>';
+    return ($str);
+}
 sub sae_openResultStandings(){
     my $location = $q->param('location');
     my $classIDX = $q->param('classIDX');

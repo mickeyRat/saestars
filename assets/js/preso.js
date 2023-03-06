@@ -18,6 +18,7 @@ function sae_openImport(userIDX){
     $('#divImport').removeClass('w3-hide');
 }
 function sae_uploadExcelScoresheet(o, eventIDX){
+    // console.log(eventIDX);
     $('#uploadedDisplay').html(loading); 
     var userIDX = $('#JUDGE_IDX :selected').val();
     var fd = new FormData();
@@ -114,6 +115,7 @@ function selectOtherRoom(){
     $('#ROOM_0').attr('checked',true);
 }
 function showListOfTeam_Preso(sortBy){
+    $('#mainPageContent').html(loading);
     var location = $.cookie('LOCATION');
     var userIDX = $.cookie('PK_USER_IDX');
     if (sortBy===''){sortBy='number'}

@@ -1,7 +1,8 @@
 var d=document;
 var now = new Date();
 var time = now.getTime();
-// var loading = '<div class="w3-padding" style="margin: auto;"><img src="../../images/loader.gif"> Loading...</div>';
+var loading = '<div class="w3-padding" style="margin: auto;"><img src="../../images/loader.gif"> Loading...</div>';
+
 
 // -----------------------------------------------------------------------------------------------------------
 var pStart = {x: 0, y:0};
@@ -189,7 +190,7 @@ function mainMenuItemClick(menuItem, obj){
       }
 }
 function openInspectionModule(){
-    // $('#mainPageContent').html(loading);
+    $('#mainPageContent').html(loading);
     var eventIDX   = $.cookie('FK_EVENT_IDX');
     var inUserType = $.cookie('IN_USER_TYPE');
     // console.log(inUserType);
@@ -203,7 +204,7 @@ function openInspectionModule(){
     });
 }
 function openCrashReinspection(){
-    // $('#mainPageContent').html(loading);
+    $('#mainPageContent').html(loading);
     var location = $.cookie('LOCATION');
     var inShowAll = $.cookie('showAllInspection');
     $.ajax({
@@ -273,6 +274,7 @@ function sae_openManageUsers(){
 
 function openManageJudges(){
     var location = $.cookie('LOCATION');
+    $('#mainPageContent').html(loading);
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/user.pl',
@@ -299,6 +301,7 @@ function openReportItems(toDo, userIDX, inType){
     });
 }
 function openManageteam(){
+    $('#mainPageContent').html(loading);
     var location = $.cookie('LOCATION');
     $.ajax({
         type: 'POST',
@@ -337,6 +340,7 @@ function openFileUpload(toDo){
 //     });
 // }
 function showPublishPage(){
+    $('#mainPageContent').html(loading);
     var location = $.cookie('LOCATION');
     var userIDX =  $.cookie('userIDX');
     // console.log(userIDX);

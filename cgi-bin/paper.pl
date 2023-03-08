@@ -454,23 +454,29 @@ sub paper_deleteUserAssignment (){
     print $q->header();
     my $JsonDB = new SAE::JSONDB();
     my $newIDX = $JsonDB->_delete('TB_CARD', qq(PK_CARD_IDX=$cardIDX));
+    # $jsonDB->_update();
+    # my %DATA = ('BO_ARCHIVE'=>1);
+    # $JsonDB->_update('TB_CARD', \%DATA, qq(PK_CARD_IDX=$cardIDX));
     my $str;
     $str = &t_nameTagAvailable($inCardType, $eventIDX, $userIDX, $teamIDX);
     return ($str);
     }
 sub createList (){
-    # my $eventIDX= $q->param('eventIDX');
-    my $txName= $q->param('txName');
-    my %DATA = %{decode_json($q->param('jsonData'))};
+    my $eventIDX   = $q->param('eventIDX');
     print $q->header();
-    my $JsonDB = new SAE::JSONDB();
-    my $newIDX = $JsonDB->_insert('TB_CARD', \%DATA);
-    my $Paper = new SAE::PAPER();
-    my %TEAM  = %{$Paper->_getTeamDetails($DATA{FK_TEAM_IDX})};
-    my $inNumber = $TEAM{IN_NUMBER};
-    my $txSchool = $TEAM{TX_SCHOOL};
-    my $classIDX = $TEAM{FK_CLASS_IDX};
-    my $str = &t_nameTag($newIDX , $txName, 0, $DATA{FK_USER_IDX}, $DATA{FK_TEAM_IDX}, $DATA{FK_CARDTYPE_IDX}, $inNumber, $txSchool, $classIDX );
+    my $txName     = $q->param('txName');
+    my %DATA       = %{decode_json($q->param('jsonData'))};
+    my $JsonDB     = new SAE::JSONDB();
+    my $newIDX     = $JsonDB->_insert('TB_CARD', \%DATA);
+    my $Paper      = new SAE::PAPER();
+    my %TEAM       = %{$Paper->_getTeamDetails($DATA{FK_TEAM_IDX})};
+    my $Reports    = new SAE::REPORTS();
+    my %CARDS      = %{$Reports->_getAllCardScores($eventIDX)};
+    my $inNumber   = $TEAM{IN_NUMBER};
+    my $txSchool   = $TEAM{TX_SCHOOL};
+    my $classIDX   = $TEAM{FK_CLASS_IDX};
+    my $subTotal   = $CARDS{$cardIDX};
+    my $str        = &t_nameTag($newIDX , $txName, 0, $DATA{FK_USER_IDX}, $DATA{FK_TEAM_IDX}, $DATA{FK_CARDTYPE_IDX}, $inNumber, $txSchool, $classIDX, $subTotal );
 
     return ($str );
     }
@@ -490,6 +496,8 @@ sub paper_openAvailableJudges (){
     my $Profile    = new SAE::PROFILE();
     # my $eventYear  = $Paper->_getEventYear( $eventIDX );
     # my %TEAM       = %{$Profile->_getTeamDetails($teamIDX)};
+    my $Reports    = new SAE::REPORTS();
+    my %CARDS      = %{$Reports->_getAllCardScores($eventIDX)};
     my %EVENT      = %{$Profile->_getEventDetails( $eventIDX )};
     my $inNumber   = $TEAM{IN_NUMBER};
     my $txSchool   = $TEAM{TX_SCHOOL};
@@ -505,7 +513,8 @@ sub paper_openAvailableJudges (){
         my $cardIDX   = $JUDGE{$userIDX}{PK_CARD_IDX};
         my $judgeName = sprintf '%s, %s', $JUDGE{$userIDX}{TX_LAST_NAME}, $JUDGE{$userIDX}{TX_FIRST_NAME};
         my $inStatus  = $JUDGE{$userIDX}{IN_STATUS};
-        $str .= &t_nameTag($cardIDX, $judgeName, $inStatus , $userIDX, $teamIDX, $inCardType, $inNumber, $txSchool, $classIDX);
+        my $subTotal  = $CARDS{$cardIDX};
+        $str .= &t_nameTag($cardIDX, $judgeName, $inStatus , $userIDX, $teamIDX, $inCardType, $inNumber, $txSchool, $classIDX, $subTotal);
     }
     $str .= '</div>';
     $str .= sprintf '<h3>Judges availalbe for %s Class %s</h3>', $CLASS{$classIDX}, $TYPE{$inCardType};
@@ -564,13 +573,13 @@ sub t_nameTagAvailable (){
     return ($str);
     }
 sub t_nameTag (){
-    my ($cardIDX, $label, $inStatus, $userIDX, $teamIDX, $inCardType, $inNumber, $txSchool, $classIDX) = @_;
-    
+    my ($cardIDX, $label, $inStatus, $userIDX, $teamIDX, $inCardType, $inNumber, $txSchool, $classIDX, $inScore) = @_;
     my $str;
     $str = sprintf '<span class="tag %s w3-hover-pale-yellow span_assigned_%d" ><u style="cursor: pointer;" onclick="grade_openAssessment(this, %d, %d, \'%s\', %d, %d, %d, %d);">%s</u>',$COLOR{$inStatus}, $cardIDX, $cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $label;
-    if ($inStatus<2){
+    $str .= sprintf '<span class="w3-margin-left">( %2.2f )</span>', $inScore;
+    # if ($inStatus<2){
         $str .= sprintf '<i class="w3-round w3-margin-left w3-hover-red w3-button fa fa-close" style="padding: 3px 5px;" onclick="paper_deleteUserAssignment(this, %d, %d, %d, %d);"></i>', $cardIDX, $userIDX, $teamIDX, $inCardType;
-    }
+    # }
     $str .= '</span>';
     return ($str);
     }
@@ -708,6 +717,9 @@ sub view_teamView (){
 
     # my %JUDGE      = %{$Paper->_getAllJudges()};
     my %ASSIGNMENT = %{$Paper->_getJudgeAssignment($eventIDX)};
+    my $Reports    = new SAE::REPORTS();
+    my %CARDS   = %{$Reports->_getAllCardScores($eventIDX)};
+    # printf "%2.4f\n", $CARDS{10533};
     my $str;
 
     my %DOCLABEL   = (1=>'Design Rpt', 2=>'TDS', 3=>'Drawings');    
@@ -740,6 +752,7 @@ sub view_teamView (){
         my $classIDX   = $TEAMS{$teamIDX}{FK_CLASS_IDX};
         my $title      = "$CLASS{$classIDX} Class Judge Assignment";
         my $inNumber   = $TEAMS{$teamIDX}{IN_NUMBER};
+
         my %TARGET     = (1=>'designReport_'.$teamIDX, 2=>'tds_'.$teamIDX, 3=>'3dDrawing_'.$teamIDX, 4=>'Requirements_'.$teamIDX);
         my $txSchool   = sprintf '<b>%03d</b>-%s<br><i class="w3-small">%s - %s Class</i>',$TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL}, $TEAMS{$teamIDX}{TX_COUNTRY}, $CLASS{$classIDX };
         my $daysLate   = sprintf '<br><span class="w3-text-blue" style="text-decoration: underline; cursor: pointer;" onclick="paper_daysLate(this, %d);">Days Late: <i ID="TEAM_LATE_'.$teamIDX.'">%d</i></span>', $teamIDX, $inDays;
@@ -763,7 +776,8 @@ sub view_teamView (){
             my $cardIDX   = $DESIGN{$userIDX}{PK_CARD_IDX};
             my $judgeName = sprintf '%s, %s', $DESIGN{$userIDX}{TX_LAST_NAME}, $DESIGN{$userIDX}{TX_FIRST_NAME};
             my $inStatus  = $DESIGN{$userIDX}{IN_STATUS};
-            $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 1, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX);
+            my $subTotal  = $CARDS{$cardIDX};
+            $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 1, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX, $subTotal);
         }
         $str .= '</div>';
         $str .= '</td>';
@@ -775,7 +789,8 @@ sub view_teamView (){
             my $cardIDX = $TDS{$userIDX}{PK_CARD_IDX};
             my $judgeName = sprintf '%s, %s', $TDS{$userIDX}{TX_LAST_NAME}, $TDS{$userIDX}{TX_FIRST_NAME};
             my $inStatus  = $TDS{$userIDX}{IN_STATUS};
-            $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 2, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX);
+            my $subTotal  = $CARDS{$cardIDX};
+            $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 2, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX, $subTotal);
         }
         $str .= '</div>';
         $str .= '</td>';
@@ -787,7 +802,8 @@ sub view_teamView (){
             my $cardIDX = $DRAWING{$userIDX}{PK_CARD_IDX};
             my $judgeName = sprintf '%s, %s', $DRAWING{$userIDX}{TX_LAST_NAME}, $DRAWING{$userIDX}{TX_FIRST_NAME};
             my $inStatus  = $DRAWING{$userIDX}{IN_STATUS};
-            $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 3, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX);
+            my $subTotal  = $CARDS{$cardIDX};
+            $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 3, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX, $subTotal);
         }
         $str .= '</div>';
         $str .= '</td>';
@@ -799,7 +815,8 @@ sub view_teamView (){
             my $cardIDX = $REQ{$userIDX}{PK_CARD_IDX};
             my $judgeName = sprintf '%s, %s', $REQ{$userIDX}{TX_LAST_NAME}, $REQ{$userIDX}{TX_FIRST_NAME};
             my $inStatus  = $REQ{$userIDX}{IN_STATUS};
-            $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 4, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX);
+            my $subTotal  = $CARDS{$cardIDX};
+            $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 4, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX, $subTotal);
         }
         $str .= '</div>';
         $str .= '</td>';

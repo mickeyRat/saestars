@@ -304,13 +304,16 @@ sub sae_loadHomePage(){
         $str .= $Tech->_getMyReinspection($teamIDX);
         $str .= '</div>';
         $str .= '<div class="w3-clear"></div>';
+
         foreach $panelIDX (sort {$a <=> $b} keys %PANEL) {
-            my $Score = 0;
+            my $mScore = 0;
+            my $raw   = 0;
             my $late  = 0;
-            my $eIDX = crypt($teamIDX, '20');
+            my $late  = 0;
+            my $eIDX  = crypt($teamIDX, '20');
             my $source = 14;
             if ($panelIDX == 1){
-                my ( $raw, $late )= $Design->_getOverallPaperByTeam($teamIDX);
+                my ( $raw, $late ) = $Design->_getOverallPaperByTeam($teamIDX);
                 $Score = $raw - $late;
                 $source = 14;
             } elsif ($panelIDX == 2) {
@@ -343,6 +346,7 @@ sub sae_loadHomePage(){
                     # $str .= '</a>';
                     $str .= '</div>';
                     $str .= '</div>';
+                    $Score = 0;
                 } else {
                     $str .= sprintf '<div class="w3-quarter w3-margin-top" >';
                     $str .= sprintf '<div class="w3-container %s w3-padding-16 w3-border w3-card-2 w3-round">', $COLOR{$panelIDX};
@@ -366,5 +370,5 @@ sub sae_loadHomePage(){
     $str .= sprintf '<button class="w3-button w3-round w3-padding-16 w3-border w3-display-right w3-hover-blue w3-margin-right" onclick="sae_subscribeToTeam(%d, 0);">Subscribe<i class="fa fa-plus w3-margin-left" aria-hidden="true"></i></button>', $userIDX;
     $str .= '</div>';
     return ($str);
-}
+    }
 

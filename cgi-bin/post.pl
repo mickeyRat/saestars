@@ -57,8 +57,9 @@ sub _finalDesign(){
     my $str = sprintf "<h2>%s Class - Design Report Standings</h2>", $CLASS{$classIDX};
     # $str .= sprintf '<h5>Generated on: %s v.%d</h5>', $txTime, $publishIDX;
     $str .= '<div class="w3-responsive">';
-    $str .= '<table class="table table-sortable w3-table-all w3-bordered w3-large">';
+    $str .= '<table class="table table-sortable w3-table-all w3-bordered w3-large w3-mobile">';
     $str .= '<thead>';
+    # $str .= '<thead class="w3-hide-small w3-hide-medium">';
     $str .= '<tr class="w3-light-grey">';
     $str .= '<th class="w3-center-align" style="width: 5%;" data-type="string" >Place</th>';
     $str .= '<th class="w3-left-align" data-type="int" >University (Team)</th>';
@@ -73,6 +74,7 @@ sub _finalDesign(){
     for ($i=2; $i>=0; $i--){
         $teamIDX = $ORDER[$i];
         $str .= '<tr>';
+        # $str .= '<tr  class="w3-hide-small w3-hide-medium">';
         if ($SCORES{$teamIDX}{IN_DESIGN}<=0){
             $str .= sprintf '<td class="w3-left-align">N/R</td>';
         } else {
@@ -87,13 +89,33 @@ sub _finalDesign(){
         }
         $str .= sprintf '<td class="w3-right-align">%2.4f</td>', $SCORES{$teamIDX}{IN_DESIGN};
         $str .= '</tr>'; 
+        # $str .= '<tr class="w3-hide-large">';
+        # $str .= '<div class="w3-container w3-border-bottom w3-margin-bottom">';
+        #     $str .= '<span>';
+        #     if ($SCORES{$teamIDX}{IN_DESIGN}<=0){
+        #         $str .= sprintf 'N/R';
+        #     } else {
+        #         $str .= sprintf '<b class="w3-xlarge">%s (Score: %2.4f)</b>', $PLACE{($i+1)}, $SCORES{$teamIDX}{IN_DESIGN};
+        #     }
+        #     $str .= '</span><br>';
+        #     $str .= sprintf'<span><b class="w3-large">%03d</b> - %s (<i>%s</i>)</span><br>',$TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL}, $TEAMS{$teamIDX}{TX_NAME};
+        #     $str .= sprintf '<span class="w3-right-align">%s</span><br>', $TEAMS{$teamIDX}{TX_COUNTRY};
+        #     $str .= '<span>';
+        #     if ($SCORES{$teamIDX}{IN_LATE}<=0) {
+        #         $str .= sprintf '-';
+        #     } else {
+        #         $str .= sprintf '<b>-%2.1f</b>', $SCORES{$teamIDX}{IN_LATE};
+        #     }
+        #     $str .= '</span><br>';
+        # $str .= '</div>';
+        # $str .= '</tr>';
     }
     $str .= '</tbody>';
     $str .= '</table>';
     # $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub _finalPreso(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -147,7 +169,7 @@ sub _finalPreso(){
     # $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub _finalRegular(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -192,7 +214,7 @@ sub _finalRegular(){
     # $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub _finalAdvanced(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -243,7 +265,7 @@ sub _finalAdvanced(){
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub _finalMicro(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -287,7 +309,7 @@ sub _finalMicro(){
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub _finalOverall(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -357,7 +379,7 @@ sub _finalOverall(){
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub viewAllFinalResults(){
     print $q->header();
     my $Pub = new SAE::PUBLISH();
@@ -401,7 +423,7 @@ sub viewAllFinalResults(){
         $str .= &_finalOverall($eventIDX , $classIDX, $publishIDX);
     }
     return ($str);
-}
+    }
 # -------------------- FINAL ---------------------------------------------------
 sub viewFastestTimetoTurn(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
@@ -428,7 +450,7 @@ sub viewFastestTimetoTurn(){
         }
     my $str = &resultsTable_Reverse($txTitle, $txTime, $publishIDX, \%SCORES, \%TEAM, $head, 'IN_TIME');
     return ($str);
-}
+    }
 sub viewMostEffectiveVolumeDelivered(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -447,7 +469,7 @@ sub viewMostEffectiveVolumeDelivered(){
     my $head = "Eff. Volume<br>Delivered<br>in<sup>3</sup>";
     my $str = &resultsTable($txTitle, $txTime, $publishIDX, \%SCORES, \%TEAM, $head, 'IN_VOLUME');
     return ($str);
-}
+    }
 sub viewClosesttoTargetCenter(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -466,7 +488,7 @@ sub viewClosesttoTargetCenter(){
     my $head = "Distance<br>To Target<br>Center (ft)";
     my $str = &resultsTable_Reverse($txTitle, $txTime, $publishIDX, \%SCORES, \%TEAM, $head, 'IN_DISTANCE');
     return ($str);
-}
+    }
 sub viewMostPADAinzone(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -485,7 +507,7 @@ sub viewMostPADAinzone(){
     my $head = "Number of<br>PADA<br>In-Zone";
     my $str = &resultsTable($txTitle, $txTime, $publishIDX, \%SCORES, \%TEAM, $head, 'IN_PADA');
     return ($str);
-}
+    }
 sub viewHeaviestPayload(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -504,7 +526,7 @@ sub viewHeaviestPayload(){
     my $head = "Max<br>Payload<br>(lbs)";
     my $str = &resultsTable($txTitle, $txTime, $publishIDX, \%SCORES, \%TEAM, $head, 'IN_PAYLOAD');
     return ($str);
-}
+    }
 sub viewMostballs(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -524,7 +546,7 @@ sub viewMostballs(){
     my $head = "Total #<br> of balls";
     my $str = &resultsTable($txTitle, $txTime, $publishIDX, \%SCORES, \%TEAM, $head, 'IN_BALL');
     return ($str);
-}
+    }
 sub viewBestPayloadRatio(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -543,7 +565,7 @@ sub viewBestPayloadRatio(){
     my $head = "Payload/Wing<br>Ratio";
     my $str = &resultsTable($txTitle, $txTime, $publishIDX, \%SCORES, \%TEAM, $head, 'IN_RATIO');
     return ($str);
-}
+    }
 sub viewMostEffectivePayload(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -563,7 +585,7 @@ sub viewMostEffectivePayload(){
     my $head = "Total<br>Payload<br>(lbs)";
     my $str = &resultsTable($txTitle, $txTime, $publishIDX, \%SCORES, \%TEAM, $head, 'IN_PAYLOAD');
     return ($str);
-}
+    }
 # --- Superlative Table Templates ----------------------------------------------
 sub resultsTable_Reverse(){
     my ($txTitle, $txTime, $publishIDX, $S, $T, $head, $field) = @_;
@@ -629,7 +651,7 @@ sub resultsTable_Reverse(){
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub resultsTable(){
     my ($txTitle, $txTime, $publishIDX, $S, $T, $head, $field) = @_;
     my %TEAM = %{$T};
@@ -666,7 +688,7 @@ sub resultsTable(){
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 # --- Awards -------------------------------------------------------------------
 sub viewPostResults(){
     print $q->header();
@@ -681,7 +703,7 @@ sub viewPostResults(){
     my $str;
     $str = &{$headerName}($eventIDX, $HEADER{FK_CLASS_IDX}, $HEADER{TX_TIME}, $HEADER{PK_PUBLISH_IDX});
     return ($str);
-}
+    }
 sub viewDesignReport(){ # Name of the method is derived from the label of the section head in the publish.pl file
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -734,7 +756,7 @@ sub viewDesignReport(){ # Name of the method is derived from the label of the se
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub viewPresentationScores(){ # Name of the methos is derived from the label of the section head in the publish.pl file
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -781,7 +803,7 @@ sub viewPresentationScores(){ # Name of the methos is derived from the label of 
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub viewMissionPerformanceScores(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     
@@ -792,7 +814,7 @@ sub viewMissionPerformanceScores(){
     } else {
         $str = &assembleRegularClass($eventIDX, $classIDX, $txTime, $publishIDX);
     }
-}
+    }
 sub assembleRegularClass(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -830,7 +852,7 @@ sub assembleRegularClass(){
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub assembleAdvancedClass(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -872,7 +894,7 @@ sub assembleAdvancedClass(){
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub assembleMicroClass(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -910,7 +932,7 @@ sub assembleMicroClass(){
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub viewOverallPerformance(){
     my ($eventIDX, $classIDX, $txTime, $publishIDX) = @_;
     my %CLASS = (1=>'Regular',2=>'Advanced',3=>'Micro');
@@ -967,7 +989,7 @@ sub viewOverallPerformance(){
     $str .= '<p class="w3-small">* N/R = Not Ranked</p>';
     $str .= '</div>';
     return ($str);
-}
+    }
 # ====================== 2020 =============================
 sub viewPostResults_BACKUP(){
     print $q->header();
@@ -993,7 +1015,7 @@ sub viewPostResults_BACKUP(){
     # $str .= "$txTitle, $location , $classIDX, $boScore, \$inRound=$inRound";
 
     return ($str);
-};
+    }
 sub _displayFlightResults(){
     my $txTitle = shift;
     my $location = shift;
@@ -1107,7 +1129,7 @@ sub _displayFlightResults(){
     }
     $ste .= '</table>';
     return ($str); 
-}
+    }
 sub _displayDesignResults(){ #Displaying Design Sscores
     my $txTitle = shift;
     my $location = shift;
@@ -1209,7 +1231,7 @@ sub _displayDesignResults(){ #Displaying Design Sscores
     }
     $str .= '</table>';
     return ($str);
-}
+    }
 sub _displayPresentationResults(){ #Displaying Design Sscores
     my $txTitle = shift;
     my $location = shift;
@@ -1285,7 +1307,7 @@ sub _displayPresentationResults(){ #Displaying Design Sscores
     }
     $str .= '</table>';
     return ($str);
-}
+    }
 sub calculateMicroClassFlights(){
     my ($inRound, $eventIDX) = @_;
     my $Micro = new SAE::MICRO($eventIDX);
@@ -1294,7 +1316,7 @@ sub calculateMicroClassFlights(){
         $TEAM{$teamIDX}{IN_OVERALL} = $Micro->_getTeamFinalScore($teamIDX, $inRound);
     }
     return (\%TEAM);
-}
+    }
 sub calculateAdvancedClassFlights(){
     my ($inRound, $eventIDX) = @_;
     my $Advanced = new SAE::ADVANCED($eventIDX);
@@ -1305,7 +1327,7 @@ sub calculateAdvancedClassFlights(){
         $TEAM{$teamIDX}{IN_OVERALL} = $FINAL{$teamIDX}{IN_FFS};
     }
     return (\%TEAM);
-}
+    }
 sub calculateRegularClassFlights(){
     my ($inRound, $eventIDX) = @_;
         my $Regular = new SAE::REGULAR($eventIDX);
@@ -1319,7 +1341,7 @@ sub calculateRegularClassFlights(){
         $Regular->_getTeamFinalScore($teamIDX,$inRound);
     }
     return (\%TEAM);
-}
+    }
 sub _displayOverallResults(){
     my $txTitle = shift;
     my $location = shift;
@@ -1671,4 +1693,4 @@ sub _displayOverallResults(){
     $str .= sprintf '<a class="w3-hide-small" href="javascript:void(0);" onclick="sae_toggleView(\'%s\');">Expand/Collapse</a>', 'w3-overall' ;
     $str .= '<hr style="page-break-before: always;">';
     return ($str);
-}
+    }

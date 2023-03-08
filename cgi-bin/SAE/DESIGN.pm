@@ -57,11 +57,23 @@ sub _getCardIDX(){
     my $cardIDX = $select->fetchrow_array();
     return ($cardIDX);
 }
+
+sub _getDesignScore (){
+    my ($self, $teamIDX) = @_;
+    my $score   = &_getTeamDesignScore($teamIDX);
+    return ($score);
+    }
+sub _getLateScore (){
+    my ($self, $teamIDX) = @_;
+    my $score   = &_calculateLatePenalty($teamIDX);
+    return ($score);
+    }
 sub _getOverallPaperByTeam(){
     my $self = shift;
     my $teamIDX = shift;
     my $score   = &_getTeamDesignScore($teamIDX);
     my $late    = &_calculateLatePenalty($teamIDX);
+    # print qq($score, $late \n\n\a);
     return ($score, $late);
 }
 sub _calculateLatePenalty(){
@@ -107,6 +119,7 @@ sub _calculateOverallPaperByTeam(){
 }
 sub _getTeamDesignScore (){
     my ($teamIDX) = @_;
+    my $inFinalScore = 0;
     my $Rubric=new SAE::RUBRIC();
     my %SECTION = %{$Rubric->_getSectionList()};
     my $SQL    = "SELECT CARD.FK_CARDTYPE_IDX, SUB.FK_SECTION_IDX, AVG(PAPER.IN_VALUE) AS IN_AVERAGE FROM TB_PAPER AS PAPER 
@@ -137,7 +150,6 @@ sub _getTeamDesignScore (){
         $sectionScore = $score;
         $inFinalScore += $sectionScore;
         # printf "\n==== SECTION SCORE = %2.4f\n", $sectionScore;
-        
     }
     # printf "\n==== FINAL SCORE = %2.4f\n", $inFinalScore;
     # print "\n\n\a";

@@ -185,6 +185,8 @@ function paper_openSendReminder(o, userIDX, inCardType) {
     });
 }
 function paper_removeCardFromJudge(o, cardIDX) {
+    var jsYes = confirm("Click OK to confirm removal of this Judge");
+    if (!jsYes){return}
     $('#paper_CARD_'+cardIDX).fadeOut(250);
     var eventIDX       = $.cookie('LOCATION');
     var ajxData        = {};
@@ -226,7 +228,7 @@ function paperOpenTab(o) {
     });
 }
 function paper_batchRemoval (o, classIDX, inCardType) {
-    console.log(inCardType);
+    // console.log(inCardType);
     var jsYes = confirm("Batch Removal will only remove assigned judges without final scores.\nClick OK to continue");
     if (!jsYes){return}
     var eventIDX = $.cookie('LOCATION');
@@ -331,6 +333,9 @@ function paper_openAutoAssign (o, inCardType) {
     });
     }
 function paper_deleteUserAssignment (o, cardIDX, userIDX, teamIDX, inCardType) {
+    // console.log("delete");
+    var jsYes = confirm("Click OK to confirm removal of this Judge");
+    if (!jsYes){return}
     var eventIDX       = $.cookie('LOCATION');
     $('.span_assigned_'+cardIDX).fadeOut(300);
     var ajxData        = {};
@@ -341,7 +346,7 @@ function paper_deleteUserAssignment (o, cardIDX, userIDX, teamIDX, inCardType) {
     ajxData.teamIDX    = teamIDX;
     ajxData.inCardType = inCardType;
     ajxData.eventIDX   = eventIDX;
-    console.log(JSON.stringify(ajxData));
+    // console.log(JSON.stringify(ajxData));
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/paper.pl',

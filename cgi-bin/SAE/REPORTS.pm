@@ -15,6 +15,30 @@ sub new{
 	return $self;
 }
 # ===================== 2023 ==================================================
+sub _getAllCardScores (){
+    my ($self, $eventIDX) = @_;
+    my %POINTS = (1=>35, 2=>5, 3=>5, 4=>5);
+    my $SQL = "SELECT C.FK_CARDTYPE_IDX, C.PK_CARD_IDX, SEC.PK_SECTION_IDX, (AVG(P.IN_VALUE)*((SEC.IN_WEIGHT)/100))/100 AS IN_PERCENT FROM TB_PAPER AS P 
+        JOIN TB_SUBSECTION AS SUB ON P.FK_SUBSECTION_IDX=SUB.PK_SUBSECTION_IDX 
+        JOIN TB_SECTION AS SEC ON SUB.FK_SECTION_IDX=SEC.PK_SECTION_IDX 
+        JOIN TB_CARD AS C ON P.FK_CARD_IDX = C.PK_CARD_IDX 
+        WHERE C.FK_EVENT_IDX=? 
+        GROUP BY C.FK_CARDTYPE_IDX, C.PK_CARD_IDX, SEC.PK_SECTION_IDX";
+    my $select = $dbi->prepare( $SQL ) || die "$_";
+       $select->execute($eventIDX);
+    my %CARDS  = %{$select->fetchall_hashref(['FK_CARDTYPE_IDX','PK_CARD_IDX','PK_SECTION_IDX'])};
+    my %HASH;
+    foreach $inType (sort {$a<=>$b} keys %CARDS) {
+        foreach $cardIDX (sort {$a<=>$b} keys %{$CARDS{$inType}}) {
+            my $score = 0;
+            foreach $sectionIDX (keys %{$CARDS{$inType}{$cardIDX}}) {
+                $score += $CARDS{$inType}{$cardIDX}{$sectionIDX}{IN_PERCENT}*$POINTS{$inType};
+            }
+            $HASH{$cardIDX} = $score;
+        }
+    }
+    return (\%HASH);
+    }
 sub _calculateDesignScore (){
     my ($self, $inCardType, $classIDX, $cardIDX) = @_;
     my %MAXSCORE = (1=>35, 2=>5, 3=>5, 4=>5);

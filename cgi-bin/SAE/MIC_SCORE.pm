@@ -47,7 +47,7 @@ sub new{
 	        $inRaw = 80*(sqrt($inPayload*$bonus)/$inTof);
 	    }
 	    my $fs = $inRaw* (1-($FLIGHT{IN_PEN_MINOR} * 0.25)) * (1-($FLIGHT{IN_PEN_LANDING}* 0.5));
-	    my %ZONE = (1=>"Yes", 0=>"No");
+	    my %ZONE = (1=>"Yes", 0=>"-");
 	    $DATA{$flightIDX}{PK_FLIGHT_IDX} = $flightIDX;
 	    $DATA{$flightIDX}{FK_TEAM_IDX}   = $FLIGHT{FK_TEAM_IDX};
 	    $DATA{$flightIDX}{IN_WEIGHT}     = $FLIGHT{IN_WEIGHT};
@@ -68,11 +68,13 @@ sub new{
 		my ($score) = @_;
 		my %SCORE = %$score;
 		my @SORTED = (sort {$SCORE{$b}{IN_FS} <=> $SCORE{$a}{IN_FS}} keys %SCORE);
+        my %USED;
 		my $sumOfTopThree = 0;
 		for ($x=0; $x<=2; $x++){
 	        $sumOfTopThree += $SCORE{$SORTED[$x]}{IN_FS};
+            $USED{$SORTED[$x]} = 1;
 	    }
-		return ($sumOfTopThree);
+		return ($sumOfTopThree, \%USED);
 		}
 sub _savePerformanceScores(){
     my ($self, $publishIDX, $teamIDX, $inFlight) = @_;
@@ -108,7 +110,7 @@ sub _getScore(){
     my $maxWs = 0;
     my $maxWeight = 0;
     my %PEN = (0=>'-', 1=>'Yes');
-    my $top3 = &getTop3(\%SCORE);
+    my ($top3, $used) = &getTop3(\%SCORE);
     return ($top3);
     }
 
@@ -121,7 +123,7 @@ sub _getTeamScores(){
         %SCORE = (%SCORE, %{&calculateFlightScore($flightIDX)});
     }
     my $str;
-    $str .= '<table class="w3-table-all">';
+    $str .= '<table class="w3-table w3-bordered">';
     $str .= '<thead>';
     $str .= '<tr>';
     $str .= '<th style="width: 50px;"><br>Att</th>';
@@ -141,8 +143,15 @@ sub _getTeamScores(){
     my $maxWs = 0;
     my $maxWeight = 0;
     my %PEN = (0=>'-', 1=>'Yes');
+    my ($top3, $used) = &getTop3(\%SCORE);
+    my %USED = %$used;
     foreach $flightIDX (sort {$SCORE{$a}{IN_ROUND} <=> $SCORE{$b}{IN_ROUND}} keys %SCORE) {
-        $str .= '<tr>';
+        if (exists $USED{$flightIDX}){
+                $str .= '<tr class="w3-pale-yellow">';
+            } else {
+                $str .= '<tr>';
+            }
+        
         $str .= sprintf '<td>%d</td>', $SCORE{$flightIDX}{IN_ROUND};
         $str .= sprintf '<td style="text-align: right;">%d</td>', $SCORE{$flightIDX}{IN_LARGE};
         $str .= sprintf '<td style="text-align: right;">%d</td>', $SCORE{$flightIDX}{IN_LB_DAMAGE};
@@ -154,10 +163,14 @@ sub _getTeamScores(){
         $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_RAW};
         $str .= sprintf '<td style="text-align: right;">%s</td>', $SCORE{$flightIDX}{IN_MINOR};
         $str .= sprintf '<td style="text-align: right;">%s</td>', $SCORE{$flightIDX}{IN_MAJOR};
-        $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_FS};
+        # $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_FS};
+        if (exists $USED{$flightIDX}){
+                $str .= sprintf '<td class="w3-large" style="text-align: right;"><b>%2.4f</b></td>', $SCORE{$flightIDX}{IN_FS};
+            } else {
+                $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_FS};
+            }
         $str .= '</tr>';
     }
-    my $top3 = &getTop3(\%SCORE);
     $str .= '<tr>';
     $str .= '<td colspan="11" class="w3-large" style="text-align: right;">Top 3 Flight Score (FS<sub>1</sub> + FS<sub>2</sub> + FS<sub>3</sub>)</td>';
     $str .= sprintf '<td class="w3-large" style="text-align: right;">%2.4f</td>', $top3;

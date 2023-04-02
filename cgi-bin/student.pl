@@ -127,9 +127,11 @@ sub student_openRequirementsChecks (){
     $str .= '<div class="w3-container" style="overflow-y: auto;">';
     $str .= '<h5 class="w3-container w3-border w3-round w3-border-red w3-pale-yellow w3-padding">';
     $str .= '<b>INSTRUCTION:<br>To self-Certify, click on the checkbox provided below for each inspection item.</b><br>';
-    $str .= '<b>Self-Certification</b> means the team has certified that the requirement line-item is in compliance with the rules.<br>';
-    $str .= '<i class="w3-bar-item">Please reference [ Section 6.6 REQUIREMENTS CHECK & SAFETY AND AIRWORTHINESS INSPECTION PENALTIES ] in the rules document for further details<br>';
-    $str .= '<span class="w3-text-red">All penalties accrued will be deducted from the team\'s FINAL Overall Score </span>';
+    $str .= '<b>Self-Certification</b> means the team has certified that the requirement line-item is in compliance with the rules.  ';
+    $str .= '<i class="w3-bar-item">Please reference [ Section 6.6 REQUIREMENTS CHECK & SAFETY AND AIRWORTHINESS INSPECTION PENALTIES ] in the rules document for further details</i><br>';
+    $str .= '<b>Abosolute Requirements:</b> <i>Team must satisfy all Absolute Requirements to participate in the flying portion of the event.</i><br>';
+    $str .= '<b>Non-Abosolute Requirements:</b> <i>Team will be assessed the pre-determined penalty points if the requirement is not satisfied and will be permitted to participate in the flying portion of the event. </i><br>';
+    $str .= '<span class="w3-text-red w3-margin-top">All penalties accrued will be deducted from the team\'s FINAL Overall Score </span>';
     $str .= '</i>';
     $str .= '</h5>';
     $str .= '<ul class="w3-ul">';
@@ -141,26 +143,21 @@ sub student_openRequirementsChecks (){
             $str .= '</h4>';
             foreach $itemIDX (sort {$LIST{$headingIDX}{$a}{IN_SECTION} <=> $LIST{$headingIDX}{$b}{IN_SECTION}} keys %{$LIST{$headingIDX}}) {
                 my $checked = '';
+                my $w3Color = 'w3-blue-grey';
                 if ($LIST{$headingIDX}{$itemIDX}{BO_CHECK} == 1){$checked = 'checked'}
+                if ($LIST{$headingIDX}{$itemIDX}{BO_ABSOLUTE} == 1) {$w3Color = 'w3-red'}
                 $str .= '<label for="ITEM_'.$itemIDX.'">';
-                # $str .= '<label for="ITEM_'.$itemIDX.'" >';
-                $str .= '<li class="w3-bar w3-display-container w3-border w3-card w3-blue w3-round w3-margin-bottom" style="padding: 0px;">';
+                $str .= '<li class="w3-bar w3-display-container w3-border w3-card w3-blue w3-round-xlarge w3-margin-bottom" style="padding: 0px;">';
                 $str .= '<div class="w3-row w3-white w3-round-large">';
-                $str .= sprintf '<div class="w3-col w3-xlarge w3-center w3-padding-24 w3-mobile w3-round-large w3-blue-grey" style="width: 130px;">%2.2f pts</div>', $LIST{$headingIDX}{$itemIDX}{IN_POINTS}, $BGCOLOR{$TECH{$itemIDX}{IN_STATUS}};
-                # $str .= '<div class="w3-margin-left"><input ID="ITEM_'.$itemIDX.'" '.$checked.' class="w3-check " data-field="BO_CHECK" data-index="'.$itemIDX.'" type="checkbox" onchange="student_updateCheckItem(this, '.$teamIDX.');">';
-                # $str .= '<br><label class="w3-large" for="ITEM_'.$itemIDX.'"><b>In Compliance</b></label>';
-                # $str .= '</div>';
-                # $str .= sprintf '<div class="w3-col w3-xxlarge w3-center w3-padding-24 w3-mobile" style="width: 200px;">%2.2f pts<br><span class="w3-large %s w3-padding w3-border w3-round">%s</span></div>', $LIST{$headingIDX}{$itemIDX}{IN_POINTS}, $BGCOLOR{$TECH{$itemIDX}{IN_STATUS}}, $STATUS{$TECH{$itemIDX}{IN_STATUS}};;
+                $str .= sprintf '<div class="w3-col w3-xlarge w3-center w3-padding-24 w3-mobile '.$w3Color.'" style="width: 130px; height: 125px;">%2.2f pts</div>', $LIST{$headingIDX}{$itemIDX}{IN_POINTS}, $BGCOLOR{$TECH{$itemIDX}{IN_STATUS}};
                 $str .= '<div class="w3-rest w3-white w3-mobile">';
                 $str .= sprintf '<div class="w3-container w3-padding-16 w3-large">';
                 $str .= '<input ID="ITEM_'.$itemIDX.'" '.$checked.' class="w3-check w3-margin-right w3-xlarge" data-field="BO_CHECK" data-index="'.$itemIDX.'" type="checkbox" onchange="student_updateCheckItem(this, '.$teamIDX.');">';
-                # $str .= sprintf '</div>';
-
-                $str .= sprintf '%d.%s - %s</div>',$inHeading, $LIST{$headingIDX}{$itemIDX}{IN_SECTION},$LIST{$headingIDX}{$itemIDX}{TX_SECTION};
-                # $str .= sprintf '<div class="w3-container w3-padding-16 w3-large">%d.%s - %s</div>',$inHeading, $LIST{$headingIDX}{$itemIDX}{IN_SECTION},$LIST{$headingIDX}{$itemIDX}{TX_SECTION};
-                # $str .= '<i class="w3-bar-item">Please reference [ Section 6.6 REQUIREMENTS CHECK & SAFETY AND AIRWORTHINESS INSPECTION PENALTIES ] in the rules document for further details<br>';
-                # $str .= '<span class="w3-text-red">All penalties accrued will be deducted from the team\'s FINAL Overall Score </span>';
-                # $str .= '</i>';
+                $str .= sprintf '%d.%s - %s',$inHeading, $LIST{$headingIDX}{$itemIDX}{IN_SECTION},$LIST{$headingIDX}{$itemIDX}{TX_SECTION};
+                if ($LIST{$headingIDX}{$itemIDX}{BO_ABSOLUTE} == 1) {
+                    $str .= '<div class="w3-pale-yellow w3-padding-small w3-round w3-card w3-margin-top"><b class="w3-text-red">** Absolute Requirement **</b><i>: Team <u>will not</u> particiapte in the flying portion of the event if this <b>Absolute Requirement</b> is not satisfied.</i></div>';
+                }
+                $str .= '</div>';
                 $str .= '</div>';
 
                 $str .= '</div>';

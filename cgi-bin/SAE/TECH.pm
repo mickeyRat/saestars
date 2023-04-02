@@ -539,6 +539,11 @@ sub _getReqList (){
     my $select = $dbi->prepare($SQL);
        $select->execute( 1 );
     my %HASH = %{$select->fetchall_hashref(['FK_TECH_REQ_SECTION_IDX','PK_TECH_REQ_IDX'])};
+    # foreach $headingIDX (sort keys %HASH) {
+    #     foreach $itemIDX (sort keys %{$HASH{$headingIDX}}) {
+    #         print $itemIDX.': '.$HASH{$headingIDX}{$itemIDX}{BO_ABSOLUTE}.'<br>';
+    #     }
+    # }
     return (\%HASH);
     }
 sub _getSectionHeading (){

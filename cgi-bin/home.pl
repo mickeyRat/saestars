@@ -27,6 +27,7 @@ use SAE::USER;
 use SAE::REG_SCORE;
 use SAE::ADV_SCORE;
 use SAE::MIC_SCORE;
+use SAE::PUBLISH;
 
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
@@ -265,21 +266,23 @@ sub sae_unsubscribeToTeam(){
     }
 sub sae_loadHomePage(){
     print $q->header();
-    my %PANEL = (1=>'Design',2=>'Presentation' ,3=>'Penalties',4=>'Flights',5=>'Results');
-    my %COLOR = (1=>'w3-pale-green',2=>'w3-pale-blue',3=>'w3-pale-red',4=>'w3-light-grey', 5=>'w3-sand');
-    my %ICON = (1=>'fa-paperclip', 2=>'fa-line-chart', 3=>'fa-exclamation-triangle', 4=>'fa-plane', 5=>'fa-trophy');
-    my $userIDX = $q->param('userIDX');
+    my %PANEL    = (1=>'Design',2=>'Presentation' ,3=>'Penalties',4=>'Flights',5=>'Results');
+    my %COLOR    = (1=>'w3-pale-green',2=>'w3-pale-blue',3=>'w3-pale-red',4=>'w3-light-grey', 5=>'w3-sand');
+    my %ICON     = (1=>'fa-paperclip', 2=>'fa-desktop', 3=>'fa-exclamation-triangle', 4=>'fa-plane', 5=>'fa-trophy');
+    my %TITLE    = (1=>'Design Report', 2=>'Presentation Scores');
+    my $userIDX  = $q->param('userIDX');
     my $location = $q->param('location');
     my $eventIDX = $q->param('location');
-    my $Home = new SAE::HOME();
-    my %TEAMS = %{$Home->_getTeamSubscriptionsByUserID($userIDX, $location)};
-    my $Design = new SAE::DESIGN();
-    my $Preso  = new SAE::PRESO();
-    my $Score  = new SAE::SCORE();
-    my $Reg    = new SAE::REG_SCORE();
-    my $Adv    = new SAE::ADV_SCORE();
-    my $Mic    = new SAE::MIC_SCORE();
-    my $Tech   = new SAE::TECH();
+    my $Home     = new SAE::HOME();
+    my %TEAMS    = %{$Home->_getTeamSubscriptionsByUserID($userIDX, $location)};
+    my $Publish  = new SAE::PUBLISH();
+    my $Design   = new SAE::DESIGN();
+    my $Preso    = new SAE::PRESO();
+    my $Score    = new SAE::SCORE();
+    my $Reg      = new SAE::REG_SCORE();
+    my $Adv      = new SAE::ADV_SCORE();
+    my $Mic      = new SAE::MIC_SCORE();
+    my $Tech     = new SAE::TECH();
     my $str = '<div class="w3-container w3-white w3-margin-top">';
     $str .= '<header class="w3-container" style="padding-top:22px">';
     $str .= '<h5><b><i class="fa fa-dashboard"></i> My  Dashboard</b></h5>';
@@ -287,6 +290,7 @@ sub sae_loadHomePage(){
 
 
     foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS ) {
+        my $eventIDX            = $TEAMS{$teamIDX}{FK_EVENT_IDX};
         my $classIDX            = $TEAMS{$teamIDX}{FK_CLASS_IDX};
         my $inSafetyStatus      = $Tech->_getTeamSafetyStatus($teamIDX, $classIDX);
         my $inRequirementStatus = $Tech->_getTeamInspectionStatus($teamIDX, $classIDX);
@@ -334,13 +338,21 @@ sub sae_loadHomePage(){
             }
             if ($Score<0){$Score=0}
             if ($panelIDX<=4){
+                    my $publishStatus = $Publish->_getPublishStatus($eventIDX, $classIDX, $TITLE{$panelIDX});
                     $str .= '<div class="w3-quarter w3-margin-top">';
                     $str .= sprintf '<div class="w3-container %s w3-padding-16 w3-border w3-card-2 w3-round">', $COLOR{$panelIDX};
                     $str .= '<div class="w3-left">';
                     $str .= sprintf '<i class="fa %s w3-xxlarge"></i>', $ICON{$panelIDX};
                     $str .= '</div>';
-                    $str .= sprintf '<div class="w3-right"><a href="score.html?teamIDX=%s&source=%d" target="_blank"><h3>%2.4f</h3></a></div>', $eIDX, $source, $Score;
-                    # $str .= '<div class="w3-clear"> '.$teamIDX.' - '.$panelIDX .'</div>';
+                    if ($panelIDX>2){
+                            $str .= sprintf '<div class="w3-right"><a href="score.html?teamIDX=%s&source=%d" target="_blank"><h3>%2.4f</h3></a></div>', $eIDX, $source, $Score;
+                        } else {
+                            if ($publishStatus==1){
+                                    $str .= sprintf '<div class="w3-right"><a href="score.html?teamIDX=%s&source=%d" target="_blank"><h3>%2.4f</h3></a></div>', $eIDX, $source, $Score;
+                                } else {
+                                    $str .= '<div class="w3-right"><h4><i>To be published</i></h4></div>';
+                                }
+                        }
                     $str .= '<div class="w3-clear"></div>';
                     $str .= sprintf '<h4>%s</h4>', $PANEL{$panelIDX};
                     # $str .= '</a>';

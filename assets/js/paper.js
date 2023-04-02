@@ -5,6 +5,27 @@
     var time = now.getTime();
     // var nameList = [];
 }
+function paper_compareScoreForTeam(o, teamIDX, inCardType, userIDX, inNumber, txSchool) {
+    var eventIDX         = $.cookie('LOCATION');
+    var ajxData          = {}; 
+    ajxData.do           = 'paper_compareScoreForTeam';
+    ajxData.act          = 'print';
+    ajxData.eventIDX     = eventIDX;
+    ajxData.teamIDX      = teamIDX;
+    ajxData.inCardType   = inCardType;
+    ajxData.userIDX      = userIDX;
+    // $.modal("Score Calibratrion View", "50%");
+    $.modal('<b>Score Calibration View: Team #:' + pad(inNumber,3) + '</b><br>'+txSchool, '40%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/paper.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+        }
+    });
+    }
 function paper_removeDaysLate(o, teamIDX) {
     var ajxData          = {}; 
     ajxData.do           = 'paper_removeDaysLate';
@@ -185,8 +206,8 @@ function paper_openSendReminder(o, userIDX, inCardType) {
     });
 }
 function paper_removeCardFromJudge(o, cardIDX) {
-    var jsYes = confirm("Click OK to confirm removal of this Judge");
-    if (!jsYes){return}
+    // var jsYes = confirm("Click OK to confirm removal of this Judge");
+    // if (!jsYes){return}
     $('#paper_CARD_'+cardIDX).fadeOut(250);
     var eventIDX       = $.cookie('LOCATION');
     var ajxData        = {};
@@ -332,10 +353,23 @@ function paper_openAutoAssign (o, inCardType) {
         }
     });
     }
+function paper_confirmDeleteUserAssignment (o, cardIDX, userIDX, teamIDX, inCardType) {
+    $.modal('Confirm Removal of this Judge', '45%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/paper.pl',
+        data: {'do':'paper_confirmDeleteUserAssignment','act':'print','eventIDX':eventIDX,'cardIDX':cardIDX,'userIDX':userIDX,'teamIDX':teamIDX,'inCardType':inCardType},
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+        }
+    });
+}
 function paper_deleteUserAssignment (o, cardIDX, userIDX, teamIDX, inCardType) {
     // console.log("delete");
-    var jsYes = confirm("Click OK to confirm removal of this Judge");
-    if (!jsYes){return}
+    // var jsYes = confirm("Click OK to confirm removal of this Judge");
+    // if (!jsYes){return}
+    $(o).close();
     var eventIDX       = $.cookie('LOCATION');
     $('.span_assigned_'+cardIDX).fadeOut(300);
     var ajxData        = {};

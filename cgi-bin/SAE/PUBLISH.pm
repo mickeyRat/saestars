@@ -18,7 +18,7 @@ sub new{
 	return $self;
 }
 #====================================== SETTERS ==================================================================
- sub _generateResults(){
+sub _generateResults(){
     my ($self, $eventIDX, $classIDX, $txTitle, $userIDX) = @_;
     my %CLASS = (1=>'Regular Class', 2=>'Advanced Class', 3=>'Micro Class');
     my $now_string = localtime;
@@ -48,6 +48,21 @@ sub _activateIncludeView(){
     return;
 }
 #====================================== GETTERS ==================================================================
+sub _getPublishStatus (){
+    my ($self, $eventIDX, $classIDX, $txTitle) = @_;
+    my $SQL = "SELECT IN_SHOW FROM TB_PUBLISH WHERE (FK_EVENT_IDX=? AND TX_TITLE=? AND IN_SHOW=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $eventIDX, $txTitle, 1, $classIDX );
+    my $rows = $select->rows();
+    # print "$eventIDX, $txTitle, 1\n";
+    # print $rows;
+    # print "\n";
+    if ($rows){
+        return (1);
+    } else {
+        return(0);
+    }
+    }
 sub _getSelectedFinalReportFileID(){
     my ($self, $eventIDX) = @_;
     my $SQL = "SELECT * FROM TB_PUBLISH WHERE (FK_EVENT_IDX=? AND IN_INCLUDE=?)";
@@ -61,7 +76,7 @@ sub _getReportHeaders(){
     my $SQL = "SELECT * FROM TB_PUBLISH WHERE (TX_FILE=?)";
     my $select = $dbi->prepare($SQL);
        $select->execute( $txFile );
-    my %HASH = %{$select->fetchrow_hashref};
+    my %HASH = %{$select->fetchrow_hashref()};
     return (\%HASH);
 }
 sub _getPublishedResults(){

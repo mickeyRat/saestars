@@ -11,6 +11,10 @@ use Cwd 'abs_path';
 use JSON;
 use Text::CSV;
 use Mail::Sendmail;
+use Number::Format;
+use Statistics::Basic qw(:all);
+use Statistics::PointEstimation;
+use List::Util qw( sum min max reduce );
 
 
 #---- SAE MODULES -------
@@ -52,6 +56,78 @@ if ($act eq "print"){
 }
 exit;
 #==============================================================================
+sub paper_compareScoreForTeam (){
+    print $q->header();
+    my $eventIDX = $q->param('eventIDX');
+    my $teamIDX  = $q->param('teamIDX');
+    my $inCardType  = $q->param('inCardType');
+    my $userIDX  = $q->param('userIDX');
+    my $Report   = new SAE::REPORTS();
+    my %CARDS    = %{$Report->_getTeamDesignCard($teamIDX, $inCardType)};
+    
+    my $stat = new Statistics::PointEstimation;
+    $stat->set_significance(95); #set the significance(confidence) level to 95%
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my @SCORES = ();
+    foreach $cardIDX (sort {lc($CARDS{$a}{TX_LAST_NAME}) cmp lc($CARDS{$b}{TX_LAST_NAME})} keys %CARDS) {
+        my $score = $Report->_getJudgeCardScore($cardIDX );
+        $CARDS{$cardIDX}{IN_SCORE} = $score;
+        push(@SCORES, $score);
+    }
+    my $str;
+    $str .= '<div class="w3-container">';
+    $str .= '<ul class="w3-ul">';
+    foreach $cardIDX (sort {lc($CARDS{$a}{TX_LAST_NAME}) cmp lc($CARDS{$b}{TX_LAST_NAME})} keys %CARDS) {
+        # my $score = $Report->_getJudgeCardScore($cardIDX );
+        my $color = 'w3-white';
+        if ($userIDX == $CARDS{$cardIDX}{FK_USER_IDX}) {$color = 'w3-pale-yellow'}
+        $str .= '<li class="w3-bar w3-border w3-white w3-round '.$color.'">';
+        $str .= sprintf '<span class="w3-circle w3-bar-item w3-border">%2.2f</span>',$CARDS{$cardIDX}{IN_SCORE};
+        $str .= '<div class="w3-bar-item">';
+        $str .= sprintf '%s, %s', $CARDS{$cardIDX}{TX_LAST_NAME}, $CARDS{$cardIDX}{TX_FIRST_NAME};
+        $str .= '</div>';
+        $str .= '</li>';
+        # $str .= sprintf '%d<br>', $cardIDX;
+    }
+    $str .= '</ul>';
+    my $std = stddev(@SCORES);
+    my $color = 'w3-transparent';
+    if ($std>10){
+        $color = 'w3-red';
+    } elsif ($std>8) {
+        $color = 'w3-orange';
+    }  elsif ($std>5) {
+        $color = 'w3-yellow';
+    }  elsif ($std>3) {
+        $color = 'w3-pale-yellow';
+    } else {
+        $color = 'w3-transparent';
+    }
+    $str .= '<div class="w3-container w3-margin-top w3-border w3-round w3-light-grey w3-padding">';
+    $str .= '<h3>Team Scoring Statistics</h3>';
+    $str .= '<table class="w3-table-all">';
+    $str .= '<tr>';
+    $str .= sprintf '<td style="width: 90px; text-align: right;" class="%s">%2.2f</td>', $color, stddev(@SCORES);
+    $str .= '<td style="text-align: left;">Standard Deviation</td>';
+    $str .= '</tr>';
+    $str .= '<tr>';
+    $str .= sprintf '<td style=" text-align: right;">%2.2f</td>', mean(@SCORES);
+    $str .= '<td style="text-align: left;">Mean</td>';
+    $str .= '</tr>';
+    $str .= '<tr>';
+    $str .= sprintf '<td style=" text-align: right;">%2.2f</td>', min(@SCORES);
+    $str .= '<td style="text-align: left;">min Score</td>';
+    $str .= '</tr>';
+    $str .= '<tr>';
+    $str .= sprintf '<td style=" text-align: right;">%2.2f</td>', max(@SCORES);
+    $str .= '<td style="text-align: left;">Max Score</td>';
+    $str .= '</tr>';
+    $str .= '</table>';
+
+    $str .= '</div>';
+    $str .= '</div><br><br><br>';
+    return ($str);
+    }
 sub paper_removeTeamFromJudge (){
     my $cardIDX = $q->param('cardIDX');
     my $JsonDB  = new SAE::JSONDB();
@@ -523,7 +599,7 @@ sub paper_openAvailableJudges (){
         if (exists $JUDGE{$userIDX}){next}
         my $txName = sprintf '%s, %s', $USERS{$userIDX}{TX_LAST_NAME}, $USERS{$userIDX}{TX_FIRST_NAME};
         my $assignmentCount = $COUNT{$userIDX}{IN_TOTAL};
-        $str .= &t_nameTagAvailable($inCardType, $eventIDX, $userIDX, $teamIDX,);
+        $str .= &t_nameTagAvailable($inCardType, $eventIDX, $userIDX, $teamIDX);
     }
     $str .= '</div>';
     return ($str);
@@ -577,17 +653,21 @@ sub t_nameTag (){
     my $str;
     $str = sprintf '<span class="tag %s w3-hover-pale-yellow span_assigned_%d" ><u style="cursor: pointer;" onclick="grade_openAssessment(this, %d, %d, \'%s\', %d, %d, %d, %d);">%s</u>',$COLOR{$inStatus}, $cardIDX, $cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $label;
     $str .= sprintf '<span class="w3-margin-left">( %2.2f )</span>', $inScore;
-    # if ($inStatus<2){
+    if ($inStatus==2){
+        $str .= sprintf '<i class="w3-round w3-margin-left w3-hover-red w3-button fa fa-close" style="padding: 3px 5px;" onclick="paper_confirmDeleteUserAssignment(this, %d, %d, %d, %d);"></i>', $cardIDX, $userIDX, $teamIDX, $inCardType;
+    } else {
         $str .= sprintf '<i class="w3-round w3-margin-left w3-hover-red w3-button fa fa-close" style="padding: 3px 5px;" onclick="paper_deleteUserAssignment(this, %d, %d, %d, %d);"></i>', $cardIDX, $userIDX, $teamIDX, $inCardType;
-    # }
+    }
+    
     $str .= '</span>';
     return ($str);
     }
 sub t_JudgeView (){
-    my ($title, $btn, $inCardType, $adminUserIDX, $hash1, $hash2) = @_;
+    my ($title, $btn, $inCardType, $adminUserIDX, $hash1, $hash2, $hash3) = @_;
     my %TYPE  = (1=>'Design Report', 2=>'TDS Report', 3=>'Drawing', 4=>'Design Requirement');
     my %USERS = %$hash1;
     my %CARDS = %$hash2;
+    my %SCORE = %$hash3;
     my $str;
     $str .= '<h3 class="w3-margin-left w3-border w3-blue-grey w3-round w3-margin-top w3-padding">'.$title;
     $str .= sprintf '<button class="w3-margin-left w3-large w3-button w3-round w3-border w3-light-grey w3-hover-yellow" onclick="paper_openSendReminderToAll(this, '.$inCardType.')">Send Reminder Email to %s Judges</button></h3>', $TYPE{$inCardType};
@@ -605,13 +685,14 @@ sub t_JudgeView (){
         $str .= '</td>';
         $str .= '<td ID="TD_ASSIGNED_TEAM_'.$inCardType.'_'.$userIDX.'" style="vertical-align: top; display: flex; flex-wrap: wrap;">';
         foreach $cardIDX (sort {$CARDS{$userIDX}{$a}{IN_NUMBER} <=> $CARDS{$userIDX}{$b}{IN_NUMBER}} keys %{$CARDS{$userIDX}}) {
-            my $inNumber  = $CARDS{$userIDX}{$cardIDX}{IN_NUMBER};
-            my $txSchool  = $CARDS{$userIDX}{$cardIDX}{TX_SCHOOL};
-            my $inStatus  = $CARDS{$userIDX}{$cardIDX}{IN_STATUS};
-            my $classIDX  = $CARDS{$userIDX}{$cardIDX}{FK_CLASS_IDX};
-            my $teamIDX  = $CARDS{$userIDX}{$cardIDX}{FK_TEAM_IDX};
+            my $inNumber    = $CARDS{$userIDX}{$cardIDX}{IN_NUMBER};
+            my $txSchool    = $CARDS{$userIDX}{$cardIDX}{TX_SCHOOL};
+            my $inStatus    = $CARDS{$userIDX}{$cardIDX}{IN_STATUS};
+            my $classIDX    = $CARDS{$userIDX}{$cardIDX}{FK_CLASS_IDX};
+            my $teamIDX     = $CARDS{$userIDX}{$cardIDX}{FK_TEAM_IDX};
             my $inCardType  = $CARDS{$userIDX}{$cardIDX}{FK_CARDTYPE_IDX};
-            $str .= &t_paperCard($cardIDX, $inStatus, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $btn);
+            my $subTotal    = $SCORE{$cardIDX};
+            $str .= &t_paperCard($cardIDX, $inStatus, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $btn, $subTotal);
         }
         $str .= &t_addTeamButton($userIDX, $inCardType);
         $str .= '</div>';
@@ -621,7 +702,7 @@ sub t_JudgeView (){
     return ($str);
     }
 sub t_paperCard (){
-    my ($cardIDX, $inStatus, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $btn) = @_;
+    my ($cardIDX, $inStatus, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $btn, $inScore) = @_;
     # my %DATA = %{decode_json($q->param('jsonData'))};
     my $str;
     $str .= '<div ID="paper_CARD_'.$cardIDX.'" class="w3-card-4 w3-margin-left w3-margin-bottom w3-white w3-display-container" style="width: 225px;">';
@@ -629,7 +710,7 @@ sub t_paperCard (){
         $str .= '<i class="fa fa-times w3-display-topright w3-transparent w3-button w3-hover-red w3-round" aria-hidden="true" style="margin-top: 5px; margin-right: 5px;" onclick="paper_removeCardFromJudge(this, '.$cardIDX.')"></i>';
     }
     $str .= sprintf '<header class="w3-container %s">', $COLOR{$inStatus};
-    $str .= sprintf '<h4>#: %03d</h4>', $inNumber;
+    $str .= sprintf '<h4>#: %03d <span class="w3-medium">( <span class="" style="cursor: pointer" onclick="paper_compareScoreForTeam(this,%d, %d, %d, %d, \'%s\');"><u>%2.2f pts</u></span>)</span></h4>', $inNumber, $teamIDX, $inCardType, $userIDX, $inNumber, $txSchool, $inScore;
     $str .= sprintf '</header>', $inNumber;
     $str .= '<div class="w3-container w3-white" style="height: 43px; overflow-y: hidden">';
     my $cutOff = 35;
@@ -650,6 +731,29 @@ sub t_addTeamButton (){
     $str .= '<div class="w3-container w3-center" style="height: 70px; overflow-y: hidden">';
     $str .= '<i class="fa fa-3x fa-plus w3-text-light-grey" aria-hidden="true"></i>';
     $str .= '</button>';
+    return ($str);
+    }
+sub paper_confirmDeleteUserAssignment (){
+    print $q->header();
+    my $eventIDX     = $q->param('eventIDX');
+    my $cardIDX      = $q->param('cardIDX');
+    my $userIDX      = $q->param('userIDX');
+    my $teamIDX      = $q->param('teamIDX');
+    my $inCardType   = $q->param('inCardType');
+    my $Report       = new SAE::REPORTS();
+    my $Score        = $Report->_getJudgeCardScore($cardIDX);
+    my %USER         = %{$Report->_getJudgeInformation($userIDX)};
+    my $str;
+    # $str .= join("<br>", keys %USER);
+    $str .= '<div class="w3-container w3-cetner">';
+    $str .= sprintf '<h2 class="w3-center">%s, %s</h2>', $USER{TX_LAST_NAME}, $USER{TX_FIRST_NAME};
+    $str .= sprintf '<h3 class="w3-center">Report Score = %2.4f</h3>', $Score;
+    $str .= '<p class="w3-pale-yellow w3-border w3-padding w3-center">This judge has already submitted the Design Report Assessment as FINAL.<br>Click Confirm to continue with removal of the completed score</p>';
+    $str .= '<div class="w3-container w3-center">';
+    $str .= '<button class="w3-button w3-border w3-card w3-round w3-margin" onclick="$(this).close();">Cancel Action</button>';
+    $str .= sprintf '<button class="w3-button w3-hover-red w3-pale-red w3-border w3-card w3-round w3-margin" onclick="paper_deleteUserAssignment(this, %d, %d, %d, %d)">Continue with Removal</button>', $cardIDX, $userIDX, $teamIDX, $inCardType;;
+    $str .= '</div>';
+    $str .= '</div>';
     return ($str);
     }
 sub paper_removeDaysLate (){
@@ -688,6 +792,7 @@ sub view_judgeView (){
     my $eventIDX   = $q->param('eventIDX');
     my $adminUserIDX   = $q->param('adminUserIDX');
     my $Profile    = new SAE::PROFILE();
+    my $Reports    = new SAE::REPORTS();
     my %USERS      = %{$Profile->_getDesignJudges($txYear)}; 
     my %DESIGN     = %{$Profile->_getAssignment($eventIDX, 1)};
     my %TDS_USER   = %{$Profile->_getTdsJudges($txYear)}; 
@@ -696,11 +801,12 @@ sub view_judgeView (){
     my %DRW        = %{$Profile->_getAssignment($eventIDX, 3)};
     my %REQ_USER   = %{$Profile->_getReqJudges($txYear)}; 
     my %REQ        = %{$Profile->_getAssignment($eventIDX, 4)};
+    my %SCORE      = %{$Reports->_getAllCardScores($eventIDX)};
     my $str;
-    $str .= &t_JudgeView('Design Report Assignments', 'Goto Design Report', 1, $adminUserIDX, \%USERS, \%DESIGN);
-    $str .= &t_JudgeView('TDS Report Assignments', 'Goto TDS',  2, $adminUserIDX, \%TDS_USER , \%TDS);
-    $str .= &t_JudgeView('Drawing Report Assignments', 'Goto Drawings',  3, $adminUserIDX, \%DRW_USER , \%DRW);
-    $str .= &t_JudgeView('Requirement Report Assignments', 'Goto Req\'ts',  4, $adminUserIDX, \%REQ_USER , \%REQ);
+    $str .= &t_JudgeView('Design Report Assignments', 'Goto Design Report', 1, $adminUserIDX, \%USERS, \%DESIGN, \%SCORE);
+    $str .= &t_JudgeView('TDS Report Assignments', 'Goto TDS',  2, $adminUserIDX, \%TDS_USER , \%TDS, \%SCORE);
+    $str .= &t_JudgeView('Drawing Report Assignments', 'Goto Drawings',  3, $adminUserIDX, \%DRW_USER , \%DRW, \%SCORE);
+    $str .= &t_JudgeView('Requirement Report Assignments', 'Goto Req\'ts',  4, $adminUserIDX, \%REQ_USER , \%REQ, \%SCORE);
 
     return ($str);
     }
@@ -718,7 +824,7 @@ sub view_teamView (){
     # my %JUDGE      = %{$Paper->_getAllJudges()};
     my %ASSIGNMENT = %{$Paper->_getJudgeAssignment($eventIDX)};
     my $Reports    = new SAE::REPORTS();
-    my %CARDS   = %{$Reports->_getAllCardScores($eventIDX)};
+    my %CARDS      = %{$Reports->_getAllCardScores($eventIDX)};
     # printf "%2.4f\n", $CARDS{10533};
     my $str;
 
@@ -790,6 +896,7 @@ sub view_teamView (){
             my $judgeName = sprintf '%s, %s', $TDS{$userIDX}{TX_LAST_NAME}, $TDS{$userIDX}{TX_FIRST_NAME};
             my $inStatus  = $TDS{$userIDX}{IN_STATUS};
             my $subTotal  = $CARDS{$cardIDX};
+            # my $subTotal  = $Reports->_getSectionAssessment($teamIDX, 2);
             $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 2, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX, $subTotal);
         }
         $str .= '</div>';
@@ -803,6 +910,7 @@ sub view_teamView (){
             my $judgeName = sprintf '%s, %s', $DRAWING{$userIDX}{TX_LAST_NAME}, $DRAWING{$userIDX}{TX_FIRST_NAME};
             my $inStatus  = $DRAWING{$userIDX}{IN_STATUS};
             my $subTotal  = $CARDS{$cardIDX};
+            # my $subTotal  = $Reports->_getSectionAssessment($teamIDX, 3);
             $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 3, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX, $subTotal);
         }
         $str .= '</div>';
@@ -816,6 +924,7 @@ sub view_teamView (){
             my $judgeName = sprintf '%s, %s', $REQ{$userIDX}{TX_LAST_NAME}, $REQ{$userIDX}{TX_FIRST_NAME};
             my $inStatus  = $REQ{$userIDX}{IN_STATUS};
             my $subTotal  = $CARDS{$cardIDX};
+            # my $subTotal  = $Reports->_getSectionAssessment($teamIDX, 4);
             $str .= &t_nameTag($cardIDX, $judgeName, $inStatus, $userIDX, $teamIDX, 4, $inNumber, $TEAMS{$teamIDX}{TX_SCHOOL}, $classIDX, $subTotal);
         }
         $str .= '</div>';

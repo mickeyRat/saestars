@@ -14,6 +14,44 @@
     var noFlyList = [];
     var noFly     = [];
 }
+
+function flight_cancelConfirmDeleteAttempt(o, flightIDX) {
+    $('#DELETE_ROW_'+flightIDX).hide(50);
+}
+function flight_showConfirmDeleteAttempt(o, flightIDX) {
+    $('#DELETE_ROW_'+flightIDX).slideDown(350);
+}
+function flight_checkInspectOthers(o) {
+    if ($(o).val() == ''){
+        $('#INSPECT_OTHER_CHECKBOX').prop('checked', false);
+    } else {
+        $('#INSPECT_OTHER_CHECKBOX').prop('checked', true);
+    }
+}
+function flight_openReinspection(o, inNumber, inRound, flightIDX) {
+    if($(o).is(':checked')){;
+        $.modal2('Open Reinspection Ticket for Team #:' + pad(inNumber,3) + ' - Att:' + pad(inRound,2),'50%');
+        var ajxData = {};
+        var data = {};
+        ajxData['do']         = 'flight_openReinspection';
+        ajxData['act']        = 'print';
+        ajxData['eventIDX']   = $.cookie('FK_EVENT_IDX');
+        ajxData['flightIDX']  = flightIDX;
+        ajxData['inRound']    = inRound;
+        ajxData['inNumber']   = inNumber;
+        ajxData['jsonData']   = JSON.stringify(data);
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/flight.pl',
+            data: ajxData,
+            success: function(str){
+                $('#modal2_content').html(str);
+            }
+            });
+        }
+    }
+
+
     function updateReasonNotToScore(flightIDX) {
         $('#savedMessage').show();
         var ajxData = {};
@@ -393,7 +431,7 @@ function addTicket(o, teamIDX, inNumber, boReinspect, classIDX){
     if (tickets.length>0){
         ticketNumber = tickets[0] + 1;
     }
-    console.log(ticketNumber);
+    // console.log(ticketNumber);
     // return
     if (boReinspect==1){
         alert("Cannot Issue a ticket until team has cleared Re-Inspection");
@@ -427,9 +465,9 @@ function addTicket(o, teamIDX, inNumber, boReinspect, classIDX){
 function deleteFlightTicket(){
     $('#div_ticketDeleteConfirmation').slideToggle();
 }
-function confirmFlightTicket(o, flightIDX, teamIDX, inNumber, classIDX){
+function flight_confirmFlightTicket(o, flightIDX, teamIDX, inNumber, classIDX){
     var ajxData = {};
-    ajxData['do'] = 'confirmFlightTicket';
+    ajxData['do'] = 'flight_confirmFlightTicket';
     ajxData['act'] = 'print';
     ajxData['idx'] = flightIDX;
     ajxData['teamIDX'] = teamIDX;
@@ -443,7 +481,8 @@ function confirmFlightTicket(o, flightIDX, teamIDX, inNumber, classIDX){
         success: function(str){
             channel.publish('sae_ps_deleteTicket', str);
             channel.publish('sae_ps_updateAddTicketButton', str);
-            $(o).close();
+            // $(o).close();
+            $('.deleteContainer_'+flightIDX).remove();
         }
     });
 } // Confirm to delete the Ticket

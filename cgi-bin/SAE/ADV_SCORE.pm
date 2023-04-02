@@ -74,7 +74,7 @@ sub _getScore (){
     foreach $flightIDX (sort {$SCORE{$a}{IN_ROUND} <=> $SCORE{$b}{IN_ROUND}} keys %SCORE) {
         $maxWater += $SCORE{$flightIDX}{IN_EFF_WATER};
     }
-    my $top3 = &getTop3(\%SCORE);
+    my ($top3, $used) = &getTop3(\%SCORE);
     return ($top3);
 }
 sub _getGtvScore (){
@@ -96,7 +96,7 @@ sub _getTeamScores (){
         %SCORE = (%SCORE, %{&calculateFlightScore($flightIDX)});
     }
     my $str;
-    $str .= '<table class="w3-table-all w3-small">';
+    $str .= '<table class="w3-table w3-bordered w3-small">';
     $str .= '<thead>';
     $str .= '<tr>';
     $str .= '<th style="width: 50px;"><br>Att</th>';
@@ -118,9 +118,16 @@ sub _getTeamScores (){
     my $maxWeight = 0;
     my %PEN = (0=>'-', 1=>'Yes');
     my $maxWater = 0;
+    my ($top3, $used) = &getTop3(\%SCORE);
+    my %USED = %$used;
     foreach $flightIDX (sort {$SCORE{$a}{IN_ROUND} <=> $SCORE{$b}{IN_ROUND}} keys %SCORE) {
         $maxWater += $SCORE{$flightIDX}{IN_EFF_WATER};
-        $str .= '<tr>';
+        # $str .= '<tr>';
+        if (exists $USED{$flightIDX}){
+                $str .= '<tr class="w3-pale-yellow">';
+            } else {
+                $str .= '<tr>';
+            }
         $str .= sprintf '<td>%d</td>', $SCORE{$flightIDX}{IN_ROUND};
         $str .= sprintf '<td style="text-align: right;">%2.2f</td>', $SCORE{$flightIDX}{IN_STD};
         $str .= sprintf '<td style="text-align: right;">%s</td>', $SCORE{$flightIDX}{IN_ZONE};
@@ -133,10 +140,13 @@ sub _getTeamScores (){
         $str .= sprintf '<td style="text-align: right;">%s</td>', $PEN{$SCORE{$flightIDX}{IN_MINOR}};
         $str .= sprintf '<td style="text-align: right;">%s</td>', $PEN{$SCORE{$flightIDX}{IN_MAJOR}};
         $str .= sprintf '<td style="text-align: right;">%2.2f</td>', $SCORE{$flightIDX}{IN_EFF_WATER};
-        $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_FS};
+        if (exists $USED{$flightIDX}){
+                $str .= sprintf '<td class="w3-large" style="text-align: right;"><b>%2.4f</b></td>', $SCORE{$flightIDX}{IN_FS};
+            } else {
+                $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_FS};
+            }
         $str .= '</tr>';
     }
-    my $top3 = &getTop3(\%SCORE);
     $str .= '<tr>';
     $str .= '<td colspan="12" style="text-align: right;"><span class="w3-large">Gross water weight available for GVT competition (lbs.)</span></td>';
     $str .= sprintf '<td style="text-align: right;"><span class="w3-large">%2.2f</span></td>', $maxWater;
@@ -189,7 +199,7 @@ sub calculateFlightScore (){
 	my $fs = $inRawScore* (1-($FLIGHT{IN_PEN_MINOR} * 0.25)) * (1-($FLIGHT{IN_PEN_LANDING}* 0.5));
 	my $effectiveWater = $inWaterFlt* (1-($FLIGHT{IN_PEN_MINOR} * 0.25)) * (1-($FLIGHT{IN_PEN_LANDING}* 0.5));
 	if ($inDistance <= $dropZoneRadius) {$inZone = "Yes"} else {$inZone = "No"} 
-	my %ZONE = (1=>"Yes", 0=>"No");
+	my %ZONE = (1=>"Yes", 0=>"-");
 	my %TYPE = (1=>"Static", 0=>"Random", 2=>"Random");
 	$DATA{$flightIDX}{PK_FLIGHT_IDX} = $flightIDX;
     $DATA{$flightIDX}{FK_TEAM_IDX}   = $FLIGHT{FK_TEAM_IDX};
@@ -212,12 +222,15 @@ sub getTop3(){
 	my ($score) = @_;
 	my %SCORE = %$score;
 	my @SORTED = (sort {$SCORE{$b}{IN_FS} <=> $SCORE{$a}{IN_FS}} keys %SCORE);
+    my %USED;
 	# print "Scored 0 = $SORTED[0]\n\n";
 	my $sumOfTopThree = 0;
 	for ($x=0; $x<=2; $x++){
-        $sumOfTopThree += $SCORE{$SORTED[$x]}{IN_FS};
+            $sumOfTopThree += $SCORE{$SORTED[$x]}{IN_FS};
+            $USED{$SORTED[$x]} = 1;
 	    }
-		return ($sumOfTopThree);
+		# return ($sumOfTopThree);
+        return ($sumOfTopThree, \%USED);
 		}
 
 return(1);

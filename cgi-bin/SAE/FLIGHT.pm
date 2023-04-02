@@ -189,6 +189,14 @@ sub _templateReinspectionButton(){
 # ===============================================================
 # GET
 # ===============================================================
+sub _getListOfReinspectItems (){
+    my ($self) = @_;
+    my $SQL    = "SELECT * FROM TB_INSPECTION";
+    my $select = $dbi->prepare($SQL);
+       $select->execute();
+    my %HASH = %{$select->fetchall_hashref('PK_INSPECTION_IDX')}; 
+    return (\%HASH);
+    }
 sub _getDensityAltitude(){
     my ($self, $eventIDX, $epoch) = @_;
     my $lowerLimit = $epoch * 0.999999910142988;
@@ -290,6 +298,14 @@ sub _getTeamDataById(){
     my %HASH = %{$select->fetchall_hashref('PK_TEAM_IDX')}; 
     return (\%HASH);
 }
+sub _getTeamData (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT * FROM TB_TEAM WHERE PK_TEAM_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($teamIDX);
+    my %HASH = %{$select->fetchrow_hashref()}; 
+    return (\%HASH);
+    }
 sub _getCardStatusByID(){
     my $self = shift;
     my $flightIDX = shift;
@@ -445,7 +461,7 @@ sub _getTicketByEvent (){
 }
 sub _getTicketLog(){
     my ($self, $eventIDX, $teamIDX) = @_;
-    my $SQL = "SELECT * FROM TB_FLIGHT WHERE FK_EVENT_IDX=? and FK_TEAM_IDX=?";
+    my $SQL = "SELECT T.IN_NUMBER, F.* FROM TB_FLIGHT AS F JOIN TB_TEAM AS T ON F.FK_TEAM_IDX=T.PK_TEAM_IDX WHERE F.FK_EVENT_IDX=? and F.FK_TEAM_IDX=?";
     my $select = $dbi->prepare($SQL);
         $select->execute($eventIDX, $teamIDX);
     my %HASH = %{$select->fetchall_hashref('PK_FLIGHT_IDX')}; 

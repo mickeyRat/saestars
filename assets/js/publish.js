@@ -35,6 +35,7 @@ function sae_generateResultScores(classIDX, txTitle, txCell){
     var eventIDX = $.cookie('LOCATION');
     var userIDX = $.cookie('userIDX');
     console.log("userIDX = " + userIDX);
+    console.log("txTitle = " + txTitle);
     $('#'+txCell+'_'+classIDX).html(loading);
     $.ajax({
         type: 'POST',

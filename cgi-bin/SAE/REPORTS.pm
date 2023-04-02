@@ -4,6 +4,10 @@ use DBI;
 use SAE::SDB;
 use List::Util qw( sum min max reduce );
 
+use Number::Format;
+use Statistics::Basic qw(:all);
+use Statistics::PointEstimation;
+
 use URI::Escape;
 
 my $dbi = new SAE::Db();
@@ -15,6 +19,79 @@ sub new{
 	return $self;
 }
 # ===================== 2023 ==================================================
+sub _getSectionAssessment (){
+    my ($self, $teamIDX, $inCardType) = @_;
+    my %POINTS = (1=>35, 2=>5, 3=>5, 4=>5);
+    my $SQL          = "SELECT SEC.IN_WEIGHT AS SEC_WEIGHT, SUB.* FROM TB_SUBSECTION AS SUB JOIN TB_SECTION AS SEC ON SUB.FK_SECTION_IDX=SEC.PK_SECTION_IDX WHERE SEC.FK_CARDTYPE_IDX=?";
+    my $select       = $dbi->prepare( $SQL );
+       $select->execute($inCardType);
+    my %SUBSECTION   = %{$select->fetchall_hashref(['FK_SECTION_IDX', 'PK_SUBSECTION_IDX'])};
+    my $SQL_SCORE    = "SELECT P.FK_SUBSECTION_IDX, P.IN_VALUE FROM TB_PAPER AS P JOIN TB_CARD AS C ON P.FK_CARD_IDX=C.PK_CARD_IDX WHERE (C.FK_TEAM_IDX = ? AND C.FK_CARDTYPE_IDX=?)";
+    my $value        = $dbi->prepare( $SQL_SCORE );
+       $value->execute($teamIDX, $inCardType);
+    my %VALUE        = %{$value->fetchall_hashref('FK_SUBSECTION_IDX')};
+    my $score        = 0;
+    foreach $sectionIDX (keys %SUBSECTION) {    
+        my @SECSCORE = ();
+        my $sectionWeight;
+        foreach $subIDX (sort {$a <=> $b} keys %{$SUBSECTION{$sectionIDX}}) {
+            $sectionWeight = $SUBSECTION{$sectionIDX}{$subIDX}{SEC_WEIGHT};
+            # printf "%d, %d\t", $sectionWeight, $sectionIDX;
+            if (exists $VALUE{$subIDX}){
+                # printf "%10d%10.2f\n", $subIDX, $VALUE{$subIDX}{IN_VALUE};
+                push(@SECSCORE, $VALUE{$subIDX}{IN_VALUE});
+            } else {
+                # printf "%10d%10.2f\n",  $subIDX, 0;
+                push(@SECSCORE, $VALUE{$subIDX}{IN_VALUE});
+            }
+        }
+        $score += (&_getAverage(@SECSCORE)/100) * (($POINTS{$inCardType}) * ($sectionWeight/100));
+    }
+    # printf "Total Score = %2.2f\n\n", $score;
+    return ($score);
+    }
+
+sub _getTeamReportStd (){
+    my ($self, $list) = @_;
+    my $str;
+
+    return ();
+    }
+# my $stat = new Statistics::PointEstimation;
+#     $stat->set_significance(95); #set the significance(confidence) level to 95%
+sub _getTeamDesignCard (){
+    my ($self, $teamIDX, $inCardType) = @_;
+    my $SQL    = "SELECT CARD.*, USER.TX_FIRST_NAME, USER.TX_LAST_NAME FROM TB_CARD AS CARD JOIN TB_USER AS USER ON CARD.FK_USER_IDX = USER.PK_USER_IDX where FK_TEAM_IDX=? AND FK_CARDTYPE_IDX=?";
+    my $select = $dbi->prepare( $SQL );
+       $select->execute($teamIDX, $inCardType);
+    my %HASH   = %{$select->fetchall_hashref('PK_CARD_IDX')};
+    return (\%HASH);
+    }
+sub _getJudgeInformation (){
+    my ($self, $userIDX) = @_;
+    my $SQL    = "SELECT * FROM TB_USER WHERE PK_USER_IDX=?";
+    my $select = $dbi->prepare( $SQL );
+       $select->execute($userIDX);
+    my %HASH   = %{$select->fetchrow_hashref()};
+    return (\%HASH);
+    }
+sub _getJudgeCardScore (){
+    my ($self, $cardIDX) = @_;
+    my $score  = 0;
+    my %POINTS = (1=>35, 2=>5, 3=>5, 4=>5);
+    my $SQL    = "SELECT C.FK_CARDTYPE_IDX,(AVG(P.IN_VALUE)*((SEC.IN_WEIGHT)/100))/100 AS IN_PERCENT FROM TB_PAPER AS P 
+        JOIN TB_SUBSECTION AS SUB ON P.FK_SUBSECTION_IDX=SUB.PK_SUBSECTION_IDX 
+        JOIN TB_SECTION AS SEC ON SUB.FK_SECTION_IDX=SEC.PK_SECTION_IDX 
+        JOIN TB_CARD AS C ON P.FK_CARD_IDX = C.PK_CARD_IDX 
+        WHERE C.PK_CARD_IDX=?
+        GROUP BY C.FK_CARDTYPE_IDX, C.PK_CARD_IDX, SEC.PK_SECTION_IDX";
+    my $select = $dbi->prepare( $SQL );
+       $select->execute($cardIDX);
+    while (my ($inCardType, $inWeight) = $select->fetchrow_array()) {
+        $score += $inWeight * $POINTS{$inCardType};
+    }
+    return ( $score );
+    }
 sub _getAllCardScores (){
     my ($self, $eventIDX) = @_;
     my %POINTS = (1=>35, 2=>5, 3=>5, 4=>5);
@@ -110,7 +187,34 @@ sub _setAssessmentStatus (){
     my $SQL = "UPDATE TB_CARD SET IN_STATUS=? WHERE PK_CARD_IDX=?";
     my $update = $dbi->prepare( $SQL );
        $update->execute($inStatus, $cardIDX);
+    &createFullCardEntry($cardIDX);
     return ();
+    }
+sub createFullCardEntry (){
+    my ($cardIDX) = @_;
+    my $SQL_CARDTYPE = "SELECT FK_CARDTYPE_IDX FROM TB_CARD WHERE PK_CARD_IDX=?";
+    my $select_cardType = $dbi->prepare( $SQL_CARDTYPE );
+       $select_cardType->execute($cardIDX);
+    my ($inCardType) = $select_cardType->fetchrow_array();
+
+    my $SQL          = "SELECT SUB.PK_SUBSECTION_IDX FROM TB_SUBSECTION AS SUB JOIN TB_SECTION AS SEC ON SUB.FK_SECTION_IDX=SEC.PK_SECTION_IDX WHERE SEC.FK_CARDTYPE_IDX=?";
+    my $select       = $dbi->prepare( $SQL );
+       $select->execute($inCardType);
+    my %SUBSECTION   = %{$select->fetchall_hashref('PK_SUBSECTION_IDX')};
+
+    my $SQL_PAPER    = "SELECT FK_SUBSECTION_IDX FROM TB_PAPER WHERE FK_CARD_IDX=?";
+    my $select_paper = $dbi->prepare( $SQL_PAPER );
+       $select_paper->execute($cardIDX);
+    my %PAPER        = %{$select_paper->fetchall_hashref('FK_SUBSECTION_IDX')};
+
+    my $SQL_INSERT   = "INSERT INTO TB_PAPER (FK_CARD_IDX, FK_SUBSECTION_IDX, IN_VALUE) VALUES (?, ?, ?)";
+    my $insert       = $dbi->prepare($SQL_INSERT);
+    foreach $subSectionIDX (sort {$a <=> $b} keys %SUBSECTION ) {
+        if (!exists $PAPER{$subSectionIDX}){
+            $insert->execute($cardIDX, $subSectionIDX, 0);
+        }
+    }
+    return ($str);
     }
 sub _setSubmitCardScore (){
     my ($self, $cardIDX, $subIDX, $inValue) = @_;

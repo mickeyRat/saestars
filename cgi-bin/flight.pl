@@ -196,7 +196,8 @@ exit;
     sub RegularClassTicketLog(){
         my ($eventIDX, $teamIDX, $inRound) = @_;
         my $Flight = new SAE::FLIGHT();
-        my %TIX = %{$Flight->_getTicketLog($eventIDX, $teamIDX)};
+        my %TIX  = %{$Flight->_getTicketLog($eventIDX, $teamIDX)};
+        # my %TEAM = %{$Flight->_getTeamData($teamIDX)};
         my $str;
         my $height = 40;
         my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
@@ -215,18 +216,20 @@ exit;
         $str .= '<th style="width: 65px; text-align: center;">Minor<br><span class="w3-small">Penalty</span></th>';
         $str .= '<th style="width: 65px; text-align: center;">Major<br><span class="w3-small">Penalty</span></th>';
         $str .= '<th><br>Notes</th>';
+        $str .= '<th style="width: 65px; text-align: center;"><br><span class="w3-small">Remove</span></th>';
         $str .= '</tr>';
         $str .= '</thead>';
         $str .= '<tbody>';
         my $field = '';
         my $tabIndex = 1;
         foreach $flightIDX (sort {$TIX{$a}{IN_ROUND} <=> $TIX{$b}{IN_ROUND}} keys %TIX) {
-            my $focus = '';
+            my $focus    = '';
+            my $inNumber = $TIX{$flightIDX}{IN_NUMBER};
             if ($inRound == $TIX{$flightIDX}{IN_ROUND}){
-                $focus = 'w3-pale-yellow';
-                $str .= '<tr class="'.$focus.'" style="padding: 0px;">';
+                $focus   = 'w3-pale-yellow';
+                $str .= sprintf '<tr ID="ROW_%d" class="'.$focus.' w3-hover-pale-yellow deleteContainer_%d" style="padding: 0px;">', $flightIDX, $flightIDX;
             } else {
-                $str .= '<tr style="padding: 0px;">';
+                $str .= sprintf '<tr ID="ROW_%d" class="w3-hover-pale-yellow deleteContainer_%d" style="padding: 0px;">', $flightIDX, $flightIDX;
             }
             $str .= &t_row_attempt($flightIDX, 'IN_ROUND', $TIX{$flightIDX}{IN_ROUND}, $focus);
             $str .= &t_row_checkBox($flightIDX, 'IN_STATUS', $TIX{$flightIDX}{IN_STATUS}, $focus);
@@ -236,6 +239,19 @@ exit;
             $str .= &t_row_checkBox($flightIDX, 'IN_PEN_MINOR', $TIX{$flightIDX}{IN_PEN_MINOR}, $focus);
             $str .= &t_row_checkBox($flightIDX, 'IN_PEN_LANDING', $TIX{$flightIDX}{IN_PEN_LANDING}, $focus);
             $str .= &t_row_inputText($flightIDX, 'CL_NOTES', $TIX{$flightIDX}{CL_NOTES}, $focus);     
+            # $str .= &t_row_remove($flightIDX);     
+            if ($TIX{$flightIDX}{BO_REINSPECT} == 0){
+                $str .= &t_row_remove($flightIDX);  
+            }  else {
+                $str .= '<td style="text-align: center;">Tech</td>';
+            }
+            $str .= '</tr>';
+            $str .= sprintf '<tr ID="DELETE_ROW_%d" class="deleteContainer_%d" style="display: none;">', $flightIDX, $flightIDX;
+            $str .= '<td class="w3-padding-large w3-pale-red w3-border-red" colspan="20" style="text-align: center; padding: 20px; border: 3px solid red">';
+            $str .= sprintf '<h3>Delete Flight Attempt #:%02d</h3>',$TIX{$flightIDX}{IN_ROUND};
+            $str .= sprintf '<button class="w3-button w3-round-large w3-border w3-padding-large w3-margin-right w3-red" onclick="flight_confirmFlightTicket(this, %d, %d, %d, %d)">Confirm</button>', $flightIDX, $teamIDX, $inNumber, $classIDX;
+            $str .= sprintf '<button class="w3-button w3-round-large w3-border w3-padding-large w3-margin-left w3-white" onclick="flight_cancelConfirmDeleteAttempt(this, %d);">Cancel</button>', $flightIDX;
+            $str .= '</td>';
             $str .= '</tr>';
         }
         $str .= '</tbody>';
@@ -275,17 +291,19 @@ exit;
         $str .= '<th style="width: 65px; text-align: center;">Minor<br><span class="w3-small">Penalty</span></th>';
         $str .= '<th style="width: 65px; text-align: center;">Major<br><span class="w3-small">Penalty</span></th>';
         $str .= '<th><br>Notes</th>';
+        $str .= '<th style="width: 65px; text-align: center;"><br><span class="w3-small">Remove</span></th>';
         $str .= '</tr>';
         $str .= '</thead>';
         $str .= '<tbody>';
         my $field = '';
         foreach $flightIDX (sort {$TIX{$a}{IN_ROUND} <=> $TIX{$b}{IN_ROUND}} keys %TIX) {
             my $focus = '';
+            my $inNumber = $TIX{$flightIDX}{IN_NUMBER};
             if ($inRound == $TIX{$flightIDX}{IN_ROUND}){
-                $focus = 'w3-pale-yellow';
-                $str .= '<tr class="'.$focus.'" style="padding: 0px;">';
+                $focus   = 'w3-pale-yellow';
+                $str .= sprintf '<tr ID="ROW_%d" class="'.$focus.' w3-hover-pale-yellow deleteContainer_%d" style="padding: 0px;">', $flightIDX, $flightIDX;
             } else {
-                $str .= '<tr style="padding: 0px;">';
+                $str .= sprintf '<tr ID="ROW_%d" class="w3-hover-pale-yellow deleteContainer_%d" style="padding: 0px;">', $flightIDX, $flightIDX;
             }
             $str .= &t_row_attempt($flightIDX, 'IN_ROUND', $TIX{$flightIDX}{IN_ROUND}, $focus);
             $str .= &t_row_checkBox($flightIDX, 'IN_STATUS', $TIX{$flightIDX}{IN_STATUS}, $focus);
@@ -296,7 +314,19 @@ exit;
             $str .= &t_row_inputNumber($flightIDX, 'IN_DISTANCE', $TIX{$flightIDX}{IN_DISTANCE}, $focus, $TIX{$flightIDX}{BO_INZONE});
             $str .= &t_row_checkBox($flightIDX, 'IN_PEN_MINOR', $TIX{$flightIDX}{IN_PEN_MINOR}, $focus);
             $str .= &t_row_checkBox($flightIDX, 'IN_PEN_LANDING', $TIX{$flightIDX}{IN_PEN_LANDING}, $focus);
-            $str .= &t_row_inputText($flightIDX, 'CL_NOTES', $TIX{$flightIDX}{CL_NOTES}, $focus);     
+            $str .= &t_row_inputText($flightIDX, 'CL_NOTES', $TIX{$flightIDX}{CL_NOTES}, $focus);
+            if ($TIX{$flightIDX}{BO_REINSPECT} == 0){
+                $str .= &t_row_remove($flightIDX);  
+            }  else {
+                $str .= '<td style="text-align: center;">Tech</td>';
+            }
+            $str .= '</tr>';
+            $str .= sprintf '<tr ID="DELETE_ROW_%d" class="deleteContainer_%d" style="display: none;">', $flightIDX, $flightIDX;
+            $str .= '<td class="w3-padding-large w3-pale-red w3-border-red" colspan="20" style="text-align: center; padding: 20px; border: 3px solid red">';
+            $str .= sprintf '<h3>Delete Flight Attempt #:%02d</h3>',$TIX{$flightIDX}{IN_ROUND};
+            $str .= sprintf '<button class="w3-button w3-round-large w3-border w3-padding-large w3-margin-right w3-red" onclick="flight_confirmFlightTicket(this, %d, %d, %d, %d)">Confirm</button>', $flightIDX, $teamIDX, $inNumber, $classIDX;
+            $str .= sprintf '<button class="w3-button w3-round-large w3-border w3-padding-large w3-margin-left w3-white" onclick="flight_cancelConfirmDeleteAttempt(this, %d);">Cancel</button>', $flightIDX;
+            $str .= '</td>';
             $str .= '</tr>';
         }
         $str .= '</tbody>';
@@ -337,7 +367,7 @@ exit;
         my ($eventIDX, $teamIDX, $inRound) = @_;
         my $Flight = new SAE::FLIGHT();
         my %TIX = %{$Flight->_getTicketLog($eventIDX, $teamIDX)};
-        my $str = 'Hello World';
+        my $str;
         my $height = 40;
         my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime();
         my $today = sprintf "%04d-%02d-%02dT%02d:%02d", $year+1900, $mon+1, $mday,  $hour, $min;
@@ -347,8 +377,9 @@ exit;
         $str .= '<thead>';
         $str .= '<tr class="w3-light-grey w3-center">';
         $str .= '<th style="width: 50px; text-align: center;"><br>Att.</th>';
+        # $str .= '<th class="w3-pale-red w3-small" style="width: 65px; text-align: center;">Re-inspection<br>Required</th>';
         $str .= '<th style="width: 65px; text-align: center;">For<br>Score</th>';
-        # $str .= '<th style="width: 140px; text-align: center;">Date & Time of Flight</th>';
+        $str .= '<th style="width: 140px; text-align: center;">Date & Time of Flight</th>';
         $str .= '<th style="width: 70px; text-align: center;">Good<br><span class="w3-small">LargeBox</span></th>';
         $str .= '<th style="width: 70px; text-align: center;">Damaged<br><span class="w3-small">LargeBox</span></th>';
         $str .= '<th style="width: 70px; text-align: center;">Good<br><span class="w3-small">SmallBox</span></th>';
@@ -357,23 +388,34 @@ exit;
         $str .= '<th style="width: 100px; text-align: center;">First Turn<br><span class="w3-small">Time (Sec.)</span></th>';
         # $str .= '<th style="width: 100px; text-align: center;">PADA<br>Distance(ft)</th>';
         # $str .= '<th style="width: 65px; text-align: center;"><br>Auto</th>';
-        $str .= '<th style="width: 65px; text-align: center;">Minor<br><span class="w3-small">Penalty</span></th>';
-        $str .= '<th style="width: 65px; text-align: center;">Major<br><span class="w3-small">Penalty</span></th>';
+        $str .= '<th style="width: 65px; text-align: center;">25%<br><span class="w3-small">Penalty</span></th>';
+        $str .= '<th style="width: 65px; text-align: center;">50%<br><span class="w3-small">Penalty</span></th>';
         $str .= '<th><br>Notes</th>';
+        $str .= '<th style="width: 65px; text-align: center;"><br><span class="w3-small">Remove</span></th>';
         $str .= '</tr>';
         $str .= '</thead>';
         $str .= '<tbody>';
         my $field = '';
         foreach $flightIDX (sort {$TIX{$a}{IN_ROUND} <=> $TIX{$b}{IN_ROUND}} keys %TIX) {
             my $focus = '';
+            # my $inNumber = $TIX{$flightIDX}{IN_NUMBER};
+            # if ($inRound == $TIX{$flightIDX}{IN_ROUND}){
+            #     $focus = 'w3-pale-yellow';
+            #     $str .= '<tr class="'.$focus.'" style="padding: 0px;">';
+            # } else {
+            #     $str .= '<tr style="padding: 0px;">';
+            # }
+            my $inNumber = $TIX{$flightIDX}{IN_NUMBER};
             if ($inRound == $TIX{$flightIDX}{IN_ROUND}){
-                $focus = 'w3-pale-yellow';
-                $str .= '<tr class="'.$focus.'" style="padding: 0px;">';
+                $focus   = 'w3-pale-yellow';
+                $str .= sprintf '<tr ID="ROW_%d" class="'.$focus.' w3-hover-pale-yellow deleteContainer_%d" style="padding: 0px;">', $flightIDX, $flightIDX;
             } else {
-                $str .= '<tr style="padding: 0px;">';
+                $str .= sprintf '<tr ID="ROW_%d" class="w3-hover-pale-yellow deleteContainer_%d" style="padding: 0px;">', $flightIDX, $flightIDX;
             }
             $str .= &t_row_attempt($flightIDX, 'IN_ROUND', $TIX{$flightIDX}{IN_ROUND}, $focus);
+            # $str .= &t_row_crash($flightIDX, 'BO_REINSPECT', $TIX{$flightIDX}{BO_REINSPECT}, $focus, $inNumber, $inRound);
             $str .= &t_row_checkBox($flightIDX, 'IN_STATUS', $TIX{$flightIDX}{IN_STATUS}, $focus);
+            $str .= &t_row_dateTime($flightIDX, 'TX_DATE_TIME', $TIX{$flightIDX}{TX_DATE_TIME}, $focus);
             $str .= &t_row_inputNumber($flightIDX, 'IN_LARGE', $TIX{$flightIDX}{IN_LARGE}, $focus);
             $str .= &t_row_inputNumber($flightIDX, 'IN_LB_DAMAGE', $TIX{$flightIDX}{IN_LB_DAMAGE}, $focus);
             $str .= &t_row_inputNumber($flightIDX, 'IN_SMALL', $TIX{$flightIDX}{IN_SMALL}, $focus);
@@ -382,7 +424,20 @@ exit;
             $str .= &t_row_time($flightIDX, 'IN_TOF', $TIX{$flightIDX}{IN_TOF}, $focus);
             $str .= &t_row_checkBox($flightIDX, 'IN_PEN_MINOR', $TIX{$flightIDX}{IN_PEN_MINOR}, $focus);
             $str .= &t_row_checkBox($flightIDX, 'IN_PEN_LANDING', $TIX{$flightIDX}{IN_PEN_LANDING}, $focus);
-            $str .= &t_row_inputText($flightIDX, 'CL_NOTES', $TIX{$flightIDX}{CL_NOTES}, $focus);     
+            $str .= &t_row_inputText($flightIDX, 'CL_NOTES', $TIX{$flightIDX}{CL_NOTES}, $focus);   
+            # $str .= &t_row_remove($flightIDX);    
+            if ($TIX{$flightIDX}{BO_REINSPECT} == 0){
+                $str .= &t_row_remove($flightIDX);  
+            }  else {
+                $str .= '<td style="text-align: center;">Tech</td>';
+            }
+            $str .= '</tr>';
+            $str .= sprintf '<tr ID="DELETE_ROW_%d" class="deleteContainer_%d" style="display: none;">', $flightIDX, $flightIDX;
+            $str .= '<td class="w3-padding-large w3-pale-red w3-border-red" colspan="20" style="text-align: center; padding: 20px; border: 3px solid red">';
+            $str .= sprintf '<h3>Delete Flight Attempt #:%02d</h3>',$TIX{$flightIDX}{IN_ROUND};
+            $str .= sprintf '<button class="w3-button w3-round-large w3-border w3-padding-large w3-margin-right w3-red" onclick="flight_confirmFlightTicket(this, %d, %d, %d, %d)">Confirm</button>', $flightIDX, $teamIDX, $inNumber, $classIDX;
+            $str .= sprintf '<button class="w3-button w3-round-large w3-border w3-padding-large w3-margin-left w3-white" onclick="flight_cancelConfirmDeleteAttempt(this, %d);">Cancel</button>', $flightIDX;
+            $str .= '</td>';
             $str .= '</tr>';
         }
         $str .= '</tbody>';
@@ -404,7 +459,37 @@ exit;
         my $data = sprintf 'data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" data-field="%s" ', $flightIDX, $field;
         my $style = sprintf 'min-height: 40px; !important; padding: 0px !important;';
         $str = '<td class="cell" >';
-        $str .= sprintf '<input class="%s" %s style="%s" type="text" value="%d" onchange="updateField(this);">', $w3Class, $data, $style, $value;
+        $str .= sprintf '<input class="%s" %s style="%s" type="text" value="%02d" onchange="updateField(this);">', $w3Class, $data, $style, $value;
+        $str .= '</td>';
+        return ($str);
+        }
+    sub t_row_remove (){
+        my ( $flightIDX ) = @_;
+        my $str;
+        my $w3Class = $focus." w3-input w3-center w3-border w3-transparent";
+        my $data = sprintf 'data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" ', $flightIDX;
+        my $style = sprintf 'min-height: 40px; !important; padding: 0px !important;';
+        $str = '<td class="cell w3-center w3-border-bottom" style="vertical-align: middle" >';
+        $str .= sprintf '<i class="w3-button w3-transparent w3-round w3-hover-red fa fa-trash w3-text-red w3-large" aria-hidden="true" onclick="flight_showConfirmDeleteAttempt(this, %d);"></i>', $flightIDX;
+        # $str .= sprintf '<input class="%s" %s style="%s" type="text" value="%d" onchange="updateField(this);">', $w3Class, $data, $style, $value;
+        $str .= '</td>';
+        return ($str);
+        }
+    sub t_row_crash (){
+        my ( $flightIDX, $field, $value, $focus, $inNumber, $inRound) = @_;
+        my $str;
+        my $style   = 'min-height: 40px; padding: 0 !important; vertical-align: bottom; position: relative; top: -2px;';
+        ## openReInspectionStatus 841
+        my $w3Class = $focus.' w3-check w3-center w3-transparent ';
+        if ($field eq 'BO_STATIC') {$w3Class .= 'inZoneEntry_'.$flightIDX. ' inStaticCount ';}
+        if ($field eq 'BO_STATIC' && $inZone == 0){$w3Class .= ' w3-disabled'}
+
+        my $data    = sprintf 'data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" data-field="%s"', $flightIDX, $field;
+        $str = '<td class="cell" style=" text-align: center;  border: 1px solid #ccc;">';
+        if ($value == 1 ){$check = 'checked'} else {$check = ''}
+        my $id = $field.'_'.$flightIDX;
+        if ($field eq "IN_STATUS"){$id = 'FlightStatus_'.$flightIDX}
+        $str .= sprintf '<input type="checkbox" ID="'.$id.'" type="checkbox"class="'.$w3Class.'" '.$data.' style="'.$style.'" '.$check.' onclick="flight_openReinspection(this, %d, %d, %d);updateCheckItems(this);">', $inNumber, $inRound, $flightIDX;
         $str .= '</td>';
         return ($str);
         }
@@ -520,14 +605,14 @@ exit;
         my $str = sprintf '<li ID="TICKET_%d">', $flightIDX;
         $str .= sprintf '<button class="%s w3-border w3-hover-green w3-round w3-button team_%d_Ticket %s" data-round="%d" ', $disabled, $teamIDX, $TIX_COLOR{$inStatus}, $inRound;
         $str .= sprintf 'onclick="btn_checkInTicket(%d, %d, %d, %d, %d);">',$inNumber, $inRound, $flightIDX, $teamIDX, $classIDX;
-        $str .= sprintf '%03d-<b>%02d</b>',$inNumber, $inRound;
-        if ($inStatus == 0) {
-            $str .= sprintf '<span class="fa fa-star-o w3-margin-left" aria-hidden="true"></span>';
-        } elsif ($inStatus == 1) {
-            $str .= sprintf '<span class="fa fa-star w3-margin-left w3-text-amber" aria-hidden="true"></span>';
-        } else {
-            $str .= sprintf '<span class="fa fa-star w3-margin-left w3-text-red" aria-hidden="true"></span>';
-        }
+        $str .= sprintf '%03d-<b class="w3-large">%02d</b>',$inNumber, $inRound;
+        # if ($inStatus == 0) {
+        #     $str .= sprintf '<span class="fa fa-star-o w3-margin-left" aria-hidden="true"></span>';
+        # } elsif ($inStatus == 1) {
+        #     $str .= sprintf '<span class="fa fa-star w3-margin-left w3-text-amber" aria-hidden="true"></span>';
+        # } else {
+        #     $str .= sprintf '<span class="fa fa-star w3-margin-left w3-text-red" aria-hidden="true"></span>';
+        # }
         $str .= sprintf '</button>';
         $str .= sprintf '</li>';
         return ($str);
@@ -610,28 +695,6 @@ exit;
             $str .= sprintf '<input id="ForScore_%d" '.$checkedForScore.' class="w3-check" data-field="BO_OUT" data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" type="radio" value="0" name="TicketStatus" onclick="updateAttemptStatus(event, this, %d);">', $flightIDX, $flightIDX, $flightIDX;
             $str .= '<label for="ForScore_'.$flightIDX.'" class="w3-margin-left w3-large">Check-In</label>';
             $str .= '</div>';
-            # $str .= '<div class="w3-container">';
-            # $str .= sprintf '<input id="NotForScore_%d" '.$checkedNotForScore.' class="w3-check" data-field="IN_STATUS" data-table="TB_FLIGHT" data-key="PK_FLIGHT_IDX" data-index="%d" type="radio" value="2" name="TicketStatus" onclick="updateAttemptStatus(event, this, %d);">', $flightIDX, $flightIDX, $flightIDX;
-            # $str .= '<label for="NotForScore_'.$flightIDX.'" class="w3-margin-left w3-large"><i>Checked-In: </i>Not For Score</label>';
-            # $str .= '</div>';
-            # my $display = 'display: none;';
-            # if ($ticketStatus == 2) {$display = ''}
-            # $str .= '<div ID="cor_2" class="w3-panel w3-pale-yellow ticket_corridian w3-padding" style="'.$display.' border-style: inset; margin-top: 4px;">';
-            # $str .= '<span><i>Internal Use only: Reasons for not scoring</i></span>';
-            # $str .= '<div class="item-container">';
-            #     $str .= '<div class="w3-dropdown-hover" style="align-items: center; flex: 2; background: #FFFFFF;  width: 100%;">';
-            #     $str .= sprintf '<input type="text" ID="DNFItemInput"  autocomplete="off" class="w3-input" data-key="%d" onKeyUp="createItemTag(event, this);" style="flex: 1; font-size: 16px; padding: 5px; border:1; outline: none;">', $flightIDX;
-            #     $str .= '<div id="reasonDiv" class="divInput w3-dropdown-content w3-bar-block w3-card-2 w3-white" style="max-height: 600px;  overflow-y: scroll">';
-            #     $str .= '<ul ID="reasonDiv_List" class="w3-ul">';
-            #         foreach $txReason (@REASONS) {
-            #             $str .= &t_reasonListItem($flightIDX, $txReason);
-            #             }
-            #         $str .= '</ul>';
-            #     $str .= '</div>';
-            #     $str .= '</div>';
-            # $str .= '</div>';
-            # $str .= '</div>';
-
             $str .= '<div class="w3-container w3-center w3-padding">';
                         $str .= '<button class="w3-button w3-card w3-border w3-round w3-card-2 w3-hover-grey w3-margin" style="width: 100px;" onclick="$(this).close();">Exit</button>';
                     $str .= '</div>';
@@ -639,6 +702,38 @@ exit;
         return ($str);
         }
 ## Inspections
+    # sub flight_openReinspection (){
+    #     my $eventIDX   = $q->param('eventIDX');
+    #     # my %DATA = %{decode_json($q->param('jsonData'))};
+    #     my $Flight = new SAE::FLIGHT();
+    #     my %LIST   = %{$Flight->_getListOfReinspectItems()};
+    #     print $q->header();
+    #     my $str;
+    #     $str .= '<div class="w3-container">';
+    #     $str .= '<ul class="w3-ul" style="height: 800px; overflow-y: auto;">';
+    #     foreach $inspectionIDX (sort {lc($LIST{$a}{TX_ITEM}) cmp lc($LIST{$b}{TX_ITEM})} keys %LIST) {
+    #         my $value = $LIST{$inspectionIDX}{TX_ITEM};
+    #         $str .= sprintf '<label FOR="INSPECT_%d"><li class="w3-bar w3-border w3-white w3-round w3-hover-yellow" style="padding: 2px;">',$inspectionIDX;
+    #         $str .= '<div class="w3-bar-item" style="padding: 1px 10px;">';
+    #         $str .= sprintf '<input ID="INSPECT_%d" type="checkbox" class="w3-check inspectItems" value="%s"><label FOR="INSPECT_%d" class="w3-margin-left">%s</label>', $inspectionIDX, $value, $inspectionIDX, $value;
+    #         $str .= '</div>';
+    #         $str .= '</li></label>';
+    #     }
+    #     $str .= '<li class="w3-bar w3-border w3-white w3-round" style="padding: 2px;">';
+    #     $str .= '<div class="w3-bar-item" style="padding: 1px 10px; width: 100%">';
+    #     $str .= sprintf '<input ID="INSPECT_OTHER_CHECKBOX" type="checkbox" class="w3-check inspectOther">', $inspectionIDX, $value, $inspectionIDX, $value;
+    #     $str .= sprintf '<input ID="INSPECT_OTHER" type="text" class="w3-input w3-animate-input w3-border w3-round w3-margin-left w3-pale-yellow" placeholder="Other..." onkeyup="flight_checkInspectOthers(this);" style="width: 20%; display: inline-block; max-width: 95%;">', $inspectionIDX, $value, $inspectionIDX, $value;
+    #     $str .= '</div>';
+    #     $str .= '</li>';
+    #     $str .= '</ul>';
+    #     $str .= '<div class="w3-container">';
+    #     $str .= '<button class="w3-button w3-border w3-round-large w3-card w3-margin-right">Submit</button>';
+    #     $str .= '<button class="w3-button w3-border w3-round-large w3-card w3-margin-left">Cancel</button>';
+    #     $str .= '</div>';
+    #     $str .= '</div>';
+    
+    #     return ($str);
+    #     }
     sub loadInspectionLog (){
         my $teamIDX = $q->param('teamIDX');
         # my %DATA = %{decode_json($q->param('jsonData'))};
@@ -837,7 +932,7 @@ exit;
             my $checked = '';
             my $disabled = '';
             if ($TIX{BO_REINSPECT} == 1){$display = ''; $checked = 'checked'}
-            if ($TIX{IN_STATUS} == 0){$disabled = 'disabled'}
+            # if ($TIX{IN_STATUS} == 0){$disabled = 'disabled'}
             my $data = sprintf ' data-key="PK_FLIGHT_IDX" data-index="%d" data-field="%s" data-round="%d" data-team="%d" data-number="%d" %s', $flightIDX, 'BO_REINSPECT', $inRound , $teamIDX, $inNumber, $disabled;
             $str .= sprintf '<input id="Inspection" type="checkbox" value="%d" class="w3-check ReinspectionCheckBox" %s onclick="openReInspectionStatus(this, %d);" %s> ', $inspectIDX, $data, $flightIDX, $checked;
             $str .= sprintf '<label class="w3-margin-left" for="Inspection"><span class="w3-xlarge w3-text-red">Attempt #: %03s-%02d - Re-Inspection Required. </span></label>', $inNumber, $inRound;
@@ -867,10 +962,11 @@ exit;
             $str .= '</div>';
         $str .= '<div class="w3-container w3-border w3-card-4" style="height: 800px; overflow-y: scroll; padding: 0px" >';
         $str .= '<div class="w3-row" style="padding: 0px;">';
-            $str .= &t_ticketStatus($flightIDX, $inNumber, $teamIDX, $classIDX, $inRound, $TIX{BO_OUT}, $TIX{BO_REINSPECT});
-            $str .= '<div class="w3-white w3-container w3-threequarter"  style="padding: 0px;">';
+            # $str .= &t_ticketStatus($flightIDX, $inNumber, $teamIDX, $classIDX, $inRound, $TIX{BO_OUT}, $TIX{BO_REINSPECT});
+            $str .= '<div class="w3-white w3-container"  style="padding: 0px;">';
+            # $str .= '<div class="w3-white w3-container w3-threequarter"  style="padding: 0px;">';
                 $str .= '<div class="w3-bar w3-black">';
-                    $str .= sprintf '<button class="w3-bar-item w3-button tablink w3-border-left w3-white" onclick="openTab(this,\'ticketLog\', %d, %d)">Ticket Logs</button>', $teamIDX, $classIDX ;
+                    $str .= sprintf '<button class="w3-bar-item w3-button tablink w3-border-left w3-white" onclick="openTab(this,\'ticketLog\', %d, %d)">#%03d: Ticket Logs</button>', $teamIDX, $classIDX, $inNumber ;
                     if ($classIDX==2){
                         $str .= sprintf '<button class="w3-bar-item w3-button tablink w3-border-left" onclick="openTab(this,\'advancedGTV\', %d, %d)">Ground Transport Vehicle (GTV)</button>', $teamIDX, $classIDX ;
                     }
@@ -880,7 +976,7 @@ exit;
                     $str .= sprintf '<button class="w3-bar-item w3-button tablink " onclick="openTab(this,\'teamScore\', %d, %d)">Team Scoring</button>', $teamIDX, $classIDX ;
                 $str .= '</div>';
                 $str .= '<div id="ticketLog" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-padding-bottom tabContent" style="min-height: 600px;">';
-                    $str .= '<h2 class="w3-margin-left">Ticket Logs</h2>';
+                    $str .= sprintf '<h2 class="w3-margin-left">#%03d: Ticket Logs</h2>', $inNumber;
 
                     if ($classIDX==3){ # Micro Class Ticket Logs
                         $str .= &MicroClassTicketLog($eventIDX, $teamIDX, $inRound);
@@ -894,27 +990,27 @@ exit;
                 $str .= '</div>';
 
                 $str .= '<div id="advancedGTV" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="min-height: 600px;border-top: none; display: none;">';
-                    $str .= '<h2 class="w3-margin-left">Ground Transport Vehicle</h2>';
+                    $str .= sprintf '<h2 class="w3-margin-left">#%03d: Ground Transport Vehicle</h2>', $inNumber;
                     $str .= '<div id="advancedGTV_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';
 
                 $str .= '<div id="inspectionLog" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="min-height: 600px;border-top: none; display: none;">';
-                    $str .= '<h2 class="w3-margin-left">Inspection Logs</h2>';
+                    $str .= sprintf '<h2 class="w3-margin-left">#%03d: Inspection Logs</h2>', $inNumber;
                     $str .= '<div id="inspectionLog_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';
 
                 $str .= '<div id="teamData" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="min-height: 600px;border-top: none; display: none;">';
-                    $str .= '<h2 class="w3-margin-left">Team Data</h2>';
+                    $str .= sprintf '<h2 class="w3-margin-left">#%03d: Team Data</h2>', $inNumber;
                     $str .= '<div id="teamData_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';
 
                 $str .= '<div id="teamDocuments" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="min-height: 600px;border-top: none; display: none;">';
-                    $str .= '<h2 class="w3-margin-left">Team Documents</h2>';
+                    $str .= sprintf '<h2 class="w3-margin-left">#%03d: Team Documents</h2>', $inNumber;
                     $str .= '<div id="teamDocuments_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';
 
                 $str .= '<div id="teamScore" class="w3-container w3-border-0 w3-border-left w3-border-right w3-border-bottom w3-round tabContent" style="min-height: 600px;border-top: none; display: none;">';
-                    $str .= '<h2 class="w3-margin-left">Team Scoring</h2>';
+                    $str .= sprintf '<h2 class="w3-margin-left">#%03d: Team Scoring</h2>', $inNumber;
                     $str .= '<div id="teamScore_content" class="w3-container w3-border-0 "></div>';
                 $str .= '</div>';
             $str .= '</div>';
@@ -996,7 +1092,7 @@ exit;
         my $json = encode_json \%OBJ;
         return($json);
         }
-    sub confirmFlightTicket (){
+    sub flight_confirmFlightTicket (){
         my $idx= $q->param('idx');
         my $teamIDX= $q->param('teamIDX');
         my $inNumber= $q->param('inNumber');
@@ -1191,6 +1287,8 @@ exit;
         foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS){
             my $inNumber =$TEAMS{$teamIDX}{IN_NUMBER};
             my $classIDX = $TEAMS{$teamIDX}{FK_CLASS_IDX};
+            my $team     = $TEAMS{$teamIDX}{TX_SCHOOL};
+            my $txCountry =  $TEAMS{$teamIDX}{TX_COUNTRY};
             my $boReinspect = $TEAMS{$teamIDX}{BO_REINSPECT};
             my $classIDX = $TEAMS{$teamIDX}{FK_CLASS_IDX};
             
@@ -1200,11 +1298,11 @@ exit;
             $str .= &t_addTicketButton($teamIDX, $inNumber, $boReinspect, $classIDX);
             $str .= '</td>';
             $str .= '<td class="wrapper">';
-            $str .= '<p><b>University of Testing</b> (<i>United States</i>)</p>';
+            $str .= sprintf '<p><b>%s</b> (<i>%s</i>)</p>', $team, $txCountry;
             $str .= '<div class="content">';
             $str .= sprintf '<ul ID="ticketBucket_%d">',$teamIDX;
             foreach $flightIDX (sort {$TICKETS{$teamIDX}{$a}{IN_ROUND} <=> $TICKETS{$teamIDX}{$b}{IN_ROUND}} keys %{$TICKETS{$teamIDX}}){
-                my $boTicketReinspect = $TICKETS{$teamIDX}{$flightIDX}{BO_REINSPECT};
+                my $boTicketReinspect = $TICKETS{$teamIDX}{$flightIDX}{BO_REICOUNTRY};
                 my $inStatus = $TICKETS{$teamIDX}{$flightIDX}{IN_STATUS};
                 $str .= &t_ticket($inNumber, $TICKETS{$teamIDX}{$flightIDX}{IN_ROUND}, $flightIDX, $teamIDX, $classIDX, $boTicketReinspect, $boReinspect, $inStatus);
             }

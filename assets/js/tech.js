@@ -3,6 +3,16 @@
     var loading = '<div class="w3-display-container w3-margin-top"><center class="center-screen w3-display-center"><i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i></br><span class="w3-xlarge sr-only">Loading...</span></center></div>';
 
 //------ 2023 ---------------------------------------------------
+function tech_toggleRequiredInspection(o, show) {
+
+    if (show == 1){
+        $('.optionalHeading').removeClass('w3-hide');
+        // console.log('show');
+    } else {
+        $('.optionalHeading').addClass('w3-hide');
+        // console.log('hide');
+    }
+}
 function tech_completeSafetyCheck (o, planeIDX,classIDX) {
     $('.w3-modal').remove();
     $.ajax({
@@ -408,7 +418,7 @@ function tech_updateItem (o, itemIDX, sectionIDX) {
     data.TX_SECTION   = $('#TX_SECTION').val();
     data.FK_TECH_REQ_SECTION_IDX  = sectionIDX;
     data.TX_REQUIREMENT  = $('#TX_REQUIREMENT').val();;
-    data.IN_POINTS  = $('#IN_POINTS').val();;
+    data.IN_POINTS  = $('#IN_POINTS').val();
     $('.sectionClass').each(function(){
         if ($(this).is(':checked')){
             // console.log($(this).data('field'))
@@ -424,7 +434,7 @@ function tech_updateItem (o, itemIDX, sectionIDX) {
     ajxData.itemIDX               = itemIDX;
     ajxData.TABLE                 = 'TB_TECH_REQ';
     ajxData.jsonData              = JSON.stringify(data);
-    console.log(ajxData);
+    console.log(data);
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/tech.pl',

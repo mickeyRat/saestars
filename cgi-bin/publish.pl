@@ -294,7 +294,7 @@ sub viewOverallPerformance (){
     my %TEAMS = %{$Obj->_getTeamList($eventIDX)};
     foreach $teamIDX (keys %TEAMS) {
         my ( $raw, $late ) = $Design->_getOverallPaperByTeam($teamIDX);
-        my $DesginScore    = ($raw + $late);
+        my $DesginScore    = ($raw - $late);
         my $PresoScore     = $Preso->_getPresoScoreByTeam($teamIDX, 5);
         my $PenaltyScore   = $Tech->_getTechPenalties($teamIDX);
         my $MissionScore   = $Obj->_getScore($teamIDX);

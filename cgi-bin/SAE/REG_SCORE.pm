@@ -53,11 +53,13 @@ sub _getTop3(){
 	my ($self, $score) = @_;
 	my %SCORE = %$score;
 	my @SORTED = (sort {$SCORE{$b}{IN_FS} <=> $SCORE{$a}{IN_FS}} keys %SCORE);
+    my %USED;
 	my $sumOfTopThree = 0;
 	for ($x=0; $x<=2; $x++){
         $sumOfTopThree += $SCORE{$SORTED[$x]}{IN_FS};
+        $USED{$SORTED[$x]} = 1;
     }
-	return ($sumOfTopThree);
+	return ($sumOfTopThree, \%USED);
 	}
 
 sub calculatePayloadPrediction (){
@@ -135,7 +137,7 @@ sub _getScore (){
             $maxWeight = $SCORE{$flightIDX}{IN_WEIGHT};
         }
     }
-    my $top3 = &getTop3(\%SCORE);
+    my ($top3, $used) = &getTop3(\%SCORE);
     my $Score = ($top3 + $maxWs);
     return ($Score);
     }
@@ -147,7 +149,7 @@ sub _getTeamScores (){
         %SCORE = (%SCORE, %{&calculateFlightScore($flightIDX)});
     }
     my $str;
-    $str .= '<table class="w3-table-all w3-small">';
+    $str .= '<table class="w3-table w3-bordered w3-small">';
     $str .= '<thead>';
     $str .= '<tr>';
     $str .= '<th style="width: 50px;"><br>Att</th>';
@@ -166,12 +168,20 @@ sub _getTeamScores (){
     my $maxWs = 0;
     my $maxWeight = 0;
     my %PEN = (0=>'-', 1=>'Yes');
+    # my $top3 = &getTop3(\%SCORE);
+    my ($top3, $used) = &getTop3(\%SCORE);
+    my %USED = %$used;
     foreach $flightIDX (sort {$SCORE{$a}{IN_ROUND} <=> $SCORE{$b}{IN_ROUND}} keys %SCORE) {
         if ($SCORE{$flightIDX}{IN_WEIGHT} > $maxWeight){
             $maxWs = $SCORE{$flightIDX}{IN_WS};
             $maxWeight = $SCORE{$flightIDX}{IN_WEIGHT};
         }
-        $str .= '<tr>';
+        if (exists $USED{$flightIDX}){
+                $str .= '<tr class="w3-pale-yellow">';
+            } else {
+                $str .= '<tr>';
+            }
+        # $str .= '<tr>';
         $str .= sprintf '<td>%d</td>', $SCORE{$flightIDX}{IN_ROUND};
         $str .= sprintf '<td style="text-align: right;">%s</td>', $SCORE{$flightIDX}{IN_SPAN};
         $str .= sprintf '<td style="text-align: right;">%2.2f</td>', $SCORE{$flightIDX}{IN_DENSITY};
@@ -181,11 +191,15 @@ sub _getTeamScores (){
         $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_RAW};
         $str .= sprintf '<td style="text-align: right;">%s</td>', $PEN{$SCORE{$flightIDX}{IN_MINOR}};
         $str .= sprintf '<td style="text-align: right;">%s</td>', $PEN{$SCORE{$flightIDX}{IN_MAJOR}};
-        $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_FS};
+        # $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_FS};
+        if (exists $USED{$flightIDX}){
+                $str .= sprintf '<td class="w3-large" style="text-align: right;"><b>%2.4f</b></td>', $SCORE{$flightIDX}{IN_FS};
+            } else {
+                $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_FS};
+            }
         $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_WS};
         $str .= '</tr>';
     }
-    my $top3 = &getTop3(\%SCORE);
     $str .= '<tr>';
     $str .= '<td colspan="10" class="w3-large" style="text-align: right;">Max Wingspan Score</td>';
     $str .= sprintf '<td class="w3-large" style="text-align: right;">%2.4f</td>', $maxWs;
@@ -247,11 +261,13 @@ sub getTop3(){
 	my ($score) = @_;
 	my %SCORE = %$score;
 	my @SORTED = (sort {$SCORE{$b}{IN_FS} <=> $SCORE{$a}{IN_FS}} keys %SCORE);
+    my %USED;
 	my $sumOfTopThree = 0;
 	for ($x=0; $x<=2; $x++){
         $sumOfTopThree += $SCORE{$SORTED[$x]}{IN_FS};
+        $USED{$SORTED[$x]} = 1;
     }
-	return ($sumOfTopThree);
+	return ($sumOfTopThree, \%USED);
 	}
 
 

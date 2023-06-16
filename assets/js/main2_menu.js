@@ -185,6 +185,10 @@ function mainMenuItemClick(menuItem, obj){
             openInspectionModule();
             // console.log("test");
             break; 
+        case 35: //Open Tech Inspection Module
+            attend_openTeamList();
+            // console.log("test");
+            break; 
         default:
           // code block
       }

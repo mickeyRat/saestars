@@ -95,15 +95,10 @@ my %COUNTRY = %{$Team->_getListOfCountries()};
         $DATA{$inNumber}{FK_COUNTRY_IDX} = $countryIDX;
         $DATA{$inNumber}{TX_COUNTRY} = $txCountry;
         $DATA{$inNumber}{FK_EVENT_IDX} = $eventIDX;
-        $DATA{$inNumber}{TX_CODE} = $Auth->getTemporaryPassword(6);
+        $DATA{$inNumber}{TX_CODE} = $Auth->_getSubscriptionCode(6);
     }
     foreach $inNumber (keys %DATA) {
         my $teamIDX = $Team->_addNewTeam(\%{$DATA{$inNumber}});
-        # $str .= sprintf '%03d, %d, ', $inNumber, $teamIDX;
-        # foreach $field (sort keys %{$DATA{$inNumber}}) {
-        #     $str .= sprintf '%s, ', $DATA{$inNumber}{$field};
-        # }
-        # $str .= '<br>';
     }
     
 

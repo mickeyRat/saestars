@@ -323,7 +323,7 @@ sub sae_addNewTeam(){
     my $Team = new SAE::TEAM();
     my $Auth = new SAE::Auth();
     my %DATA = %{decode_json($q->param('jsonData'))};
-    $DATA{TX_CODE} = $Auth->getTemporaryPassword(6);
+    $DATA{TX_CODE} = $Auth->_getSubscriptionCode(6);
     my $teamIDX = $Team->_addNewTeam(\%DATA);
     $str = &_teamCardTemplate($teamIDX, $DATA{IN_NUMBER}, $DATA{TX_SCHOOL}, $DATA{TX_COUNTRY});
     return ($str);

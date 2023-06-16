@@ -863,7 +863,8 @@ sub view_teamView (){
         my $txSchool   = sprintf '<b>%03d</b>-%s<br><i class="w3-small">%s - %s Class</i>',$TEAMS{$teamIDX}{IN_NUMBER}, $TEAMS{$teamIDX}{TX_SCHOOL}, $TEAMS{$teamIDX}{TX_COUNTRY}, $CLASS{$classIDX };
         my $daysLate   = sprintf '<br><span class="w3-text-blue" style="text-decoration: underline; cursor: pointer;" onclick="paper_daysLate(this, %d);">Days Late: <i ID="TEAM_LATE_'.$teamIDX.'">%d</i></span>', $teamIDX, $inDays;
         $str .= '<tr>';
-        $str .= sprintf '<td>%s<br>%s</td>', $txSchool, $daysLate;
+        my $eIDX  = crypt($teamIDX, '20');
+        $str .= sprintf '<td><a href="score.html?teamIDX=%s&source=%d" class="w3-text-black" style="text-decoration: none;" target="_blank">%s</a><br>%s</td>', $eIDX, 14, $txSchool, $daysLate;
         $str .= '<td>';
         for ($x=1; $x<=3; $x++){
             if (exists $DOCS{$teamIDX}{$x}){

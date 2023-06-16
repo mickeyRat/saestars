@@ -26,8 +26,15 @@ channel.subscribe('sae_ps_unclearInspectionTicket', function(message) {sae_ps_un
 channel.subscribe('sae_ps_notifyTeamsOfReinspection', function(message) {sae_ps_notifyTeamsOfReinspection(message.data);});
 channel.subscribe('sae_ps_updateTeamInspectionStatus', function(message) {sae_ps_updateTeamInspectionStatus(message.data);});
 channel.subscribe('sae_ps_alertTeamInspectionStatus', function(message) {sae_ps_alertTeamInspectionStatus(message.data);});
+channel.subscribe('sae_ps_checkInTeamStatus', function(message) {sae_ps_checkInTeamStatus(message.data);});
 
 {
+    function sae_ps_checkInTeamStatus(argument) {
+        var o = JSON.parse(argument);
+        const teamIDX = o.PK_TEAM_IDX;
+        const bar = o.BAR;
+        $('#bar_'+teamIDX).replaceWith(bar);
+    }
     function sae_ps_alertTeamInspectionStatus(argument) {
         var o = JSON.parse(argument);
         const teamIDX = o.FK_TEAM_IDX;

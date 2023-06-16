@@ -15,6 +15,15 @@ sub new{
 	bless($self, $className);
 	return $self;
 }
+sub _getTeams (){
+    my ($self, $eventIDX) = @_;
+    my $SQL    = "SELECT * FROM TB_TEAM WHERE FK_EVENT_IDX=?";
+    my $select = $dbi->prepare( $SQL );
+       $select->execute( $eventIDX );
+    my %HASH   = %{$select->fetchall_hashref('PK_TEAM_IDX')};
+    return (\%HASH);
+    }
+
 sub _setProfile(){
     my ($self, $txFirst, $txLast, $txEmail, $userIDX) = @_;
     my $SQL = "UPDATE TB_USER SET TX_FIRST_NAME=?, TX_LAST_NAME=?, TX_EMAIL=?, TX_LOGIN=? WHERE PK_USER_IDX=?";
@@ -120,7 +129,15 @@ sub _welcome(){
                 );
     sendmail(%mail) or die $Mail::Sendmail::error;
 }
-
+sub _getSubscriptionCode (){
+    my ($self, $length) = @_;
+    if (!$length){$length = 8}
+    my @chars = (1..9);
+    my $code;
+    $code .= $chars[rand @chars] for 1..$length;
+    # printf "code = %d\n\n", $code;
+    return($code);
+    }
 sub getTemporaryPassword(){
     my ($self) = shift;
     my ($length) = shift;

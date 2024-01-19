@@ -3,6 +3,172 @@
     var loading = '<center class="center-screen "><i class="fa fa-spinner fa-pulse fa-3x fa-fw"></i></br><span class="w3-xlarge sr-only">Generating...</span></center>';
 
 
+// 2024 ==============================================================================
+    function publish_changeNavButtonColor(o) {
+        $('.tablink').removeClass('w3-red');
+        $(o).addClass('w3-red');
+    }
+// 2024 DESIGN =======================================================================
+    function publish_activatePublicView(o, publishIDX){ // Keep 2024
+        var status = $(o).is(":checked");
+        var checked = 0;
+        var private = "PRIVATE";
+        if ($(o).is(':checked')) {checked = 1; private = "PUBLIC"} 
+        var jsYes = confirm("Click [ OK ] to confirm the ACTION to Make it this result "+private);
+        if (!jsYes){
+            if (status){
+                $(o).prop('checked', false);
+            } else {
+                $(o).prop('checked', true);
+            }
+            return;
+        }
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/publish.pl',
+            data: {'do':'sae_activatePublicView','act':'print','publishIDX':publishIDX,'checked':checked},
+            success: function(str){
+
+            }
+        });
+        }
+    function publish_deleteResults(o, publishIDX) {
+        var jsYes = confirm("Click [ OK ] to confrim this action to DELETE.");
+        if (!jsYes){return}
+        $(o).closest('tr').remove();
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/publish.pl',
+            data: {'do':'publish_deleteResults','act':'print','publishIDX':publishIDX},
+            success: function(str){
+                // $('#TABLE_'+classIDX).append(str);
+            }
+        });
+    }
+    function publish_GenerateDesignReport(o, classIDX) {
+        var eventIDX = $.cookie('LOCATION');
+        var userIDX = $.cookie('userIDX');
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/publish.pl',
+            data: {'do':'publish_GenerateDesignReport','act':'print','eventIDX':eventIDX,'classIDX':classIDX, 'userIDX':userIDX},
+            success: function(str){
+                $(o).closest('table').append(str);
+                // $('#TABLE_'+classIDX).append(str);
+            }
+        });
+        }
+    function publish_showDesign(o){
+        if (o!=undefined){
+            publish_changeNavButtonColor(o);
+        }
+        var eventIDX = $.cookie('LOCATION');
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/publish.pl',
+            data: {'do':'publish_showDesign','act':'print','eventIDX':eventIDX},
+            success: function(str){
+                $('#publish_content').html(str);
+            }
+        });
+        }   
+
+// 2024 PRESENTATIONS  ===============================================================
+    function publish_GeneratePresenationResults(o, classIDX) {
+        var eventIDX = $.cookie('LOCATION');
+        var userIDX = $.cookie('userIDX');
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/publish.pl',
+            data: {'do':'publish_GeneratePresenationResults','act':'print','eventIDX':eventIDX,'classIDX':classIDX, 'userIDX':userIDX},
+            success: function(str){
+                $(o).closest('table').append(str);
+                // $('#TABLE_'+classIDX).append(str);
+            }
+        });
+    }
+    function publish_showPresentation(o){
+        publish_changeNavButtonColor(o);
+        var eventIDX = $.cookie('LOCATION');
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/publish.pl',
+            data: {'do':'publish_showPresentation','act':'print','eventIDX':eventIDX},
+            success: function(str){
+                $('#publish_content').html(str);
+            }
+        });
+        }
+
+// 2024 MISSION ===============================================================
+    function publish_GenerateMissionResults(o, classIDX) {
+        var eventIDX = $.cookie('LOCATION');
+            var userIDX = $.cookie('userIDX');
+            $.ajax({
+                type: 'POST',
+                url: '../cgi-bin/publish.pl',
+                data: {'do':'publish_GenerateMissionResults','act':'print','eventIDX':eventIDX,'classIDX':classIDX, 'userIDX':userIDX},
+                success: function(str){
+                    $(o).closest('table').append(str);
+                    // $('#TABLE_'+classIDX).append(str);
+                }
+            });
+        }
+    function publish_showMission(o){
+        publish_changeNavButtonColor(o);
+        var eventIDX = $.cookie('LOCATION');
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/publish.pl',
+            data: {'do':'publish_showMission','act':'print','eventIDX':eventIDX},
+            success: function(str){
+                $('#publish_content').html(str);
+            }
+        });
+        }
+
+// 2024 OVERALL ===============================================================
+    function publish_GenerateOverallResults(o, classIDX) {
+        var eventIDX = $.cookie('LOCATION');
+            var userIDX = $.cookie('userIDX');
+            $.ajax({
+                type: 'POST',
+                url: '../cgi-bin/publish.pl',
+                data: {'do':'publish_GenerateOverallResults','act':'print','eventIDX':eventIDX,'classIDX':classIDX, 'userIDX':userIDX},
+                success: function(str){
+                    $(o).closest('table').append(str);
+                    // $('#TABLE_'+classIDX).append(str);
+                }
+            });
+        }
+    function publish_showOverall(o){
+        publish_changeNavButtonColor(o);
+        var eventIDX = $.cookie('LOCATION');
+        $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/publish.pl',
+            data: {'do':'publish_showOverall','act':'print','eventIDX':eventIDX},
+            success: function(str){
+                $('#publish_content').html(str);
+            }
+        });
+        }
+// 2024 SUPERLATIVE ===============================================================
+function publish_showSuperlative(o){
+    publish_changeNavButtonColor(o);
+    var eventIDX = $.cookie('LOCATION');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/publish.pl',
+        data: {'do':'publish_showSuperlative','act':'print','eventIDX':eventIDX},
+        success: function(str){
+            $('#publish_content').html(str);
+        }
+    });
+}
+// 2024 ======================================================================
+
+
 function sae_includeInFinalScore(obj, publishIDX){
     var checked = 0;
     if ($(obj).is(':checked')) {checked = 1} 

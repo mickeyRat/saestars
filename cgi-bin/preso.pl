@@ -25,6 +25,9 @@ use SAE::SCORE;
 use SAE::Common;
 use SAE::USER;
 use SAE::TEAM;
+use SAE::GRADE;
+use SAE::TABLE;
+use SAE::RUBRIC;
 
 my %CLASS = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
 
@@ -43,6 +46,336 @@ if ($act eq "print"){
     &{$do= $q->param("do")};
 }
 exit;
+# ==2024 ================================================================
+sub preso_saveLineItem (){
+    print $q->header();
+    my $paperIDX    = $q->param('paperIDX');
+    my $cardIDX     = $q->param('cardIDX');
+    my $teamIDX     = $q->param('teamIDX');
+    my $txType      = 'Presentation';
+    my %CONDITION   = ('PK_PAPER_IDX'=>$paperIDX);
+    my $json_dcondition  = encode_json \%CONDITION;
+    my $Table       = new SAE::TABLE();
+    my $Preso       = new SAE::PRESO();
+       $Table->_save('TB_PAPER', $q->param('jsonData'), $json_dcondition);
+    my $Grade = new SAE::GRADE();
+    my $score = $Grade->_getAssessmentScore_byCard($cardIDX, $txType);
+    my %STATS = %{$Preso->_getTeamPresoStatistics($teamIDX)};
+    $STATS{IN_SCORE}  = $score;
+    my $json = encode_json \%STATS;
+    return ($json);
+
+    }
+sub preso_deleteCard (){
+    print $q->header();
+    my $eventIDX = $q->param('eventIDX');
+    my $cardIDX  = $q->param('cardIDX');
+    my $teamIDX    = $q->param('teamIDX');
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my $str;
+    my $Preso = new SAE::PRESO();
+    $Preso->_deletePresoScoreCard($cardIDX);
+    $Preso->_deletePresoScoreCard_Paper($cardIDX);
+    my %STATS = %{$Preso->_getTeamPresoStatistics($teamIDX)};
+    my $json = encode_json \%STATS;
+    return ($json);
+    }
+sub preso_autosaveFeedback (){
+    print $q->header();
+    my $paperIDX    = $q->param('paperIDX');
+    my %CONDITION   = ('PK_PAPER_IDX'=>$paperIDX);
+    my $json_dcondition  = encode_json \%CONDITION;
+    my $Table       = new SAE::TABLE();
+       $Table->_save('TB_PAPER', $q->param('jsonData'), $json_dcondition);
+    return("Saved");
+    }
+sub preso_updatePresentationScore (){
+    print $q->header();
+    my $Preso       = new SAE::PRESO();
+    my $eventIDX    = $q->param('eventIDX');
+    my $cardIDX     = $q->param('cardIDX');
+    my $teamIDX     = $q->param('teamIDX');
+    my %CARD        = %{$Preso->_getPresoCardDetails($cardIDX)};
+    my $Team       = new SAE::TEAM();
+    my %TEAM       = %{$Team->_getTeamDetails($teamIDX)};
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my $str;
+    $str .= '<div class="w3-bar w3-white w3-margin-top">';
+    $str .=  sprintf '<button class="w3-bar-item w3-button w3-green w3-hover-pale-green w3-border w3-right w3-rightbar w3-border-green w3-margin-right" onclick="$(this).close();">Exit Evaluation</button>';
+    $str .=  sprintf '<button class="w3-bar-item w3-button w3-pale-red w3-hover-red w3-border w3-leftbar w3-border-red w3-margin-left" onclick="preso_deleteCard(this, %d, %d)">Delete</button>', $cardIDX, $teamIDX;
+    $str .= '</div>';
+
+    $str .= '<div class="w3-container" style="height: 600px; overflow-y: auto">';
+    $str .= sprintf '<h2>%03d - %s</h2>', $TEAM{IN_NUMBER}, $TEAM{TX_SCHOOL};
+    foreach $section (sort {$a <=> $b} keys %CARD) {
+        foreach $subSection (sort {$a <=> $b} keys %{$CARD{$section}}){
+            my $reportIDX       = $CARD{$section}{$subSection}{PK_REPORT_IDX};
+            my $paperIDX        = $CARD{$section}{$subSection}{PK_PAPER_IDX};
+            my $txSection       = $CARD{$section}{$subSection}{TX_SUB};
+            my $divName         = sprintf "LineItem_%d", $reportIDX;
+            my $lineScore       = $CARD{$section}{$subSection}{IN_VALUE};
+            my $feedback        = $CARD{$section}{$subSection}{CL_FEEDBACK};
+            my $inValueType     = $CARD{$section}{$subSection}{BO_BIN};
+            my $sectionColor    = 'w3-teal';
+            my %LABEL      = (1=>'Poor: Low',2=>'Poor: Medium',3=>'Poor: High',4=>'Average: Low',5=>'Average: Medium',6=>'Average: High',7=>'Excellent: Low',8=>'Excellent: Medium',9=>'Excellent: High',10=>'Perfect');
+            if ($lineScore==0){$sectionColor  = 'w3-light-grey'}
+            $str .= sprintf '<div ID="LINE_ITEM_%d" class="w3-row w3-padding w3-border w3-round w3-hover-pale-blue %s" >', $reportIDX, $sectionColor;
+            $str .= sprintf '<div class="w3-col m6 " style="cursor: pointer;" onclick="preso_expandDescription(this, \'%s\');">', $divName;
+            $str .= sprintf '<i id="arrow_'.$divName.'" class="fa fa-angle-double-right w3-margin-right w3-large" aria-hidden="true" ></i><b>%d.%d</b> - %s',$section, $subSection, $txSection ;
+            # $str .= sprintf '<div class="w3-col m12"><i id="arrow_'.$divName.'" class="fa fa-angle-double-right w3-margin-right w3-large" aria-hidden="true" ></i><b>%d.%d</b> - %s</div>',$section, $subSection, $txSection ;
+            $str .= '</div>';
+            $str .= '<div class="w3-col m6">';
+            if ($inValueType == 0) {
+                # $str .= sprintf '<div class="w3-col m2">&nbsp;</div>';
+                for ($i=10; $i>=1; $i--){
+                    my $bgColor = 'w3-pale-red';
+                    if ($i>3) {$bgColor = 'w3-yellow';}
+                    if ($i>6) {$bgColor = 'w3-pale-green';}
+                    if ($i>9) {$bgColor = 'w3-blue';}
+                    my $checked         = '';
+                    if ($i == $lineScore) {$checked = 'checked'}
+                    $str .= sprintf '<div class="w3-cell w3-mobile %s w3-border w3-right" style="white-space: nowrap; padding: 2px 4px;">', $bgColor;
+                    $str .= sprintf '<input %s class="w3-radio" data-key="%d" data-field="PK_REPORT_IDX" value="%d" type="radio" name="LINE_%d" onclick="preso_updateBreakingScoringThreshold(this, \'%s\', %d, %d, %d, %d)">', $checked, $paperIDX, $i, $paperIDX, $divName , $paperIDX, $cardIDX, $reportIDX, $teamIDX;
+                    $str .= sprintf '<span> %d </span><span class="w3-small w3-hide-large w3-hide-medium"> %s</span>', $i, $LABEL{$i};
+                    $str .= sprintf '</div>';
+                }
+                $str .= '</div>';
+                $str .= '</div>';
+                $str .= sprintf '<div class="w3-row w3-padding w3-border w3-round w3-white w3-hide %s">', $divName;
+                        $str .= '<div class="w3-col m12" >';
+                        $str .= sprintf '%s', $CARD{$section}{$subSection}{CL_DESCRIPTION};;
+                        $str .= '</div>';
+                        $str .= '<div class="w3-col m12 w3-margin-top" >Feedback';
+                        $str .= sprintf '<textarea class="w3-input w3-border w3-pale-yellow w3-round " onfocus="grade_autoAdjustHeight(this);" onblur="preso_autosaveFeedback(this, %d);"  style="min-width: 100%; height: 75px;">%s</textarea>', $paperIDX, $feedback;
+                        $str .= '</div>';
+                $str .= '</div>';
+            } else {
+                $str .= '<div class="w3-cell w3-mobile w3-right">';
+                # $str .= sprintf '<div class="w3-col m2">&nbsp;</div>';
+                    my $checked         = '';
+                    if ($lineScore == 10) {$checked = 'checked'}
+                    $str .= sprintf '<input type="checkbox" %s class="w3-check" data-key="IN_VALUE" value="10" onclick="preso_saveCheckAssessment(this, %d, %d, %d, %d )">', $checked, $paperIDX, $cardIDX, $reportIDX, $teamIDX;
+                    $str .= '<label class="w3-margin-left">Yes, Team presented <b>under</b> time limit.</label>';
+                    # $str .= '<label class="w3-margin-left">Yes, Team presented <b>under</b> time limit.</label>';
+                $str .= sprintf '</div>';
+                $str .= '</div>';
+                $str .= '</div>';
+                $str .= sprintf '<div class="w3-row w3-padding w3-border w3-round w3-white w3-hide %s">', $divName;
+                    $str .= '<div class="w3-col m12" >';
+                    $str .= sprintf '%s', $CARD{$section}{$subSection}{CL_DESCRIPTION};;
+                    $str .= '</div>';
+                    $str .= '<div class="w3-col m12 w3-margin-top" >Feedback';
+                    $str .= sprintf '<textarea class="w3-input w3-border w3-pale-yellow w3-round " onfocus="grade_autoAdjustHeight(this);" onblur="preso_autosaveFeedback(this, %d);" style="min-width: 100%; height: 75px;">%s</textarea>', $paperIDX, $feedback;
+                    $str .= '</div>';
+                $str .= '</div>';
+                }
+
+        }
+    }
+    $str .= '</div>';
+
+    return ($str);
+    }
+sub preso_saveNewEvaluation (){
+    print $q->header();
+    my $classIDX     = $q->param('classIDX');
+    my $userIDX     = $q->param('userIDX');
+    my $teamIDX     = $q->param('teamIDX');
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    # 1. Create Card and grab new cardIDX value from jsonCard
+    # 2. Get Rubric for Presentation and put in Hash, using cardIDX as the reference
+    # 3. Dereference jsonData into a HASH
+    # 4. Loop through Rubric and add new Record into TB_PAPER with evaluation values
+    # 5. get Score from the entry
+    # 6. create a score button to return and append to the space.
+    my $Table        = new SAE::TABLE();
+    my $Rubric       = new SAE::RUBRIC();
+    my $Grade        = new SAE::GRADE();
+    my $User         = new SAE::USER();
+    my $Preso       = new SAE::PRESO();
+    my %RUBRIC       = %{$Rubric->_getPresentationRubric($classIDX)};
+    my %DATA         = %{decode_json($q->param('jsonData'))};
+    my %FEED         = %{decode_json($q->param('jsonFeed'))};
+    my $newCardIDX   = $Table->_saveAsNew('TB_CARD', $q->param('jsonCard'));
+    my $str;
+    foreach $reportIDX (sort keys %RUBRIC) {
+        my $inValue    = 0;
+        my $txFeedback = '';
+        if (exists $DATA{$reportIDX}){$inValue = $DATA{$reportIDX}}
+        if (exists $FEED{$reportIDX}){$txFeedback = $FEED{$reportIDX}}
+        my %HASH = ('FK_CARD_IDX'=>$newCardIDX, 'FK_REPORT_IDX'=>$reportIDX, 'IN_VALUE'=>$inValue, 'CL_FEEDBACK'=>$txFeedback);
+        my $json = encode_json \%HASH;
+        $Table->_saveAsNew('TB_PAPER', $json);
+        # $str .= sprintf "cardIDX=%d; %d = %d [%s] \n", $newCardIDX, $reportIDX, $inValue, $txFeedback;
+    }
+    my $inScore = $Grade->_getAssessmentScore_byCard($newCardIDX, 'Presentation');
+    my $txInitials = $User->_getUserInitials($userIDX);
+    my $btn = &preso_evalTile($newCardIDX, $inScore, $txInitials, $teamIDX);
+    my %STATS = %{$Preso->_getTeamPresoStatistics($teamIDX)};
+    $STATS{TG_BUTTON}  = $btn;
+    # return ($str);
+    my $json = encode_json \%STATS;
+    return ($json);
+    }
+sub preso_openEvaluationForm (){
+    print $q->header();
+    my $eventIDX   = $q->param('eventIDX');
+    my $classIDX   = $q->param('classIDX');
+    my $teamIDX    = $q->param('teamIDX');
+    my $txType     = 'Presentation';
+    my $Team       = new SAE::TEAM();
+    my %TEAM       = %{$Team->_getTeamDetails($teamIDX)};
+    my $Report     = new SAE::GRADE();
+    my %RUBRIC     = %{$Report->_getReportRubric($txType, $classIDX)};
+    my $str;
+    my %LABEL      = (1=>'Poor: Low',2=>'Poor: Medium',3=>'Poor: High',4=>'Average: Low',5=>'Average: Medium',6=>'Average: High',7=>'Excellent: Low',8=>'Excellent: Medium',9=>'Excellent: High',10=>'Perfect');
+    $str .= '<div class="w3-container">';
+    
+    $str .= '<div class="w3-bar  w3-white w3-border-grey w3-margin-top">';
+    # $str .= '<button class="w3-bar-item w3-button " onclick="grade_instructions();">Instructions</button>';
+    $str .=  sprintf '<button class="w3-bar-item w3-button w3-pale-red w3-hover-red w3-border w3-leftbar w3-border-red w3-margin-left" onclick="$(this).close();">Cancel</button>', $cardIDX, 1, $txType;
+    $str .=  sprintf '<button class="w3-bar-item w3-button w3-pale-green w3-hover-green w3-border w3-right w3-rightbar w3-border-green w3-margin-right" onclick="preso_saveNewEvaluation(this, %d, %d);"><i class="fa fa-floppy-o" aria-hidden="true"></i> Save Evaluation</button>', $classIDX, $teamIDX;
+    $str .= '</div>';
+    $str .= '<div class="w3-container" style="height: 600px; overflow-y: auto">';
+    $str .= sprintf '<h2>%03d - %s</h2>', $TEAM{IN_NUMBER}, $TEAM{TX_SCHOOL};
+    foreach $section (sort {$a <=> $b} keys %RUBRIC) {
+        foreach $subSection (sort {$a <=> $b} keys %{$RUBRIC{$section}}){
+            my $reportIDX       = $RUBRIC{$section}{$subSection}{PK_REPORT_IDX};
+            my $txSection       = $RUBRIC{$section}{$subSection}{TX_SUB};
+            my $divName         = sprintf "LineItem_%d", $reportIDX;
+            my $inValueType     = $RUBRIC{$section}{$subSection}{BO_BIN};
+            my $sectionColor    = 'w3-light-grey';
+            $str .= sprintf '<div ID="LINE_ITEM_%d" class="w3-row w3-padding w3-border w3-round w3-hover-pale-blue %s" >', $reportIDX, $sectionColor;
+            $str .= sprintf '<div class="w3-col m6" style="cursor: pointer;" onclick="preso_expandDescription(this, \'%s\');">', $divName;
+            $str .= sprintf '<i id="arrow_'.$divName.'" class="fa fa-angle-double-right w3-margin-right w3-large" aria-hidden="true" ></i><b>%d.%d</b> - %s',$section, $subSection, $txSection ;
+            # $str .= sprintf '<div class="w3-col m7"><i id="arrow_'.$divName.'" class="fa fa-angle-double-right w3-margin-right w3-large" aria-hidden="true" ></i><b>%d.%d</b> - %s</div>',$section, $subSection, $txSection ;
+            $str .= '</div>';
+            $str .= '<div class="w3-col m6 ">';
+            if ($inValueType == 0) {
+                    for ($i=10; $i>=1; $i--){
+                        my $bgColor = 'w3-pale-red';
+                        if ($i>3) {$bgColor = 'w3-yellow';}
+                        if ($i>6) {$bgColor = 'w3-pale-green';}
+                        if ($i>9) {$bgColor = 'w3-blue';}
+                        $str .= sprintf '<div class="w3-cell w3-mobile %s w3-border w3-right" style="white-space: nowrap; padding: 2px 4px;">', $bgColor;
+                        $str .= sprintf '<input class="w3-radio" data-key="%d" data-field="PK_REPORT_IDX"  value="%d" type="radio" name="LINE_%d" onclick="preso_breakingScoringThreshold(this, \'%s\', %d)">', $reportIDX, $i, $reportIDX, $divName, $reportIDX;
+                        $str .= sprintf '<span> %d </span><span class="w3-small w3-hide-large w3-hide-medium"> %s</span>', $i, $LABEL{$i};
+                        $str .= sprintf '</div>';
+                    }
+                    $str .= '</div>';
+                $str .= '</div>';
+                    $str .= sprintf '<div class="w3-row w3-padding w3-border w3-round w3-white w3-hide %s">', $divName;
+                        $str .= '<div class="w3-col m12" >';
+                        $str .= sprintf '%s', $RUBRIC{$section}{$subSection}{CL_DESCRIPTION};;
+                        $str .= '</div>';
+                        $str .= '<div class="w3-col m12 w3-margin-top" >Feedback';
+                        $str .= sprintf '<textarea class="w3-input w3-border w3-pale-yellow w3-round " data-key="%d" data-field="CL_FEEDBACK" onfocus="grade_autoAdjustHeight(this, %d);" onblur="preso_collectFormData(this);" style="min-width: 100%; height: 75px;">%s</textarea>', $reportIDX, $reportIDX;
+                        $str .= '</div>';
+                    $str .= '</div>';
+
+                } else {
+                    $str .= '<div class="w3-cell w3-mobile w3-right">';
+                    $str .= sprintf '<input class="w3-check" data-key="%d" value="10" type="checkbox" onclick="preso_breakingScoringThreshold(this, \'%s\', %d)">',  $reportIDX, $divName, $reportIDX;
+                    $str .= '<label class="w3-margin-left">Yes, Team presented <b>under</b> time limit. </label>';
+                    $str .= sprintf '</div>';
+                    $str .= '</div>';
+                    $str .= '</div>';
+                    $str .= sprintf '<div class="w3-row w3-padding w3-border w3-round w3-white w3-hide %s">', $divName;
+                        $str .= '<div class="w3-col m12" >';
+                        $str .= sprintf '%s', $RUBRIC{$section}{$subSection}{CL_DESCRIPTION};;
+                        $str .= '</div>';
+                        $str .= '<div class="w3-col m12 w3-margin-top" >Feedback';
+                        $str .= sprintf '<textarea class="w3-input w3-border w3-pale-yellow w3-round " data-key="%d" data-field="CL_FEEDBACK" onfocus="grade_autoAdjustHeight(this);" onblur="preso_collectFormData(this);" style="min-width: 100%; height: 75px;">%s</textarea>', $reportIDX;
+                        $str .= '</div>';
+                    $str .= '</div>';
+                }
+            }
+    }
+    $str .= '</div>';
+    return ($str);
+    }
+sub preso_evalTile (){
+    my ($cardIDX, $inScore, $txInitials, $teamIDX) = @_;
+    my $str;
+    $str = sprintf '<button ID="BUTTON_CARD_%d" class="w3-button w3-round w3-margin-left w3-border w3-small w3-pale-green w3-hover-green" onclick="preso_updatePresentationScore(this, %d, %d);">', $cardIDX, $cardIDX, $teamIDX;
+    $str .= sprintf '<span class="w3-badge w3-green w3-border" >%s</span> <span ID="CARD_SCORE_%d">%2.2f</span>', $txInitials, $cardIDX, $inScore;
+    $str .= sprintf '</button>';
+    return ($str);
+    }
+sub preso_showListOfTeam (){
+    print $q->header();
+    my $eventIDX  = $q->param('eventIDX');
+    my $userIDX   = $q->param('userIDX');
+    my $sortBy    = $q->param('sortBy');
+    my $Team      = new SAE::TB_TEAM();
+    # my $Score     = new SAE::SCORE();
+    my $Preso     = new SAE::PRESO();
+    my %CLASS     = (1=>'Reg', 2=>'Adv', 3=>'Mic');
+    my %TEAMS     = %{$Team->getAllRecordBy_FkEventIdx($eventIDX)};
+    my %SCORE     = %{$Preso->_getBatchPresoScore($eventIDX)};
+    my $str;
+    # $str = '<div class="w3-container w3-white w3-margin-top" style="padding-top: 15px;">';
+    $str .= '<div class="w3-display-container" style="display: block; z-index: 7001;">';
+    $str .= '<div ID="banner_saveMessage" class="w3-display-topmiddle"></div>';
+    $str .= '</div>';
+    $str .= '<h3 style="padding-top: 25px;">Design & Technical Presentations</h3>';
+    $str .= '<div class="w3-row w3-padding w3-border w3-light-grey w3-hide-small w3-hide-medium">';
+    $str .= '<div class="w3-col m10 ">';
+        $str .= sprintf '<div class="w3-col m1">Team #</div>', $inNumber;
+        $str .= sprintf '<div class="w3-col m1">Class</div>', $CLASS{$classIDX};
+        $str .= sprintf '<div class="w3-col m3">School</div>', $txSchool;
+        $str .= sprintf '<div class="w3-col m7 w3-border-left">Evaluation Scores</div>';
+        $str .= '</div>';
+        $str .= '<div class="w3-col m2 w3-border-left w3-small">';
+        $str .= sprintf '<div class="w3-col m3">High</div>', 0;
+        $str .= sprintf '<div class="w3-col m3">Low</div>', 0;
+        $str .= sprintf '<div class="w3-col m3">Std. D.</div>', 0;
+        $str .= sprintf '<div class="w3-col m3">Mean</div>', 0;
+        $str .= '</div>';
+    $str .= '</div>';
+
+    foreach $teamIDX (sort {$TEAMS{$a}{IN_NUMBER} <=> $TEAMS{$b}{IN_NUMBER}} keys %TEAMS) {
+        my $inNumber  = $TEAMS{$teamIDX}{IN_NUMBER};
+        my $classIDX  = $TEAMS{$teamIDX}{FK_CLASS_IDX};
+        my $txSchool  = $TEAMS{$teamIDX}{TX_SCHOOL};
+        my $txCountry = $TEAMS{$teamIDX}{TX_COUNTRY};
+        $str .= '<div class="w3-row w3-padding w3-border w3-round">';
+            $str .= '<div class="w3-col m10">';
+            $str .= sprintf '<div class="w3-col s1">%03d</div>', $inNumber;
+            $str .= sprintf '<div class="w3-col s1">%s</div>', $CLASS{$classIDX};
+            $str .= sprintf '<div class="w3-col m2">%s</div>', $txSchool;
+            $str .= sprintf '<div ID="cardBin_%d" class="w3-col w3-row-padding m8 w3-round">', $teamIDX;
+            $str .= sprintf '<button class="w3-button w3-border w3-round w3-small w3-hover-green" onclick="preso_openEvaluationForm(this, %d, %d);">+</button>', $classIDX, $teamIDX ;
+            foreach $cardIDX (sort {$a <=> $b} keys %{$SCORE{$teamIDX}}) {
+                $str .= &preso_evalTile($cardIDX, $SCORE{$teamIDX}{$cardIDX}{IN_SCORE}, $SCORE{$teamIDX}{$cardIDX}{TX_INIT}, $teamIDX);
+            }
+            my %STAT = %{$Preso->_getTeamPresoStatistics($teamIDX)};
+            $str .= '</div>';
+            $str .= '</div>';
+            $str .= '<div class="w3-col m2 w3-small">';
+            $str .= '<hr class="w3-hide-large w3-hide-medium">';
+            $str .= sprintf '<div class="w3-col s3"><div class="w3-hide-large w3-hide-medium w3-small">High</div><span ID="MAX_STAT_%d">%2.2f</span></div>'  , $teamIDX, $STAT{IN_MAX};
+            $str .= sprintf '<div class="w3-col s3"><div class="w3-hide-large w3-hide-medium w3-small">Low</div><span ID="MIN_STAT_%d">%2.2f</span></div>'   , $teamIDX, $STAT{IN_MIN};
+            my $txtColor = '';
+            if ($STAT{IN_STD}>10) {
+                $txtColor = 'w3-text-red';
+                } elsif ($STAT{IN_STD}>5) {
+                    $txtColor = 'w3-text-orange';
+
+                    } else {
+                        $txtColor = 'w3-text-green';
+                    }
+            $str .= sprintf '<div class="w3-col s3"><div class="w3-hide-large w3-hide-medium w3-small">Std. D</div><span ID="STD_STAT_%d" class="%s">%2.2f</span></div>', $teamIDX, $txtColor, $STAT{IN_STD};
+            $str .= sprintf '<div class="w3-col s3"><div class="w3-hide-large w3-hide-medium w3-small">Mean</div><span ID="MEAN_STAT_%d"><b>%2.2f</b></span></div>'  , $teamIDX, $STAT{IN_MEAN};
+            $str .= '</div>';
+        $str .= '</div>';
+        
+    }
+
+    # $str .= &showListOfTeam_Preso_LEG();
+    return ($str);
+    }
+# ==2024 ================================================================
 sub __template(){
     print $q->header();
     my $str;
@@ -303,7 +636,7 @@ sub t_scorecard (){
 
     return ($str);
     }
-sub showListOfTeam_Preso(){
+sub showListOfTeam_Preso_LEG(){
     print $q->header();
     # my $dbi = new SAE::Db();
     my $str;

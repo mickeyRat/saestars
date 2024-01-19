@@ -31,6 +31,26 @@ sub new{
 }
 
 # 2023================================================================================
+sub _getUserInitialList(){
+    my %HASH;
+    my $SQL = "SELECT PK_USER_IDX, LEFT(TX_FIRST_NAME,1) AS TX_FIRST, LEFT(TX_LAST_NAME,1) AS TX_LAST FROM TB_USER";
+    my $select = $dbi->prepare($SQL);
+       $select->execute();
+    while (($userIDX, $txFirst, $txLast) = $select->fetchrow_array()) {
+        my $txInitials = sprintf '%s%s', uc($txFirst), uc($txLast);
+        $HASH{$userIDX} = $txInitials;
+    }
+    return (\%HASH);
+    }
+sub _getUserInitials {
+    my ($self, $userIDX) = @_;
+    my $SQL = "SELECT LEFT(TX_FIRST_NAME,1) AS TX_FIRST, LEFT(TX_LAST_NAME,1) AS TX_LAST FROM `TB_USER` WHERE PK_USER_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($userIDX);
+    my ($txFirst, $txLast) = $select->fetchrow_array();
+    my $txInitials = sprintf '%s%s', uc($txFirst), uc($txLast);
+    return ($txInitials);
+}
 sub _getClassPreference (){
     my ($self, $userIDX, $eventIDX) = @_;
     my $SQL = "SELECT * FROM TB_PREF WHERE (FK_USER_IDX=? AND FK_EVENT_IDX=?)";

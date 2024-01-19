@@ -66,9 +66,9 @@ sub sae_openImportTeam(){
      $str .= sprintf '<option value="%d" %s>%s</option>', $fkEventIDX, $selected, $EVENT{$fkEventIDX}{TX_EVENT_NAME};   
     }
     $str .= '</select>';
-    $str .= '<br><br><input ID="HEADER" class="w3-check" type="checkbox" checked> First Row is the title Row ';
+    # $str .= '<br><br><input ID="HEADER" class="w3-check" type="checkbox"> First Row is the title Row '; 
     $str .= '<div class="w3-center w3-light-grey w3-padding w3-border w3-round w3-margin-top">';
-    $str .= sprintf '<label class="w3-text-grey" >Excel Format: Team #, School, Team Name, Country</label><br>';
+    $str .= sprintf '<label class="w3-text-grey" >Copy from sae.org page and past into Excel.  Data should be single column</label><br>';
     # $str .= '<label for="file" class="w3-button w3-border w3-green w3-round" style="display: in-line;">';
     $str .= '<label for="file" class="w3-button w3-border w3-grey w3-round" style="display: inline-block; width: 100%; overflow-hidden">';
     $str .= 'Browse ...';

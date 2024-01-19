@@ -22,16 +22,16 @@ function sae_openImportTeam(){
 function sae_uploadTeamList(o){
     $('#uploadedDisplay').html(loading); 
     var eventIDX = $('#EVENT_IDX :selected').val();
-    var header = 0;
-    if ($('#HEADER').is(":checked")){
-        header = 1;
-    } 
+    // var header = 0;
+    // if ($('#HEADER').is(":checked")){
+    //     header = 1;
+    // } 
     console.log(header);
     var fd = new FormData();
     var files = $('#file')[0].files[0];
     fd.append('filename', files);
     fd.append('eventIDX', eventIDX);
-    fd.append('header', header);
+    // fd.append('header', header);
     // return;
     $.ajax({
         url: '../cgi-bin/upload_team.pl',

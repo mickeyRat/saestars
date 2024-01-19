@@ -8,9 +8,10 @@ $( d ).ready(function(){
     var fileID     = url.searchParams.get("fileID");
     var vid        = url.searchParams.get("vid");
     if (vid){
-        viewAllFinalResults();
+        // viewAllFinalResults();
     } else {
-        viewPostResults(fileID);
+        // viewPostResults(fileID);
+        post_viewResults(fileID);
     }
 });
 function viewAllFinalResults(){
@@ -25,7 +26,33 @@ function viewAllFinalResults(){
         }
     });
 }
-
+function post_viewResults(key) {
+    var eventIDX = $.cookie('LOCATION');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/post.pl',
+        data: {'do':'post_viewResults','act':'print','eventIDX':eventIDX, 'key':key},
+        success: function(str){
+            $('#main').html(str);
+        }
+    }).done(function(){
+        // console.log("Done");
+        
+        // sortTableByColumn(d.querySelector("table"),1);
+        document.querySelectorAll(".table th").forEach(headerCell => {
+            headerCell.addEventListener("click", () => {
+                // const tableElement = headerCell.parentElement.parentElement.parentElement;
+                const tableElement = headerCell.closest('.table');
+                const headerIndex = Array.prototype.indexOf.call(headerCell.parentElement.children, headerCell);
+                const currentIsAscending = headerCell.classList.contains("th-sort-asc");
+                const dType = $(headerCell).data('type');
+                // console.log($(headerCell).data('type'));
+        
+                sortTableByColumn(tableElement, headerIndex, dType, !currentIsAscending);
+            });
+        });
+    });
+}
 function viewPostResults(fileID){
     var location = $.cookie('LOCATION');
     // console.log(fileID);

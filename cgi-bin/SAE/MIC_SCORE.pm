@@ -3,6 +3,7 @@ package SAE::MIC_SCORE;
 use DBI;
 use SAE::SDB;
 use SAE::FLIGHT;
+use SAE::MICRO;
 use List::Util qw(sum);
 use Math::Trig;
 
@@ -117,63 +118,56 @@ sub _getScore(){
 sub _getTeamScores(){
 	my ($self, $teamIDX) = @_;
     # my $Score = new SAE::MIC_SCORE();
+    my $Micro = new SAE::MICRO();
+    my @LIST = ();
     my %LOGS = %{&getFlightLogs($teamIDX)};
     my %SCORE;
     foreach $flightIDX (sort {$LOGS{$a}{IN_ROUND} <=> $LOGS{$b}{IN_ROUND}} keys %LOGS){
         %SCORE = (%SCORE, %{&calculateFlightScore($flightIDX)});
     }
+    my %PEN = (0=>'-', 1=>'Yes');
     my $str;
-    $str .= '<table class="w3-table w3-bordered">';
+
+    $str .= '<table class="w3-table-all">';
     $str .= '<thead>';
     $str .= '<tr>';
-    $str .= '<th style="width: 50px;"><br>Att</th>';
-    $str .= '<th style="width: 100px;text-align: right;">N<sub>large</sub><br><span class="w3-small">Good</span></th>';
-    $str .= '<th style="width: 100px;text-align: right;">N<sub>large</sub><br><span class="w3-small">Damaged</span></th>';
-    $str .= '<th style="width: 100px;text-align: right;">N<sub>small</sub><br><span class="w3-small">Good</span></th>';
-    $str .= '<th style="width: 100px;text-align: right;">N<sub>small</sub><br><span class="w3-small">Damaged</span></th>';
-    $str .= '<th style="width: 100px;text-align: right;"><br><span class="w3-small">W<sub>payload</sub></span></th>';
-    $str .= '<th style="width: 100px;text-align: right;"><br>T<sub>flight</sub></th>';
-    $str .= '<th style="width: 100px;text-align: right;"><br><span class="w3-small">Bonus</span></th>';
-    $str .= '<th style="width: 100px;text-align: right;">Raw<br><span class="w3-small">Score</span></th>';
-    $str .= '<th style="width: 100px;text-align: right;">Minor<br><span class="w3-small">Penalty</span></th>';
-    $str .= '<th style="width: 100px;text-align: right;">Major<br><span class="w3-small">Penalty</span></th>';
-    $str .= '<th style="width: 100px;text-align: right;">Flight<br><span class="w3-small">Score</span></th>';
+    $str .= '<th style="width: 50px;   text-align: left";  >Att.</th>';
+    $str .= '<th style="width: 100px; text-align: right" >Empty<br>Weight</th>';
+    $str .= '<th style="width: 100px; text-align: right" >Winspan<br>(in)</th>';
+    $str .= '<th style="width: 100px; text-align: right" >Takeoff<br>Bonus</th>';
+    $str .= '<th style="width: 100px; text-align: right" >Payload<br>(lbs)</th>';
+    $str .= '<th style="width: 100px; text-align: right" >25%<br>Penalty</th>';
+    $str .= '<th style="width: 100px; text-align: right" >50%<br>Penalty</th>';
+    $str .= '<th style="width: 300px; text-align: right" >Flight<br>Score</th>';
     $str .= '</tr>';
     $str .= '</thead>';
-    my $maxWs = 0;
-    my $maxWeight = 0;
-    my %PEN = (0=>'-', 1=>'Yes');
-    my ($top3, $used) = &getTop3(\%SCORE);
-    my %USED = %$used;
+    $str .= '<tbody>';
     foreach $flightIDX (sort {$SCORE{$a}{IN_ROUND} <=> $SCORE{$b}{IN_ROUND}} keys %SCORE) {
-        if (exists $USED{$flightIDX}){
-                $str .= '<tr class="w3-pale-yellow">';
-            } else {
-                $str .= '<tr>';
-            }
-        
+        my $score = $Micro->_calc24_FLightScore($flightIDX);
+        push (@LIST, $score);
+        $str .= '<tr>';
         $str .= sprintf '<td>%d</td>', $SCORE{$flightIDX}{IN_ROUND};
-        $str .= sprintf '<td style="text-align: right;">%d</td>', $SCORE{$flightIDX}{IN_LARGE};
-        $str .= sprintf '<td style="text-align: right;">%d</td>', $SCORE{$flightIDX}{IN_LB_DAMAGE};
-        $str .= sprintf '<td style="text-align: right;">%d</td>', $SCORE{$flightIDX}{IN_SMALL};
-        $str .= sprintf '<td style="text-align: right;">%2.2f</td>', $SCORE{$flightIDX}{IN_SB_DAMAGE};
-        $str .= sprintf '<td style="text-align: right;">%2.2f</td>', $SCORE{$flightIDX}{IN_WEIGHT};
-        $str .= sprintf '<td style="text-align: right;">%2.2f</td>', $SCORE{$flightIDX}{IN_TOF};
-        $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_BONUS};
-        $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_RAW};
-        $str .= sprintf '<td style="text-align: right;">%s</td>', $SCORE{$flightIDX}{IN_MINOR};
-        $str .= sprintf '<td style="text-align: right;">%s</td>', $SCORE{$flightIDX}{IN_MAJOR};
-        # $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_FS};
-        if (exists $USED{$flightIDX}){
-                $str .= sprintf '<td class="w3-large" style="text-align: right;"><b>%2.4f</b></td>', $SCORE{$flightIDX}{IN_FS};
-            } else {
-                $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $SCORE{$flightIDX}{IN_FS};
-            }
+        $str .= sprintf '<td style="text-align: right;">%2.1f</td>', $LOGS{$flightIDX}{IN_EMPTY};
+        $str .= sprintf '<td style="text-align: right;">%2.1f</td>', $LOGS{$flightIDX}{IN_SPAN};
+        $str .= sprintf '<td style="text-align: right;">%2.1f</td>', $LOGS{$flightIDX}{IN_DISTANCE};
+        $str .= sprintf '<td style="text-align: right;">%2.1f</td>', $LOGS{$flightIDX}{IN_WEIGHT};
+        $str .= sprintf '<td style="text-align: right;">%s</td>', $PEN{$LOGS{$flightIDX}{IN_PEN_MINOR}};
+        $str .= sprintf '<td style="text-align: right;">%s</td>', $PEN{$LOGS{$flightIDX}{IN_PEN_LANDING}};
+        $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $score;
         $str .= '</tr>';
     }
+    my @SORTED = sort {$b <=> $a} @LIST;
+    $str .= '</tbody>';
     $str .= '<tr>';
-    $str .= '<td colspan="11" class="w3-large" style="text-align: right;">Top 3 Flight Score (FS<sub>1</sub> + FS<sub>2</sub> + FS<sub>3</sub>)</td>';
-    $str .= sprintf '<td class="w3-large" style="text-align: right;">%2.4f</td>', $top3;
+    $str .= '<td colspan="8" class="w3-large" style="text-align: right;">Final Score = Top 3 Flight Score (FS<sub>1</sub> + FS<sub>2</sub> + FS<sub>3</sub>)';
+    # $str .= sprintf '%2.4f + %2.4f + %2.4f', $SORTED[0], $SORTED[1], $SORTED[2];
+    my $top3 = $SORTED[0]+$SORTED[1]+$SORTED[2];
+    $str .= '</td>';
+    # $str .= sprintf '<td class="w3-large" style="text-align: right;">%2.4f</td>', $top3;
+    $str .= '</tr>';
+    $str .= '<tr>';
+    $str .= sprintf '<td colspan="7" class="w3-large" style="text-align: right;"></td>', ;
+    $str .= sprintf '<td class="w3-large" style="text-align: right;">%2.4f + %2.4f + %2.4f = <b class="w3-xlarge">%2.4f</b></td>', $SORTED[0], $SORTED[1], $SORTED[2], $top3;
     $str .= '</tr>';
     $str .= '</table>';
     $str .= '<br>'x3;

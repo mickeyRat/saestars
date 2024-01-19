@@ -14,6 +14,65 @@ sub new{
 # =====================================================================================================
 #  GETTERS
 # =====================================================================================================
+sub _getPresentationRubric {
+    my ($self, $classIDX) = @_;
+    my $SQL = "SELECT * FROM TB_REPORT WHERE TX_TYPE=? AND FK_CLASS_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute('Presentation', $classIDX);
+    my %HASH = %{$select->fetchall_hashref('PK_REPORT_IDX')};
+    return(\%HASH); 
+}
+sub _getLastSubSectionNumber() {
+    # my ($self, $txType, $inSection) = @_;
+    my ($self, $txType, $inSec, $classIDX) = @_;
+    my $SQL    = "SELECT MAX(IN_SUB) FROM TB_REPORT WHERE (TX_TYPE=? AND IN_SEC=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($txType, $inSec, $classIDX);
+
+    my $last = $select->fetchrow_array();
+    # my %DATA =  %{$select->fetchall_hashref('IN_SUB')};
+    return ($last+1);
+}
+sub _getSubSectionDetails() {
+    my ($self, $reportIDX) = @_;
+    my $SQL    = "SELECT * FROM TB_REPORT WHERE (PK_REPORT_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($reportIDX);
+    my %HASH = %{$select->fetchrow_hashref()}; 
+    return (\%HASH);
+}
+sub _getRubricWeight_ByType() {
+    my ($self, $txType, $inSec, $classIDX) = @_;
+    my $SQL    = "SELECT * FROM TB_REPORT WHERE (TX_TYPE=? AND IN_SEC=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($txType, $inSec, $classIDX);
+
+    my %DATA =  %{$select->fetchall_hashref('PK_REPORT_IDX')};
+    return (\%DATA);
+}
+sub _getRubricSectionListByType() {
+    my ($self, $txType, $classIDX) = @_;
+    my $SQL    = "SELECT DISTINCT TX_SEC, IN_SEC, IN_SEC_WEIGHT FROM TB_REPORT WHERE (TX_TYPE=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($txType, $classIDX);
+    my %DATA =  %{$select->fetchall_hashref('TX_SEC')};
+    return (\%DATA);
+}
+sub _getRubricBySection() {
+    my ($self, $txType, $classIDX) = @_;
+    my %DATA = %{&getRubricBySection($txType, $classIDX)};
+    return (\%DATA);
+    }
+
+sub getRubricBySection(){
+    my ($txType, $classIDX) = @_;
+    my $SQL    = "SELECT * FROM TB_REPORT WHERE (TX_TYPE=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($txType, $classIDX);
+    my %DATA =  %{$select->fetchall_hashref(['IN_SEC','IN_SUB','PK_REPORT_IDX'])};
+    return (\%DATA);
+    }
+# --- 2023
 sub _getSectionList(){
     my $self = shift;
     my $SQL = "SELECT * FROM TB_SECTION";

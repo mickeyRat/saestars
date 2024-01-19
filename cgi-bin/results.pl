@@ -17,7 +17,7 @@ $path =~ s/\/[^\/]+$//;
 
 my $act = $q->param("act");
 
-if ($act eq "print"){
+if ($act eq "print"){ 
     print &{$do= $q->param("do")};
 } else {
     &{$do= $q->param("do")};

@@ -3,7 +3,319 @@ var now = new Date();
 var time = now.getTime();
 
 
+// ============= 2024 ========================
+function selectAllCheckBox (o, className, cardIDX, txType) {
+    var inValue = 0;
+    if ($(o).is(':checked')){inValue = 10}
+    $('.'+className).each(function(){
+        $(this).prop('checked', o.checked);
+        var paperIDX = $(this).data('value');
+        var inSection = $(this).data('number');
+        var inSubSection = $(this).data('key');
+        grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType);
+        // console.log("cardIDX = " + cardIDX);
+        // console.log("txType = " + txType);
+         
+    });
+    grade_subimtUpdateAssessment(cardIDX, 1); //After each update the status of the card will be set back to Draft
+}
+function grade_subimtUpdateAssessment(cardIDX, inStatus) {
+    var ajxData         = {}; 
+    var data            = {};
+    data.IN_STATUS      = inStatus;
+    ajxData.do          = 'grade_subimtAssessment';
+    ajxData.act         = 'print';
+    ajxData.cardIDX     = cardIDX;
+    ajxData.txFirstName = $.cookie('TX_FIRST_NAME');
+    ajxData['jsonData'] = JSON.stringify(data);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            var data = JSON.parse(str);
+            $('.actionStatus_'+cardIDX).html(data.LABEL);
+            $('.bar_Assessment_'+cardIDX).removeClass('w3-white w3-yellow w3-pale-blue').addClass(data.COLOR);
+            $('#CARD_SCORE_'+cardIDX).html(data.SCORE.toFixed(2));
+            // $('.start_'+cardIDX).html(data.LABEL);
+            // $('.start_'+cardIDX).removeClass('w3-white w3-yellow w3-blue');
+            // $('.start_'+cardIDX).addClass(data.COLOR);
+        },
+    });}
+function grade_subimtAssessment(o, cardIDX, inStatus, txType) {
+    var ajxData         = {}; 
+    var data            = {};
+    data.IN_STATUS      = inStatus;
+    ajxData.do          = 'grade_subimtAssessment';
+    ajxData.act         = 'print';
+    ajxData.cardIDX     = cardIDX;
+    ajxData.txType      = txType;
+    ajxData.txFirstName = $.cookie('TX_FIRST_NAME');
+    ajxData['jsonData'] = JSON.stringify(data);
+    console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            var data = JSON.parse(str);
+            console.log(str);
+            // console.log(data.LABEL);
+            $(o).close();
+            $('.actionStatus_'+cardIDX).html(data.LABEL);
+            $('.bar_Assessment_'+cardIDX).removeClass('w3-white w3-yellow w3-pale-blue').addClass(data.COLOR);
+            $('#CARD_SCORE_'+cardIDX).html(parseFloat(data.SCORE).toFixed(1));
+            // $('.start_'+cardIDX);
+            // $('.start_'+cardIDX);
+        },
+    });}
+function grade_instructions(argument) {
+    var ajxData         = {}; 
+    ajxData.do          = 'grade_instructions';
+    ajxData.act         = 'print';
+    ajxData.txFirstName = $.cookie('TX_FIRST_NAME');;
+    $.modal2("Instructions", "70%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            $('#modal2_content').html(str);
+            // console.log(str);
+        }
+    });
+}
+function grade_viewMetrics(o, teamIDX, reportIDX, inSection, inSubSection, cardTypeIDX) {
+    $.modal2("Section "+inSection+"."+inSubSection+": Metric", "60%");
+    var userIDX          = $.cookie('PK_USER_IDX');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: {'do':'grade_viewMetrics','act':'print','reportIDX':reportIDX,'userIDX':userIDX,'teamIDX':teamIDX,'cardTypeIDX':cardTypeIDX},
+        success: function(str){
+            $('#modal2_content').html(str);
+        }
+    });
+}
+function grade_viewOtherFeedback(o, teamIDX, reportIDX, inSection, inSubSection, txSubSection) {
+    $.modal2("Section "+inSection+"."+inSubSection+": Feedback from other Judges", "60%");
+    var userIDX          = $.cookie('PK_USER_IDX');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: {'do':'grade_viewOtherFeedback','act':'print','teamIDX':teamIDX,'reportIDX':reportIDX,'userIDX':userIDX},
+        success: function(str){
+            $('#modal2_content').html(str);
+        }
+    });
+}
 
+function grade_loadTemplate (o, tempIDX, inSection, inSubSection) {
+    // console.log('#CL_FEEDBACK_'+inSection+'_'+inSubSection);
+    $('#CL_FEEDBACK_'+inSection+'_'+inSubSection).val($(o).data('value'));
+    $(o).close('sae-top2');
+    $('#CL_FEEDBACK_'+inSection+'_'+inSubSection).focus();
+    }
+function grade_openTemplate (o, inSection, inSubSection, txSubSection) {
+    // console.log('#CL_FEEDBACK_'+inSection+'_'+inSubSection);
+    var feedback         = $('#CL_FEEDBACK_'+inSection+'_'+inSubSection).val();
+    // console.log(feedback);
+    var data             = {};
+    var ajxData          = {}; 
+    var userIDX          = $.cookie('PK_USER_IDX');
+    data.CL_COMMENT      = feedback;
+    ajxData.do           = 'grade_openTemplate';
+    ajxData.act          = 'print';
+    ajxData.inSection    = inSection;
+    ajxData.inSubSection = inSubSection;
+    ajxData.txTitle      = txSubSection;
+    ajxData.userIDX      = userIDX;
+    ajxData['jsonData']  = JSON.stringify(data);
+    $.modal2("Save current feedback to template", "50%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $('#modal2_content').html(str);
+        }
+    });
+    }
+function grade_saveTemplate (o) {
+    var userIDX         = $.cookie('PK_USER_IDX');
+    var comments        = $('#templateComment').text();
+    var txTitle         = $('#templateTitle').val();
+    if (txTitle == '') {alert("Missing Template Title"); return}
+    var data            = {};
+    var ajxData         = {}; 
+    data.CL_COMMENT     = comments;
+    data.TX_TITLE       = txTitle;
+    data.FK_USER_IDX    = userIDX;
+    ajxData.do          = 'grade_saveTemplate';
+    ajxData.act         = 'print';
+    ajxData['jsonData'] = JSON.stringify(data);
+    // console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            $(o).close('sae-top2');
+            // setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
+        }
+    });
+    }
+function grade_deleteTemplate(o, tempIDX) {
+    var jsYes = confirm("Click [OK] toconfirm the action to delete this template from your library.");
+    if (!jsYes){return}
+    var ajxData         = {}; 
+    ajxData.do          = 'grade_deleteTemplate';
+    ajxData.act         = 'print';
+    ajxData.tempIDX     = tempIDX;
+    // console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            $('#template_'+tempIDX).remove();
+            // console.log(str);
+        }
+    });
+    }
+function grade_openTemplateList (o, inSection, inSubSection) {
+    // console.log('#CL_FEEDBACK_'+inSection+'_'+inSubSection);
+    var userIDX          = $.cookie('PK_USER_IDX');
+    var ajxData          = {}; 
+    ajxData.do           = 'grade_openTemplateList';
+    ajxData.act          = 'print';
+    ajxData.userIDX      = userIDX;
+    ajxData.inSection    = inSection;
+    ajxData.inSubSection = inSubSection;
+    $.modal2("Load from Template", "80%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $('#modal2_content').html(str);
+        }
+    });}
+function grade_previewTemplate (o, tempIDX) {
+    $('#templatePreview').html($(o).data('value')); 
+    }
+
+
+function grade_autoAdjustHeight(element) {
+    element.style.height = "1px";
+    element.style.height = (15+element.scrollHeight)+"px";
+    if (element.scrollHeight<130){element.style.height = "100px";}
+    }
+function grade_expandRubric(divName) {
+    $('.'+divName).toggleClass('w3-hide');
+    $('#arrow_'+divName).toggleClass('fa-angle-double-down');
+    
+    }
+function grade_breakingScoringThreshold(paperIDX, divName, inValue, inSection, inSubSection, cardIDX, txType){            
+    if (inValue<=5){
+        $('#arrow_'+divName).addClass('fa-angle-double-down');
+        if ($('.'+divName).hasClass('w3-hide')) {
+            $('.'+divName).toggleClass('w3-hide');
+        } 
+    }
+
+    grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType);
+    }
+function grade_showSaveBanner(message) {
+    var newID = Math.floor(Math.random()*100000);
+    var div = document.createElement("div");
+    div.setAttribute ('ID', newID);
+    div.setAttribute ('class', "w3-border w3-padding w3-round-large w3-green w3-margin-top");
+    div.style.display   = "in-line";
+    div.style.width   = "300px";
+    div.innerHTML     = message;
+    // console.log(div);
+    $('#banner_saveMessage').append(div);
+
+    setInterval(function () {$('#'+newID).hide(300)}, 1500);
+    setInterval(function () {$('#'+newID).remove()}, 2300);
+    }
+function grade_saveCheckAssessment(o, paperIDX, inSection, inSubSection, cardIDX, txType) {
+    var inValue = 0;
+    if ($(o).prop('checked')){inValue = 10} 
+    grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType);
+    }
+function grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType) {
+    var data            = {};
+    var ajxData         = {}; 
+    data.IN_VALUE       = inValue;
+    ajxData.do          = 'grade_saveSectionScore';
+    ajxData.act         = 'print';
+    ajxData.paperIDX    = paperIDX;
+    ajxData.cardIDX     = cardIDX;
+    ajxData.txType      = txType;
+    ajxData['jsonData'] = JSON.stringify(data);
+    // console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(score){
+            // console.log("Score = " + score);
+            $('#CARD_SCORE_'+cardIDX).html(parseFloat(score).toFixed(1));
+            grade_showSaveBanner("Saving ( "+inValue+" ) for SECTION "+inSection+"."+inSubSection+" ...");
+            if (inValue>0){
+                $('#SECTION_'+inSection+'_'+inSubSection).removeClass('w3-light-grey').addClass('w3-teal');
+            } else {
+                $('#SECTION_'+inSection+'_'+inSubSection).removeClass('w3-teal').addClass('w3-light-grey');
+            }
+            
+        },
+    });
+    grade_subimtUpdateAssessment(cardIDX, 1);
+    }
+function grade_autosaveComments(element, paperIDX, value) {
+    var data            = {};
+    var ajxData         = {}; 
+    data.CL_FEEDBACK    = value;
+    ajxData.do          = 'grade_saveSectionFeedback';
+    ajxData.act         = 'print';
+    ajxData.paperIDX    = paperIDX;
+    ajxData['jsonData'] = JSON.stringify(data);
+    // console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            element.style.height = "75px";
+            grade_showSaveBanner("Saving your latest feedback for this section ...");
+        }
+    });
+    }
+function grade_openAssessment (o, cardIDX, inNumber, txSchool, classIDX, teamIDX, inCardType, adminUserIDX) {
+    // body...
+    // console.log('adminUserIDX      = ' + adminUserIDX);
+    // console.log('logged In userIDX = ' + $.cookie('PK_USER_IDX'));
+    var eventIDX = $.cookie('LOCATION');
+    var userIDX = $.cookie('PK_USER_IDX');
+    var txFirstName = $.cookie('TX_FIRST_NAME');
+    // console.log(txFirstName );
+    $.modal('<b>Team #:' + pad(inNumber,3) + '</b> - '+txSchool, '97%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/grade.pl',
+        data: {'do':'grade_openAssessment','act':'print','eventIDX':eventIDX,'txFirstName':txFirstName,'cardIDX':cardIDX,'userIDX':userIDX,'classIDX':classIDX,'teamIDX':teamIDX,'inCardType':inCardType,'adminUserIDX':adminUserIDX},
+        success: function(str){
+            $('#modal_content').html(str);
+        }
+    });
+
+    }
 // ============= 2023 ========================
 function  grade_teamAttributes(o, teamIDX, ) {
     var data                    = {};
@@ -20,28 +332,11 @@ function  grade_teamAttributes(o, teamIDX, ) {
         data: ajxData,
         success: function(str){
             $('#template_'+tempIDX).remove();
-            console.log(str);
+            // console.log(str);
         }
     });
     }
-function grade_deleteTemplate(o, tempIDX) {
-    var jsYes = confirm("Click [OK] toconfirm the action to delete this template from your library.");
-    if (!jsYes){return}
-    var ajxData         = {}; 
-    ajxData.do          = 'grade_deleteTemplate';
-    ajxData.act         = 'print';
-    ajxData.tempIDX     = tempIDX;
-    console.log(ajxData);
-    $.ajax({
-        type: 'POST',
-        url: '../cgi-bin/grade.pl',
-        data: ajxData,
-        success: function(str){
-            $('#template_'+tempIDX).remove();
-            console.log(str);
-        }
-    });
-    }
+
 function grade_loadInstructions(argument) {
     var ajxData         = {}; 
     ajxData.do          = 'grade_loadInstructions';
@@ -58,73 +353,49 @@ function grade_loadInstructions(argument) {
     
     // body...
 }
-function grade_loadTemplate (o, tempIDX) {
-    $('#subsectionComment').val($(o).data('value'));
-    $(o).close('sae-top2');
-}
-function grade_previewTemplate (o, tempIDX) {
-    $('#templatePreview').html($(o).data('value'));
-}
-function grade_openTemplateList (o, userIDX) {
-    var ajxData         = {}; 
-    ajxData.do          = 'grade_openTemplateList';
-    ajxData.act         = 'print';
-    ajxData.userIDX     = userIDX;
-    $.modal2("Load from Template", "80%");
-    $.ajax({
-        type: 'POST',
-        url: '../cgi-bin/grade.pl',
-        data: ajxData,
-        success: function(str){
-            // console.log(str);
-            $('#modal2_content').html(str);
-        }
-    });
-}
-function grade_saveTemplate (o) {
-    var userIDX         = $.cookie('PK_USER_IDX');
-    var comments        = $('#templateComment').val();
-    var txTitle         = $('#templateTitle').val();
-    if (txTitle == '') {alert("Missing Template Title"); return}
-    var data            = {};
-    var ajxData         = {}; 
-    data.CL_COMMENT     = comments;
-    data.TX_TITLE       = txTitle;
-    data.FK_USER_IDX    = userIDX;
-    ajxData.do          = 'grade_saveTemplate';
-    ajxData.act         = 'print';
-    ajxData['jsonData'] = JSON.stringify(data);
-    console.log(ajxData);
-    $.ajax({
-        type: 'POST',
-        url: '../cgi-bin/grade.pl',
-        data: ajxData,
-        success: function(str){
-            $(o).close('sae-top2');
-            // setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
-        }
-    });
-    }
-function grade_openTemplate (o) {
-    var comments        = $('#subsectionComment').val();
-    var data            = {};
-    var ajxData         = {}; 
-    var userIDX         = $.cookie('PK_USER_IDX');
-    data.CL_COMMENT     = comments;
-    ajxData.do          = 'grade_openTemplate';
-    ajxData.act         = 'print';
-    ajxData['jsonData'] = JSON.stringify(data);
-    $.modal2("Save Commetns to Template", "50%");
-    $.ajax({
-        type: 'POST',
-        url: '../cgi-bin/grade.pl',
-        data: ajxData,
-        success: function(str){
-            // console.log(str);
-            $('#modal2_content').html(str);
-        }
-    });
-    }
+
+
+// function grade_openTemplateList (o, userIDX) {
+//     var ajxData         = {}; 
+//     ajxData.do          = 'grade_openTemplateList';
+//     ajxData.act         = 'print';
+//     ajxData.userIDX     = userIDX;
+//     $.modal2("Load from Template", "80%");
+//     $.ajax({
+//         type: 'POST',
+//         url: '../cgi-bin/grade.pl',
+//         data: ajxData,
+//         success: function(str){
+//             // console.log(str);
+//             $('#modal2_content').html(str);
+//         }
+//     });
+// }
+// function grade_saveTemplate (o) {
+//     var userIDX         = $.cookie('PK_USER_IDX');
+//     var comments        = $('#templateComment').val();
+//     var txTitle         = $('#templateTitle').val();
+//     if (txTitle == '') {alert("Missing Template Title"); return}
+//     var data            = {};
+//     var ajxData         = {}; 
+//     data.CL_COMMENT     = comments;
+//     data.TX_TITLE       = txTitle;
+//     data.FK_USER_IDX    = userIDX;
+//     ajxData.do          = 'grade_saveTemplate';
+//     ajxData.act         = 'print';
+//     ajxData['jsonData'] = JSON.stringify(data);
+//     console.log(ajxData);
+//     $.ajax({
+//         type: 'POST',
+//         url: '../cgi-bin/grade.pl',
+//         data: ajxData,
+//         success: function(str){
+//             $(o).close('sae-top2');
+//             // setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
+//         }
+//     });
+//     }
+
 function grade_updateComments (o, commentIDX) {
     var comments = $('#subsectionComment_update').val();
     var data    = {};
@@ -226,17 +497,17 @@ function grade_setAssessmentStatus (o, cardIDX, inStatus, classIDX, inCardType) 
         }
     });
     }
-function selectAllCheckBox (o, className, cardIDX) {
-    $('#savedMessage').show();
-    var value = 0;
-    if ($(o).is(':checked')){value = 100}
-    $('.'+className).each(function(){
-        $(this).prop('checked', o.checked);
-        var subIDX = $(this).data('value');
-        grade_updateFieldValue (cardIDX, subIDX, value);
-    });
-setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
-}
+// function selectAllCheckBox (o, className, cardIDX) {
+//     $('#savedMessage').show();
+//     var value = 0;
+//     if ($(o).is(':checked')){value = 100}
+//     $('.'+className).each(function(){
+//         $(this).prop('checked', o.checked);
+//         var subIDX = $(this).data('value');
+//         grade_updateFieldValue (cardIDX, subIDX, value);
+//     });
+// setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
+// }
 function grade_updateFieldValue(cardIDX, subIDX, inValue) {
     var ajxData = {};
     ajxData.do                   = 'grade_updateField';
@@ -252,7 +523,7 @@ function grade_updateFieldValue(cardIDX, subIDX, inValue) {
             
         }
     });
-}
+    }
 function grade_updateCheckField(o, cardIDX, subIDX) {
     $('#savedMessage').show();
     var value = 0;
@@ -311,8 +582,10 @@ function grade_openHelp (o, subIDX, inSection, cardIDX, teamIDX) {
         }
     });
     
-}
-function grade_openAssessment (o, cardIDX, inNumber, txSchool, classIDX, teamIDX, inCardType, adminUserIDX) {
+    }
+
+
+function grade_openAssessment_Leg (o, cardIDX, inNumber, txSchool, classIDX, teamIDX, inCardType, adminUserIDX) {
     // body...
     // console.log('adminUserIDX      = ' + adminUserIDX);
     // console.log('logged In userIDX = ' + $.cookie('PK_USER_IDX'));
@@ -324,14 +597,13 @@ function grade_openAssessment (o, cardIDX, inNumber, txSchool, classIDX, teamIDX
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/grade.pl',
-        data: {'do':'grade_openAssessment','act':'print','eventIDX':eventIDX,'txFirstName':txFirstName,'cardIDX':cardIDX,'userIDX':userIDX,'classIDX':classIDX,'teamIDX':teamIDX,'inCardType':inCardType,'adminUserIDX':adminUserIDX},
+        data: {'do':'grade_openAssessment_Leg','act':'print','eventIDX':eventIDX,'txFirstName':txFirstName,'cardIDX':cardIDX,'userIDX':userIDX,'classIDX':classIDX,'teamIDX':teamIDX,'inCardType':inCardType,'adminUserIDX':adminUserIDX},
         success: function(str){
             $('#modal_content').html(str);
         }
     });
 
 }
-
 
 
 // ============= 2023 ========================
@@ -549,7 +821,7 @@ function sae_submitReportAssessment(cardIDX, divName, teamIDX, inType, status, f
     });
     var jsonData = JSON.stringify( obj );
     var userIDX = $.cookie('userIDX');
-    console.log(jsonData);
+    // console.log(jsonData);
     // alert(jsonData);
     // return;
     $.ajax({
@@ -559,7 +831,7 @@ function sae_submitReportAssessment(cardIDX, divName, teamIDX, inType, status, f
         success: function(str){
             $('#'+divName).remove();
             alert("Submitted!\n\nThis Team Earned "+str+" points.");
-            console.log("from="+from);
+            // console.log("from="+from);
             $('#teamPaperScores_'+teamIDX).html(str);
             if (from == 1 || from ===''){
                 openReportItems('ManageReportAssessments', userIDX, inType);
@@ -593,7 +865,7 @@ function sae_updateReportAssessment(cardIDX, divName, teamIDX, inType, status, f
         success: function(str){
             $('#'+divName).remove();
             alert("Updated!\n\nThis Team Earned "+str+" points.");
-            console.log("from="+from);
+            // console.log("from="+from);
             $('#teamPaperScores_'+teamIDX).html(str);
             if (from == 1 || from ===''){
                 openReportItems('ManageReportAssessments', userIDX, inType);

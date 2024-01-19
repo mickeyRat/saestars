@@ -7,7 +7,10 @@ use JSON;
 use List::Util qw( sum min max reduce );
 # use Statistics::Basic qw(:all);
 # use Number::Format;
-
+use SAE::GRADE;
+use Statistics::Basic qw(:all);
+use Statistics::PointEstimation;
+use List::Util qw( min max );
 
 my $dbi = new SAE::Db();
 
@@ -27,6 +30,72 @@ sub _getAverage(){
 # =====================================================================================================
 #  GETTERS
 # =====================================================================================================
+sub _getTeamPresoStatistics(){
+    my ($self, $teamIDX) = @_;
+    my @SCORES = ();
+    # 1. get team's score card scores
+    # 2. add the scores to Array
+    # 3. perform statics and return Highm Low, Std, and Mean
+    my $Grade   = new SAE::GRADE();
+    my $SQL     = "SELECT PK_CARD_IDX FROM TB_CARD WHERE (FK_TEAM_IDX=? AND FK_CARDTYPE_IDX=?)";
+    my $select  = $dbi->prepare($SQL);
+       $select  -> execute($teamIDX, 5);
+    while (my ($cardIDX) = $select->fetchrow_array()) {
+        my $score = $Grade->_getAssessmentScore_byCard($cardIDX, 'Presentation');
+        push(@SCORES, $score);
+    }
+    my %STAT;
+    my $std = sprintf "%2.15f", stddev(@SCORES);
+    my $mean = sprintf "%2.15f", mean(@SCORES);
+    $STAT{IN_STD}  = $std;
+    $STAT{IN_MEAN}  = $mean;
+    $STAT{IN_MIN}  = min(@SCORES);
+    $STAT{IN_MAX}  = max(@SCORES);
+    return (\%STAT);
+}
+sub _getPresoCardDetails {
+    my ($self, $cardIDX) = @_;
+    my $SQL = "SELECT PAPER.PK_PAPER_IDX, REPORT.PK_REPORT_IDX, REPORT.IN_SEC, REPORT.TX_SEC, REPORT.IN_SUB, REPORT.TX_SUB, REPORT.CL_DESCRIPTION, REPORT.BO_BIN, PAPER.IN_VALUE, PAPER.CL_FEEDBACK FROM TB_PAPER AS PAPER 
+    JOIN TB_REPORT AS REPORT ON PAPER.FK_REPORT_IDX=REPORT.PK_REPORT_IDX
+    WHERE FK_CARD_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($cardIDX);
+    my %HASH = %{$select->fetchall_hashref(['IN_SEC','IN_SUB'])}; 
+    return (\%HASH);
+    }
+sub getInitials(){
+    my %HASH;
+    my $SQL = "SELECT PK_USER_IDX, LEFT(TX_FIRST_NAME,1) AS TX_FIRST, LEFT(TX_LAST_NAME,1) AS TX_LAST FROM TB_USER";
+    my $select = $dbi->prepare($SQL);
+       $select->execute();
+    while (($userIDX, $txFirst, $txLast) = $select->fetchrow_array()) {
+        my $txInitials = sprintf '%s%s', uc($txFirst), uc($txLast);
+        $HASH{$userIDX} = $txInitials;
+    }
+    return (\%HASH);
+    }
+sub _getBatchPresoScore() {
+    # 1. Get a list of all the cards by Team.  Hash = HASH{teamIDX}{cardIX} 
+    # 2. Loop through the Hash and get score for each card
+    # 3. return hash with Score  
+
+    my ($self, $eventIDX) = @_;
+    my $Grade    = new SAE::GRADE();
+    my %HASH;
+
+    my %INIT     = %{&getInitials()};
+    my $TEAM_SQL = "SELECT FK_TEAM_IDX, PK_CARD_IDX, FK_USER_IDX FROM TB_CARD AS CARD JOIN TB_TEAM AS TEAM ON TEAM.PK_TEAM_IDX=CARD.FK_TEAM_IDX WHERE (TEAM.FK_EVENT_IDX=? AND CARD.FK_CARDTYPE_IDX=?);";
+    my $select   = $dbi->prepare( $TEAM_SQL );
+       $select->execute($eventIDX, 5);
+    while (my ($teamIDX, $cardIDX, $userIDX) = $select->fetchrow_array())  {
+        my $score = 0;
+           $score = $Grade->_getAssessmentScore_byCard($cardIDX,'Presentation'); 
+        $HASH{$teamIDX}{$cardIDX}{IN_SCORE}    = $score;
+        $HASH{$teamIDX}{$cardIDX}{TX_INIT}     = $INIT{$userIDX};
+        $HASH{$teamIDX}{$cardIDX}{FK_USER_IDX} = $userIDX;
+    }
+    return (\%HASH);
+    }
 sub _getCardBinary (){
     my ($self, $cardIDX) = @_;
     my $SQL = "SELECT C.*, P.* FROM TB_CARD AS C JOIN TB_PAPER AS P ON C.PK_CARD_IDX=P.FK_CARD_IDX WHERE (P.FK_SUBSECTION_IDX in (?,?,?) AND PK_CARD_IDX=?)";
@@ -41,7 +110,7 @@ sub _getPresoScoreByTeam(){
     my $cardTypeIDX = shift;
     my $score = &_calculatePresoScoreByTeam($teamIDX, $cardTypeIDX);
     return ($score);
-}
+    }
 sub _calculatePresoScoreByTeam(){
     my $teamIDX = shift;
     my $cardTypeIDX = shift;
@@ -59,7 +128,7 @@ sub _calculatePresoScoreByTeam(){
     }
     my $averageScore = &_getAverage(@SCORES);
     return ($averageScore);
-}
+    }
 sub _getOverallPresoResults(){
     my $self=shift;
     my $location = shift;
@@ -74,7 +143,7 @@ sub _getOverallPresoResults(){
         # print "\$teamIDX = $teamIDX, \$score=$TEAMS{$teamIDX}{IN_OVERALL} \n";
     }
     return(\%TEAMS) ;
-}
+    }
 
 
 

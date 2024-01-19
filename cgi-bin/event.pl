@@ -44,7 +44,7 @@ sub __template(){
 
     return ($str);
 }
-
+ 
 sub updateEventDetails(){
     print $q->header();
     my %DATA;

@@ -54,52 +54,95 @@ my $inYear = $Team->_getEventYear($eventIDX);
     close($file_handle);                        
     close(OUTFILE); 
 
-    print $newDirectory."<br>";
+    # print $newDirectory."<br>";
 
-my %COUNTRY = %{$Team->_getListOfCountries()};
-
-    my $filename = $newPath;
-    print $newPath."<br>";
-    my $str;
     my $parser = Spreadsheet::ParseXLSX->new();
-    my $workbook = $parser->parse("$filename");
+    my $workbook = $parser->parse("$newPath");
     if ( !defined $workbook ) {
         die $parser->error(), "<br>";
     }
     my $worksheet = $workbook->worksheet(0);
     my ( $row_min, $row_max ) = $worksheet->row_range();
-    # print "\$row_max = $row_max<br>";
-    my %DATA;
-    for ($row=$startRow; $row<=$row_max; $row++){
-        my $class = 1;
-        my $inNumber  = $worksheet->get_cell( $row, 0)->value();
-        my $txSchool  = $worksheet->get_cell($row,1)->value();
-        my $txName    = $worksheet->get_cell($row,2)->value();
-        my $txCountry = $worksheet->get_cell($row,3)->value();
-        my $countryIDX = $COUNTRY{$txCountry}{PK_COUNTRY_IDX};
+    print "\$row_min = $row_min\n";
+    print "\$row_max = $row_max\n";
+
+    my %COUNTRY = %{$Team->_getListOfCountries()};
+
+    for ($i=$row_min; $i<=$row_max; $i += 4){
+        my $inClass     = 1;
+        my $inNumber    = $worksheet->get_cell( $i, 0)->value();
+        my $txName      = $worksheet->get_cell( $i+1, 0)->value();
+        my $txSchool    = $worksheet->get_cell( $i+2, 0)->value();
+        my $txCountry   = $worksheet->get_cell( $i+3, 0)->value();
+        my $countryIDX  = $COUNTRY{$txCountry}{PK_COUNTRY_IDX};
+        my $txCode      = $Auth->_getSubscriptionCode(6);
         if ($inNumber > 300) {
-            $class = 3;
+            $inClass = 3;
         } elsif ($inNumber > 200) {
-            $class = 2;
+            $inClass = 2;
         } else {
-            $class = 1;
+            $inClass = 1;
         }
-        
         if (!$COUNTRY{$txCountry}){
             $countryIDX = $Team->_addCountry($txCountry);
         } 
         $DATA{$inNumber}{IN_NUMBER} = $inNumber;
         $DATA{$inNumber}{TX_SCHOOL} = $txSchool;
         $DATA{$inNumber}{TX_NAME} = $txName;
-        $DATA{$inNumber}{FK_CLASS_IDX} = $class;
+        $DATA{$inNumber}{FK_CLASS_IDX} = $inClass;
         $DATA{$inNumber}{FK_COUNTRY_IDX} = $countryIDX;
         $DATA{$inNumber}{TX_COUNTRY} = $txCountry;
         $DATA{$inNumber}{FK_EVENT_IDX} = $eventIDX;
-        $DATA{$inNumber}{TX_CODE} = $Auth->_getSubscriptionCode(6);
+        $DATA{$inNumber}{TX_CODE} = $txCode;
+        printf "%03d %03d %-50s %-20s %-20s %-02d, %-8s %5d\n", $i, $inNumber, $txName , $txSchool , $txCountry, $countryIDX, $txCode, $eventIDX ;
     }
     foreach $inNumber (keys %DATA) {
         my $teamIDX = $Team->_addNewTeam(\%{$DATA{$inNumber}});
     }
+
+
+    # my $filename = $newPath;
+    # print $newPath."<br>";
+    # my $str;
+    # my $parser = Spreadsheet::ParseXLSX->new();
+    # my $workbook = $parser->parse("$filename");
+    # if ( !defined $workbook ) {
+    #     die $parser->error(), "<br>";
+    # }
+    # my $worksheet = $workbook->worksheet(0);
+    # my ( $row_min, $row_max ) = $worksheet->row_range();
+    # # print "\$row_max = $row_max<br>";
+    # my %DATA;
+    # for ($row=$startRow; $row<=$row_max; $row++){
+    #     my $class = 1;
+    #     my $inNumber  = $worksheet->get_cell( $row, 0)->value();
+    #     my $txSchool  = $worksheet->get_cell($row,1)->value();
+    #     my $txName    = $worksheet->get_cell($row,2)->value();
+    #     my $txCountry = $worksheet->get_cell($row,3)->value();
+    #     my $countryIDX = $COUNTRY{$txCountry}{PK_COUNTRY_IDX};
+    #     if ($inNumber > 300) {
+    #         $class = 3;
+    #     } elsif ($inNumber > 200) {
+    #         $class = 2;
+    #     } else {
+    #         $class = 1;
+    #     }
+        
+    #     if (!$COUNTRY{$txCountry}){
+    #         $countryIDX = $Team->_addCountry($txCountry);
+    #     } 
+    #     $DATA{$inNumber}{IN_NUMBER} = $inNumber;
+    #     $DATA{$inNumber}{TX_SCHOOL} = $txSchool;
+    #     $DATA{$inNumber}{TX_NAME} = $txName;
+    #     $DATA{$inNumber}{FK_CLASS_IDX} = $class;
+    #     $DATA{$inNumber}{FK_COUNTRY_IDX} = $countryIDX;
+    #     $DATA{$inNumber}{TX_COUNTRY} = $txCountry;
+    #     $DATA{$inNumber}{FK_EVENT_IDX} = $eventIDX;
+    #     $DATA{$inNumber}{TX_CODE} = $Auth->_getSubscriptionCode(6);
+    # }
+    # foreach $inNumber (keys %DATA) {
+    #     my $teamIDX = $Team->_addNewTeam(\%{$DATA{$inNumber}});
+    # }
     
 
 print $str;

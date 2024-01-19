@@ -126,6 +126,7 @@ function mainMenuItemClick(menuItem, obj){
             break;
         case 12: // Publish 
             showPublishPage();
+            // publish_showDesign();
             break;
         case 13: // Manager Users
             sae_openManageUsers();
@@ -351,9 +352,11 @@ function showPublishPage(){
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/publish.pl',
-        data: {'do':'showPublishPage','act':'print','location':location,'userIDX':userIDX},
+        data: {'do':'publish_Home','act':'print','location':location,'userIDX':userIDX},
+        // data: {'do':'showPublishPage','act':'print','location':location,'userIDX':userIDX},
         success: function(str){
             $('#mainPageContent').html(str);
+            publish_showDesign();
         }
     });
 }

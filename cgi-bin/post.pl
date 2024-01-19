@@ -16,6 +16,7 @@ use SAE::REGULAR;
 use SAE::ADVANCED;
 use SAE::PUBLISH;
 use SAE::RUBRIC;
+use SAE::RESULTS;
 # use SAE::HOME;
 use List::Util qw(sum first) ;
 my %PLACE = (3=>'3rd', 2=>'2nd', 1=>'1st');
@@ -35,6 +36,16 @@ if ($act eq "print"){
     &{$do= $q->param("do")};
 }
 exit;
+# ====================== 2024 ==================================================
+sub post_viewResults (){
+    print $q->header();
+    my $key      = $q->param('key');
+    my $str;
+    # my $str      = $key.'<br>';
+    my $Results = new SAE::RESULTS();
+    $str .= $Results->_displayResults($key);
+    return ($str);
+    }
 # ====================== 2022 ==================================================
 sub _finalDesign(){
     my ($eventIDX, $classIDX, $publishIDX) = @_;
@@ -726,7 +737,7 @@ sub viewDesignReport(){ # Name of the method is derived from the label of the se
     $str .= '<thead>';
     $str .= '<tr class="w3-light-grey">';
     $str .= '<th class="w3-center-align" style="width: 5%;" data-type="string" >Standings</th>';
-    $str .= '<th class="w3-left-align" data-type="int" >University (Team)</th>';
+    $str .= '<th class="w3-left-align"  data-type="int" >University (Team)</th>';
     $str .= '<th class="w3-right-align" data-type="string" style="width: 15%;">Country</th>';
     $str .= '<th class="w3-right-align" data-type="string" style="width: 10%;">Late Paper<br>Deductions</th>';
     $str .= '<th class="w3-right-align" data-type="float" style="width: 10%;">Design Score</th>';

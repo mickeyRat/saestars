@@ -37,6 +37,29 @@ sub _average(){
         return (sum(@_)/@_);
     }
 }
+# ---------------------------- 2024 --------------------------------------------
+sub _calc24_FLightScore (){
+    my ($self, $flightIDX) = @_;
+    my $str;
+    my $SQL = "SELECT IN_STATUS, IN_EMPTY, IN_SPAN, IN_DISTANCE, IN_WEIGHT, IN_PEN_MINOR, IN_PEN_LANDING FROM TB_FLIGHT WHERE PK_FLIGHT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($flightIDX);
+    my $score = 0;
+    while (($inStatus, $inEmpty, $inSpan, $inBonus, $inPayload, $inPen25, $inPen50) = $select->fetchrow_array()) {
+        if ($inStatus == 1){
+            my $inSpan_ft = $inSpan/12;
+            my $Mass  = 11/(($inEmpty-1)**4 + 8.9);
+            my $Zone  = $inBonus - (($inSpan_ft)**1.5);
+               $score = 3 * $inPayload * $Mass + $Zone;
+            if ($inPen25){$score = $score * 0.75}
+            if ($inPen50){$score = $score * 0.5}
+        }
+    }
+    return ($score);
+    }
+
+
+
 # ---------------------------- 2022 --------------------------------------------
 sub _calcTeamScore(){
     my ($self, $teamIDX) = @_;

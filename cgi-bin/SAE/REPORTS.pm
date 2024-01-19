@@ -270,8 +270,10 @@ sub _getPaperSection (){
     }
 sub _getAssignedPapers (){
     my ($self, $eventIDX, $userIDX, $cardType) = @_;
-    my $SQL = "SELECT CARD.*, TEAM.FK_CLASS_IDX, TEAM.TX_SCHOOL, TEAM.IN_NUMBER, TEAM.PK_TEAM_IDX FROM TB_CARD AS CARD 
-        JOIN TB_TEAM AS TEAM ON CARD.FK_TEAM_IDX=TEAM.PK_TEAM_IDX WHERE (TEAM.FK_EVENT_IDX=? AND CARD.FK_USER_IDX=? AND CARD.FK_CARDTYPE_IDX=?)";
+    my $SQL = "SELECT TYPE.TX_TYPE, CARD.*, TEAM.FK_CLASS_IDX, TEAM.TX_SCHOOL, TEAM.IN_NUMBER, TEAM.PK_TEAM_IDX FROM TB_CARD AS CARD 
+            JOIN TB_CARDTYPE AS TYPE ON CARD.FK_CARDTYPE_IDX = TYPE.PK_CARDTYPE_IDX
+            JOIN TB_TEAM AS TEAM ON CARD.FK_TEAM_IDX=TEAM.PK_TEAM_IDX 
+        WHERE (TEAM.FK_EVENT_IDX=? AND CARD.FK_USER_IDX=? AND CARD.FK_CARDTYPE_IDX=?)";
     my $select = $dbi->prepare( $SQL );
        $select->execute($eventIDX, $userIDX, $cardType);
     my %HASH = %{$select->fetchall_hashref('PK_CARD_IDX')};

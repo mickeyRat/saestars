@@ -1,6 +1,245 @@
     var d=document;
     var sid = $.cookie('SID');
     var loading = '<div class="w3-padding" style="margin: auto;"><img src="../../images/loader.gif"> Loading...</div>';
+    var evalCardData = {}; // Created an Object to Collect New Evaluation Form Data before saving to Database.
+    var evalFormData = {}; // Created an Object to Collect New Evaluation Form Data before saving to Database.
+    var evalFeedback = {}; // Created an Object to Collect New Evaluation Form Data before saving to Database.
+
+// ================ 2024 ==================================
+function preso_showSaveBanner(message) {
+    var newID = Math.floor(Math.random()*100000);
+    var div = document.createElement("div");
+    div.setAttribute ('ID', newID);
+    div.setAttribute ('class', "w3-border w3-padding w3-round-large w3-green w3-margin-top");
+    div.style.display   = "in-line";
+    div.style.width   = "300px";
+    div.innerHTML     = message;
+    // console.log(div);
+    $('#banner_saveMessage').append(div);
+
+    setInterval(function () {$('#'+newID).hide(300)}, 500);
+    setInterval(function () {$('#'+newID).remove()}, 750);
+    }
+function preso_deleteCard(o, cardIDX, teamIDX) {
+    var jsYes = confirm("Click [ OK ] to confirm a DELETE request.");
+    if (!jsYes){return}
+    $(o).close();
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/preso.pl',
+        data: {'do':'preso_deleteCard','act':'print','cardIDX':cardIDX,'teamIDX':teamIDX},
+        success: function(str){
+            var data = JSON.parse(str);
+            // $('#A_CARDIDX_'+cardIDX).remove();
+            $('#BUTTON_CARD_'+cardIDX).fadeOut(100);
+            $('#MAX_STAT_'+teamIDX).html(parseFloat(data.IN_MAX).toFixed(2));
+            $('#MIN_STAT_'+teamIDX).html(parseFloat(data.IN_MIN).toFixed(2));
+            $('#STD_STAT_'+teamIDX).html(parseFloat(data.IN_STD).toFixed(2));
+            $('#MEAN_STAT_'+teamIDX).html(parseFloat(data.IN_MEAN).toFixed(2));
+
+        }
+    });
+    $(o).close();
+    }
+function preso_updatePresentationScore(o, cardIDX, teamIDX) {
+    $.modal('Update: Presentation Evaluation Form', '97%');
+    var data            = {};
+    var ajxData         = {}; 
+    var userIDX         = $.cookie('PK_USER_IDX');
+    ajxData.do          = 'preso_updatePresentationScore';
+    ajxData.act         = 'print';
+    ajxData.cardIDX     = cardIDX;
+    ajxData.teamIDX     = teamIDX;
+    ajxData['jsonCard'] = JSON.stringify(ajxData);
+    // console.log(ajxData);
+    // ajxData.userIDX     = userIDX;
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/preso.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+        }
+    });
+    }
+function preso_saveNewEvaluation(o, classIDX, teamIDX) {
+    var data            = {};
+    var ajxData         = {}; 
+    var userIDX         = $.cookie('PK_USER_IDX');
+    ajxData.do          = 'preso_saveNewEvaluation';
+    ajxData.act         = 'print';
+    ajxData.classIDX    = classIDX;
+    ajxData.userIDX     = userIDX;
+    ajxData.teamIDX     = teamIDX;
+    ajxData['jsonCard'] = JSON.stringify(evalCardData);
+    ajxData['jsonData'] = JSON.stringify(evalFormData);
+    ajxData['jsonFeed'] = JSON.stringify(evalFeedback);
+    console.log(ajxData);
+    // return;
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/preso.pl',
+        data: ajxData,
+        success: function(str){
+            var data = JSON.parse(str);
+            console.log(str);
+            $('#cardBin_'+teamIDX).append(data.TG_BUTTON);
+            $('#MAX_STAT_'+teamIDX).html(parseFloat(data.IN_MAX).toFixed(2));
+            $('#MIN_STAT_'+teamIDX).html(parseFloat(data.IN_MIN).toFixed(2));
+            $('#STD_STAT_'+teamIDX).html(parseFloat(data.IN_STD).toFixed(2));
+            $('#MEAN_STAT_'+teamIDX).html(parseFloat(data.IN_MEAN).toFixed(2));
+            $(o).close();
+        }
+    });
+    }
+function preso_collectFormData(o, reportIDX){
+    if ($(o).is(':checkbox')) {
+        evalFormData[$(o).data('key')] = 0;
+        if ($(o).prop('checked')){
+            evalFormData[$(o).data('key')] = 10;
+            changeLineItemColor(reportIDX, 'w3-teal');
+        } else {
+            changeLineItemColor(reportIDX, '');
+        }
+    } else {
+        if ($(o).data('field') == 'CL_FEEDBACK') {
+            evalFeedback[$(o).data('key')] = $(o).val();
+        } else {
+            evalFormData[$(o).data('key')] = $(o).val();
+            changeLineItemColor(reportIDX, 'w3-teal');
+        }    
+    }
+    console.log(JSON.stringify(evalFormData)) ;
+    // console.log(JSON.stringify(evalFeedback)) ;
+    }
+function changeLineItemColor(reportIDX, color) {
+    var defaultColor = 'w3-light-grey';
+    if (color=='w3-teal'){
+        $('#LINE_ITEM_'+reportIDX).removeClass(defaultColor).addClass(color);
+    } else {
+        $('#LINE_ITEM_'+reportIDX).removeClass(color).addClass(defaultColor);
+    }
+}
+function preso_updateBreakingScoringThreshold(o, divName, paperIDX, cardIDX, reportIDX, teamIDX) {
+    var inValue = $(o).val();
+    // console.log("paperIDX = " + paperIDX);   
+    // console.log("inValue = " + inValue);   
+    // console.log("cardIDX = " + cardIDX);   
+    // console.log("reportIDX = " + reportIDX);   
+    if (inValue<=5){
+        $('#arrow_'+divName).addClass('fa-angle-double-down');
+        if ($('.'+divName).hasClass('w3-hide')) {
+            $('.'+divName).toggleClass('w3-hide');
+        } 
+    }
+    preso_saveLineItem(paperIDX, inValue, cardIDX, reportIDX, teamIDX);
+    // preso_collectFormData(o);
+    // grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType);
+    // }
+    }
+function preso_autosaveFeedback(o, paperIDX) {
+    var inValue = $(o).val();
+    console.log("paperIDX = " + paperIDX);  
+    console.log("inValue = " + inValue);  
+    var data            = {};
+    var ajxData         = {}; 
+    data.CL_FEEDBACK    = inValue;
+    ajxData.do          = 'preso_autosaveFeedback';
+    ajxData.act         = 'print';
+    ajxData.paperIDX    = paperIDX;
+    ajxData['jsonData'] = JSON.stringify(data);
+    // console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/preso.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            o.style.height = "75px";
+            preso_showSaveBanner("Saving your latest feedback...");
+        }
+    });
+    // body...
+    }
+function preso_saveCheckAssessment(o, paperIDX, cardIDX, reportIDX, teamIDX) {
+    var inValue = 0;
+    if ($(o).prop('checked')){inValue = 10} 
+    preso_saveLineItem(paperIDX, inValue, cardIDX, reportIDX, teamIDX);
+    }
+function preso_saveLineItem(paperIDX, inValue, cardIDX, reportIDX, teamIDX) {
+    var data            = {};
+    var ajxData         = {}; 
+    data.IN_VALUE       = inValue;
+    ajxData.do          = 'preso_saveLineItem';
+    ajxData.act         = 'print';
+    ajxData.paperIDX    = paperIDX;
+    ajxData.cardIDX     = cardIDX;
+    ajxData.teamIDX     = teamIDX;
+    // ajxData.txType      = txType;
+    ajxData['jsonData'] = JSON.stringify(data);
+    console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/preso.pl',
+        data: ajxData,
+        success: function(str){
+            var data = JSON.parse(str);
+            // console.log("Score = " + score);
+            $('#CARD_SCORE_'+cardIDX).html(parseFloat(data.IN_SCORE).toFixed(2));
+            $('#MAX_STAT_'+teamIDX).html(parseFloat(data.IN_MAX).toFixed(2));
+            $('#MIN_STAT_'+teamIDX).html(parseFloat(data.IN_MIN).toFixed(2));
+            $('#STD_STAT_'+teamIDX).html(parseFloat(data.IN_STD).toFixed(2));
+            $('#MEAN_STAT_'+teamIDX).html(parseFloat(data.IN_MEAN).toFixed(2));
+            preso_showSaveBanner("Sending your assesment ["+inValue+"] to the Server ");
+            if (inValue>0){
+                $('#LINE_ITEM_'+reportIDX).removeClass('w3-light-grey').addClass('w3-teal');
+            } else {
+                $('#LINE_ITEM_'+reportIDX).removeClass('w3-teal').addClass('w3-light-grey');
+            }
+        },
+    });
+    }
+function preso_breakingScoringThreshold(o, divName, reportIDX){     
+    var inValue = $(o).val();   
+    if (inValue<=5){
+        $('#arrow_'+divName).addClass('fa-angle-double-down');
+        if ($('.'+divName).hasClass('w3-hide')) {
+            $('.'+divName).toggleClass('w3-hide');
+        } 
+    }
+    preso_collectFormData(o, reportIDX);
+    // grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType);
+    }
+function preso_expandDescription(o, divName) {
+    $('.'+divName).toggleClass('w3-hide');
+    $('#arrow_'+divName).toggleClass('fa-angle-double-down');
+    }
+function preso_openEvaluationForm(o, classIDX, teamIDX) {
+    $.modal('Presentation Evaluation Form', '97%');
+    evalCardData = {}; // Everytime a new Form is open, re-initialize the Object
+    evalFormData = {}; // Everytime a new Form is open, re-initialize the Object
+    var ajxData         = {}; 
+    var eventIDX = $.cookie('LOCATION');
+    var userIDX = $.cookie('PK_USER_IDX');
+    evalCardData.FK_USER_IDX     = userIDX;
+    evalCardData.FK_TEAM_IDX     = teamIDX;
+    evalCardData.FK_CARDTYPE_IDX = 5;
+    evalCardData.FK_EVENT_IDX    = eventIDX;
+    evalCardData.IN_STATUS       = 2;
+
+    ajxData['jsonData'] = JSON.stringify(evalCardData);
+    console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/preso.pl',
+        data: {'do':'preso_openEvaluationForm','act':'print','userIDX':userIDX,'eventIDX':eventIDX,'classIDX':classIDX, 'teamIDX':teamIDX},
+        success: function(str){
+            // console.log(str);
+            $('#modal_content').html(str);
+        }
+    });
+     }
 
 // ================ 2022 ==================================
 function sae_openImport(userIDX){
@@ -117,13 +356,14 @@ function selectOtherRoom(){
 function showListOfTeam_Preso(sortBy){
     $('#mainPageContent').html(loading);
     var location = $.cookie('LOCATION');
+    var eventIDX = $.cookie('LOCATION');
     var userIDX = $.cookie('PK_USER_IDX');
     if (sortBy===''){sortBy='number'}
     // console.log("sort by = " + sortBy);
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/preso.pl',
-        data: {'do':'showListOfTeam_Preso','act':'print','location':location,'userIDX':userIDX,'sortBy':sortBy},
+        data: {'do':'preso_showListOfTeam','act':'print','location':location,'userIDX':userIDX,'sortBy':sortBy,'eventIDX':eventIDX},
         success: function(str){
             $('#mainPageContent').html(str);
         }

@@ -632,7 +632,10 @@ function updateCheckItems(o){
     var data = {};
     var elementID = $(o).attr('id');
     var elementField = $(o).data('field');
-    // console.log('elementField  = ' + elementField );
+    console.log('elementField  = ' + elementField );
+    console.log('value  = ' + $(o).val() );
+    // return;
+    console.log('elementID  = ' + elementID );
     if (elementField == 'BO_STATIC'){
         var staticCount = 0;
         $('.inStaticCount').each(function(){
@@ -646,23 +649,28 @@ function updateCheckItems(o){
             }
         });
     }
-    if ($(o).is(':checked')){
-        data[$(o).data('field')] = 1;
-        if (elementField == 'BO_INZONE'){
-            $('.inZoneEntry_'+$(o).data('index')).removeClass('w3-disabled');
-        }
+    if ($(o).is(':radio')) {
+        data[$(o).data('field')] = $(o).val() ;
+        // console.log("Radio");
     } else {
-        if (elementID.indexOf('FlightStatus_') == 0){
-            data[$(o).data('field')] = 2;
+        if ($(o).is(':checked')){
+            data[$(o).data('field')] = 1;
+            if (elementField == 'BO_INZONE'){
+                $('.inZoneEntry_'+$(o).data('index')).removeClass('w3-disabled');
+            }
         } else {
-            data[$(o).data('field')] = 0;
-        }
-        if (elementField == 'BO_INZONE'){
-            $('.inZoneEntry_'+$(o).data('index')).addClass('w3-disabled');
-            $('.inZoneEntry_'+$(o).data('index')).prop('checked', false);
-            $('.inZoneEntry_'+$(o).data('index')).val(0);
-            data.BO_STATIC = 0;
-            data.IN_DISTANCE = 0;
+            if (elementID.indexOf('FlightStatus_') == 0){
+                data[$(o).data('field')] = 2;
+            } else {
+                data[$(o).data('field')] = 0;
+            }
+            if (elementField == 'BO_INZONE'){
+                $('.inZoneEntry_'+$(o).data('index')).addClass('w3-disabled');
+                $('.inZoneEntry_'+$(o).data('index')).prop('checked', false);
+                $('.inZoneEntry_'+$(o).data('index')).val(0);
+                data.BO_STATIC = 0;
+                data.IN_DISTANCE = 0;
+            }
         }
     }
     if (elementID.indexOf('DQ') == 0 || elementID.indexOf('SCRATCH') == 0 || elementID.indexOf('CRASH') == 0 ){
@@ -676,7 +684,7 @@ function updateCheckItems(o){
     ajxData['VALUE_IDX'] = $(o).data('index'); 
     ajxData['TABLE'] = $(o).data('table'); 
     ajxData['jsonData'] = JSON.stringify(data);
-    // console.log(ajxData);
+    console.log(ajxData);
     // return;
     $.ajax({
         type: 'POST',
@@ -1321,6 +1329,37 @@ function sae_convertTime(o, flightIDX, txtID){
     console.log('#'+txtID);
     $(o).close('sae-top2');
 } 
+function sae_openSpanCalulator(flightIDX, txtID) {
+    var inValue = parseFloat($('#'+txtID+flightIDX).val()).toFixed(3);
+// console.log('inValue = ' + inValue);
+    var feet = (inValue/12);
+// console.log('feet = ' + feet);
+    var inch = (feet % 1) * 12;
+// console.log('inch = ' + inch);
+    $.modal2('Wingspan Calculator', '30%');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/flight.pl',
+        data: {'do':'sae_openSpanCalulator','act':'print','flightIDX':flightIDX,'txtID':txtID,'feet':feet,'inch':inch.toFixed(3)},
+        success: function(str){
+            // console.log(str);
+            $('#modal2_content').html(str);
+        }
+    });
+}
+function sae_convertSpan(o, flightIDX, txtID) {
+    var txField = 'IN_SPAN';
+    var feet    = 0;
+    var inch    = 0;
+    if ($('#IN_FEET').val()){feet = parseFloat($('#IN_FEET').val())}
+    if ($('#IN_INCH').val()) {inch = parseFloat($('#IN_INCH').val())}
+    var converted = parseFloat((feet*12) + inch).toFixed(1);
+    console.log('converted = '+ converted);
+    sae_updateFlightCardField(flightIDX, converted, txField);
+    $('#'+txtID+flightIDX).val(converted);
+    $(o).close('sae-top2');
+    // body...
+}
 function sae_openCalculator(flightIDX, txtID){
     var inValue = parseFloat($('#'+txtID+flightIDX).val());
     var lbs = Math.trunc(inValue);

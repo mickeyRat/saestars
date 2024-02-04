@@ -63,7 +63,8 @@ sub publish_tableTemplate (){
             my $txFile = $LIST{$classIDX}{$publishIDX}{TX_FILE};
             my $txDate = $LIST{$classIDX}{$publishIDX}{TX_TIME};
             my $txName = $LIST{$classIDX}{$publishIDX}{TX_PUBLISH_BY};
-            $str .= &publish_row($publishIDX, $txFile , $txDate , $txName, $txRadioName);
+            my $inShow = $LIST{$classIDX}{$publishIDX}{IN_SHOW};
+            $str .= &publish_row($publishIDX, $txFile , $txDate , $txName, $txRadioName, $inShow);
         }
         $str .= '</tbody>';
         $str .= '<tr>';
@@ -77,6 +78,7 @@ sub publish_tableTemplate (){
             } elsif ($inType == 4) {
                 $str .= sprintf '<button class="w3-button w3-border w3-round w3-green" onclick="publish_GenerateOverallResults(this, %d);">Generate</button>', $classIDX;
             }
+        $str .= sprintf '<span class="w3-margin-left genLoading_%d" style="display: none;"><img src="../images/loader.gif"> Generating</span>', $classIDX;
         $str .= '</td>';
         $str .= '</tr>';
         $str .= '</table>';
@@ -90,12 +92,14 @@ sub publish_deleteResults(){
     $Pub->_deletePublishedScore($publishIDX);
     }
 sub publish_row() {
-    my ($newIDX, $txFile, $now_string, $userName, $txRadioName) = @_;
+    my ($newIDX, $txFile, $now_string, $userName, $txRadioName, $inShow) = @_;
+    my $checked = '';
+    if ($inShow==1) {$checked = 'checked'}
     $str = '<tr>';
-    $str .= sprintf '<td><input class="w3-check" type="checkbox" onclick="publish_activatePublicView(this, %d);"></td>', $newIDX;
+    $str .= sprintf '<td><input class="w3-check" type="checkbox" %s onclick="publish_activatePublicView(this, %d);"></td>', $checked, $newIDX;
     # $str .= sprintf '<td><input class="w3-radio" type="radio" NAME="%s"></td>', $txRadioName;
     $str .= sprintf '<td>v.%d</td>', $newIDX;
-    $str .= sprintf '<td><span class="w3-small">Generated on: </span> <span class="w3-text-blue">%s</span> by <b>%s</b></td>', $now_string, $userName;
+    $str .= sprintf '<td><span class="w3-small">Generated on: </span> <span class="w3-text-grey">%s</span> by <b>%s</b></td>', $now_string, $userName;
     $str .= sprintf '<td><a href="post.html?fileID=%s" target="_blank">View</a></td>', $txFile;
     $str .= sprintf '<td><a href="javascript:void(0);" onclick="publish_deleteResults(this, %d);">Delete</a></td>', $newIDX;
     $str .= '</tr>';
@@ -115,7 +119,7 @@ sub publish_GenerateDesignReport (){
     # my %DATA = %{decode_json($q->param('jsonData'))};
     my $str;
     # $str .= "***************** $eventIDX, $newIDX, $classIDX";
-    $str .= &publish_row($newIDX, $txFile, $now_string, $userName, $txRadioName);
+    $str .= &publish_row($newIDX, $txFile, $now_string, $userName, $txRadioName, 0);
     return ($str);
     }
 sub publish_showDesign (){
@@ -147,7 +151,7 @@ sub publish_GeneratePresenationResults (){
     # 2. calculcate design score and populate TB_SCORE
     # my %DATA = %{decode_json($q->param('jsonData'))};
     my $str;
-    $str .= &publish_row($newIDX, $txFile, $now_string, $userName, $txRadioName);
+    $str .= &publish_row($newIDX, $txFile, $now_string, $userName, $txRadioName, 0);
     return ($str);
     }
 sub publish_showPresentation (){
@@ -176,7 +180,7 @@ sub publish_GenerateMissionResults (){
     # 1. generate random number and get publish ID
     # 2. calculcate design score and populate TB_SCORE
     my $str;
-    $str .= &publish_row($newIDX, $txFile, $now_string, $userName, $txRadioName);
+    $str .= &publish_row($newIDX, $txFile, $now_string, $userName, $txRadioName, 0);
     return ($str);
     }
 sub publish_showMission (){
@@ -205,7 +209,7 @@ sub publish_GenerateOverallResults {
     # 1. generate random number and get publish ID
     # 2. calculcate design score and populate TB_SCORE
     my $str;
-    $str .= &publish_row($newIDX, $txFile, $now_string, $userName, $txRadioName);
+    $str .= &publish_row($newIDX, $txFile, $now_string, $userName, $txRadioName, 0);
     return ($str);
 }
 sub publish_showOverall (){
@@ -251,6 +255,14 @@ sub publish_Home (){
     # $str .= &showPublishPage();
     return ($str);
     }
+sub publish_activatePublicView(){
+    print $q->header();
+    my $publishIDX = $q->param('publishIDX');
+    my $checked    = $q->param('checked');
+    my $Pub        = new SAE::PUBLISH();
+    $Pub->_activatePublicView($publishIDX, $checked);
+    return();
+    }
 # ===================== 2024 ===================================================
 
 
@@ -265,13 +277,7 @@ sub publish_Home (){
 #     my $Pub = new SAE::PUBLISH();
 #     $Pub->_activateIncludeView($publishIDX, $checked);
 #     }
-# sub sae_activatePublicView(){
-#     print $q->header();
-#     my $publishIDX = $q->param('publishIDX');
-#     my $checked = $q->param('checked');
-#     my $Pub = new SAE::PUBLISH();
-#     $Pub->_activatePublicView($publishIDX, $checked);
-#     }
+
 # sub sae_deletePublishScore(){
 #     print $q->header();
 #     my $publishIDX = $q->param('publishIDX');

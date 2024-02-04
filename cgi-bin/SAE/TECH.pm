@@ -19,7 +19,29 @@ sub new{
     return $self;
     }
 
+# -------------- 2024 --------------
+sub _getSelfCertificationStatus(){
+    my ($self, $teamIDX) = @_;
+    # get a list of how many
+    my $str;
+
+    return ();
+    }
 # -------------- 2023 --------------
+sub _getTeamTechPenalties (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT DISTINCT TREQ.PK_TECH_REQ_IDX, TREQ.IN_POINTS FROM TB_TECH AS TECH 
+    JOIN TB_TECH_REQ AS TREQ ON TECH.FK_TECH_REQ_IDX=TREQ.PK_TECH_REQ_IDX
+    WHERE TECH.FK_TEAM_IDX=? AND IN_STATUS=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $teamIDX , 2);
+    my $penalty = 0;
+    while (my ($techReqIDX, $inPoints) = $select->fetchrow_array()) {
+        $penalty -= $inPoints;
+        # printf "\1.1f", $inPoint;
+    }
+    return ($penalty);
+    }
 sub _getTechItemDescriptions (){
     my ($self, $classIDX) = @_;
     my %FIELD = (1=>'R.BO_REGULAR', 2=>'R.BO_ADVANCE', 3=>'R.BO_MICRO',4=>'R.BO_PADA');

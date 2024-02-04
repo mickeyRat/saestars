@@ -25,6 +25,9 @@ use SAE::TB_COUNTRY;
 use SAE::Auth;
 # use SAE::TB_USER_TEAM;
 use SAE::EVENT;
+use SAE::TEAM;
+use SAE::JSONDB;
+
 
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
@@ -34,7 +37,7 @@ $path =~ s/\\[^\\]+$//;
 $path =~ s/\/[^\/]+$//;
 
 my $act = $q->param("act");
-
+my %CLASS      = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
 if ($act eq "print"){
     print &{$do= $q->param("do")};
 } else {
@@ -45,9 +48,308 @@ sub __template(){
     print $q->header();
     my $PkTeamIdx = $q->param('PkTeamIdx');
     my $str;
-
+    
     return ($str);
 }
+#= 2024 =============================================================================
+sub team_UpdateTeamData (){
+    print $q->header();
+    my $teamIDX= $q->param('teamIDX');
+    my %DATA = %{decode_json($q->param('jsonData'))};
+    my $str;
+    my $JsonDB     = new SAE::JSONDB();
+    $str .= $JsonDB->_update('TB_TEAM', \%DATA, qq(PK_TEAM_IDX=$teamIDX));
+    return ($q->param('jsonData'));
+    }
+sub team_deleteTeam(){
+    print $q->header();
+    $teamIDX = $q->param('teamIDX');
+    $Team = new SAE::TB_TEAM();
+    $Team->deleteRecordById($teamIDX);
+}
+sub team_addNewTeam (){
+    print $q->header();
+    my $eventIDX   = $q->param('eventIDX');
+    my %DATA       = %{decode_json($q->param('jsonData'))};
+    my $JsonDB     = new SAE::JSONDB();
+    my $newIDX     = $JsonDB->_insert('TB_TEAM', \%DATA);
+    my $str;
+    
+    $str .= &team_templateRow($newIDX, $DATA{IN_NUMBER}, $CLASS{$DATA{FK_CLASS_IDX}}, $DATA{TX_SCHOOL}, $DATA{TX_NAME}, $DATA{TX_COUNTRY});
+    return ($str);
+    }
+sub team_templateRow (){
+    my ($teamIDX, $inNumber, $txClass, $txSchool, $txName, $txCountry) = @_;
+    my $str;
+    $str = sprintf '<tr ID="teamRow_%d">', $inNumber;
+    $str .= sprintf '<td><a href="javascript:void(0);" onclick="sae_openTeamProfile(%d);">%03d</a></td>', $teamIDX, $inNumber;
+    $str .= sprintf '<td>%s</td>', $txClass;
+    $str .= sprintf '<td>%s</td>', $txSchool;
+    $str .= sprintf '<td>%s</td>', $txName;
+    $str .= sprintf '<td>%s</td>', $txCountry;
+    $str .= sprintf '<td style="text-align: right;"><a href="javascript:void(0);" data-value="%03d" onclick="team_deleteTeam(this, %d);">Delete</a></td>',  $inNumber, $teamIDX;
+    $str .= sprintf '</tr>';
+    return ($str);
+    }
+sub openManageteam(){
+    print $q->header();
+    my $eventIDX  = $q->param('location');
+    my $Team      = new SAE::TEAM();
+    # my $Class     = new SAE::TB_CLASS();
+    # my %TEAM      = %{$Team->getAllRecordBy_FkEventIdx($eventIDX)};
+    my %TEAM      = %{$Team->_getTeamList($eventIDX)};
+    # my %CLASS     = %{$Class->getAllRecord()};
+    my %COUNTRY   = %{$Team->_getCountryList()}; 
+        $str .= '<div class="w3-container w3-margin-top">';
+        $str .= '<div class="w3-bar w3-black w3-margin-top" style="w3-margin-top: 25px;">';
+        $str .= sprintf '<button class="w3-bar-item w3-button paperTab ">Import</button>', 1;
+        $str .= '</div>';
+        $str .= '<h2>Manage Team</h2>';
+        $str .= '<table ID="TEAMS_TABLE" class="w3-table-all">';
+        $str .= '<thead>';
+        $str .= '<tr class="w3-blue-grey w3-small">';
+        $str .= '<th style="width: 7%">Team #</th>';
+        $str .= '<th style="width: 10%">Class</th>';
+        $str .= '<th style="width: 40%">School/University Name</th>';
+        $str .= '<th style="width: 23%">Team Name</th>';
+        $str .= '<th style="width: 13%">Country</th>';
+        $str .= '<th style="width: 7%; text-align: right;">Delete</th>';
+        $str .= '</tr>';
+        $str .= '<tr class="w3-grey">';
+        $str .= '<td style="padding: 1px;"><input class="w3-input w3-border w3-round newInput" data-key="IN_NUMBER" type="number" min="0" onchange="team_autoSelectClass(this);"></td>';
+        $str .= sprintf '<td style="padding: 1px;">';
+        $str .= '<select ID="TEAM_CLASS" class="w3-input w3-round w3-border newInput" data-key="FK_CLASS_IDX" style="height: 37px;">';
+        $str .= sprintf '<option value="" selected disabled>-Class</option>';
+        foreach $classIDX (sort {$a<=>$b} keys %CLASS) {
+            $str .= sprintf '<option value="%d">%s</option>', $classIDX, $CLASS{$classIDX};
+        }
+        $str .= '</select>'; 
+        $str .= sprintf '</td>';
+        $str .= '<td style="padding: 1px;"><input class="w3-input w3-border w3-round newInput" data-key="TX_SCHOOL" type="text" ></td>';
+        $str .= '<td style="padding: 1px;"><input class="w3-input w3-border w3-round newInput" data-key="TX_NAME" type="text" ></td>';
+        $str .= sprintf '<td style="padding: 1px;"><input class="w3-input w3-border w3-round newInput" data-key="TX_COUNTRY" placeholder="Country" type="text" list="country" >';
+        $str .= '<datalist ID="country" role="listbox" >';
+        foreach $countryIDX (sort {lc($COUNTRY{$a}{TX_COUNTRY}) cmp lc($COUNTRY{$b}{TX_COUNTRY})} keys %COUNTRY) {
+            $str .= sprintf '<option value="%s">', $COUNTRY{$countryIDX}{TX_COUNTRY};
+        }
+        $str .= '</datalist>';
+        $str .= sprintf '</td>';
+        $str .= sprintf '<td style="padding: 2px;">';
+        $str .= sprintf '<button style=" width: 100%;" class="w3-button w3-border w3-round w3-pale-green w3-hover-green" onclick="team_addNewTeam(this);">Add</button>';
+        $str .= sprintf '</td>';
+        $str .= '</tr>';
+        $str .= '</thead>';
+        $str .= '<tbody>';
+        foreach $teamIDX (sort {$TEAM{$a}{IN_NUMBER} <=> $TEAM{$b}{IN_NUMBER}} keys %TEAM) {
+            my $txClass = $CLASS{$TEAM{$teamIDX}{FK_CLASS_IDX}};
+            $str .= &team_templateRow($teamIDX, $TEAM{$teamIDX}{IN_NUMBER}, $txClass, $TEAM{$teamIDX}{TX_SCHOOL}, $TEAM{$teamIDX}{TX_NAME}, $TEAM{$teamIDX}{TX_COUNTRY});
+        }
+        $str .= '</tbody>';
+        $str .= '</table>';
+        $str .= '</div>';
+    $str .= '</div>';
+    # $str .= &openManageteam_LEG();;
+    return ($str);
+}
+sub sae_openTeamProfile(){
+    print $q->header();
+    my $teamIDX   = $q->param('teamIDX');
+    my $eventIDX  = $q->param('location');
+    my $Team      = new SAE::TEAM($teamIDX);
+    my %TEAM      = %{$Team->_getTeamData()};
+    my %DOCS      = %{$Team->_getTeamDocuments($teamIDX)};
+    my %COUNTRY   = %{$Team->_getCountryData()};
+    my $inNumber  = $TEAM{IN_NUMBER};
+    my $txSchool  = $TEAM{TX_SCHOOL};
+    my $txName    = $TEAM{TX_NAME};
+    my $inCode    = $TEAM{TX_CODE};
+    my $txCountry = $TEAM{TX_COUNTRY};
+    my $classIDX  = $TEAM{FK_CLASS_IDX};
+    my $str;
+    $str .= '<div class="w3-container">';
+    $str .= '<div class="w3-margin-top w3-row w3-light-grey w3-padding w3-border w3-round w3-topbar w3-border-green">';
+    $str .= '<h4>Team Data</h4>';
+    $str .= '<div class="w3-col m1 w3-padding" >Team #</div>';
+    $str .= sprintf '<div class="w3-col m1"><input class="w3-input w3-border w3-round" data-key="IN_NUMBER" type="number" value="%d" onblur="team_UpdateTeamData(this, %d);"></div>', $inNumber, $teamIDX;
+
+    $str .= '<div class="w3-col m1 w3-padding">Class</div>';
+    $str .= sprintf '<div class="w3-col m2">';
+    $str .= sprintf '<select class="w3-input w3-round w3-border newInput" data-key="FK_CLASS_IDX" style="height: 38px;" onChange="team_UpdateTeamData(this, %d);">', $teamIDX;
+    foreach $classIDX (sort {$a<=>$b} keys %CLASS) {
+        my $selected = '';
+        if($classIDX == $TEAM{FK_CLASS_IDX}){$selected = 'selected'}
+        $str .= sprintf '<option value="%d" %s>%s</option>', $classIDX, $selected, $CLASS{$classIDX};
+    }
+    $str .= '</select>'; 
+    $str .= sprintf '</div>';
+
+    $str .= '<div class="w3-col m1 w3-padding" >Code</div>';
+    $str .= sprintf '<div class="w3-col m2"><input class="w3-input w3-border w3-round" data-key="TX_CODE" type="text" value="%s" onblur="team_UpdateTeamData(this, %d);"></div>', $inCode, $teamIDX;
+    # $str .= '<br>';
+    $str .= '<div class="w3-col m1 w3-padding">Country</div>';
+    $str .= sprintf '<div class="w3-col m3">';
+    $str .= sprintf '<input class="w3-input w3-border w3-round" data-key="TX_COUNTRY" type="text" list="country" value="%s" onblur="team_UpdateTeamData(this, %d);">', $txCountry, $teamIDX;
+    $str .= '<datalist ID="country" role="listbox" >';
+        foreach $countryIDX (sort {lc($COUNTRY{$a}{TX_COUNTRY}) cmp lc($COUNTRY{$b}{TX_COUNTRY})} keys %COUNTRY) {
+            $str .= sprintf '<option value="%s">', $COUNTRY{$countryIDX}{TX_COUNTRY};
+        }
+    $str .= '</datalist>';
+    $str .= sprintf '</div>';
+
+    $str .= '<div class="w3-col l1 w3-padding">School</div>';
+    $str .= sprintf '<div class="w3-col l5"><input class="w3-input w3-border w3-round" data-key="TX_SCHOOL" type="text" value="%s" onblur="team_UpdateTeamData(this, %d);"></div>', $txSchool, $teamIDX;
+
+    $str .= '<div class="w3-col l1 w3-padding">Name</div>';
+    $str .= sprintf '<div class="w3-col l5"><input class="w3-input w3-border w3-round" data-key="TX_NAME" type="text" value="%s" onblur="team_UpdateTeamData(this, %d);"></div>', $txName, $teamIDX;
+    $str .= '</div>';
+
+    if ($classIDX==1) {
+        $str .= '<div class="w3-container w3-row w3-padding w3-border w3-round w3-topbar w3-border-yellow w3-margin-top">';
+        $str .= '<h4>Team Prediction Curve</h4>';
+        $str .= '<div class="w3-col m1 w3-padding" >Slope</div>';
+        $str .= sprintf '<div class="w3-col m1"><input class="w3-input w3-border w3-round" data-key="IN_NUMBER" type="number" value="%d"></div>', $TEAM{IN_SLOPE};
+        $str .= '<div class="w3-col m2 w3-padding" >y-Intercept</div>';
+        $str .= sprintf '<div class="w3-col m1"><input class="w3-input w3-border w3-round" data-key="IN_NUMBER" type="number" value="%d"></div>', $TEAM{IN_YINT};
+        $str .= sprintf '<div class="w3-col m7">&nbsp;</div>';
+        $str .= '</div>';
+    } elsif ($classIDX==2) {
+        $str .= '<div class="w3-container w3-row w3-padding w3-border w3-round w3-topbar w3-border-yellow w3-margin-top">';
+        $str .= '<h4>Team PADA Standard Deviation</h4>';
+        $str .= '<div class="w3-col m2 w3-padding" >Std. Deviation</div>';
+        $str .= sprintf '<div class="w3-col m1"><input class="w3-input w3-border w3-round" data-key="IN_NUMBER" type="number" value="%d"></div>',$TEAM{IN_STD};
+        $str .= sprintf '<div class="w3-col M9">&nbsp;</div>';
+        $str .= '</div>';
+    }
+
+    my %PAPER = (1=>'Design Report', 2=>'TDS', 3=>'Drawing');
+    $str .= '<div class="w3-container w3-row w3-padding w3-border w3-round w3-topbar w3-border-blue w3-margin-top">';
+    $str .= '<h4>Team Files</h4>';
+    foreach $paperIDX (sort {$PAPER{$a} cmp $PAPER{$b}} keys %PAPER) {
+        $str .= sprintf '<div class="w3-col m1 w3-small" style="height: 44px;">%s</div>', $PAPER{$paperIDX};
+        $str .= sprintf '<div class="w3-col m4 w3-small" style="height: 44px;">';
+        $str .= '<form action = "javascript:void(0);" method = "post" enctype = "multipart/form-data">';
+        $str .= sprintf '<input id="file_%d" style="width: 70%; border: none;" type="file" name="filename"/>', $paperIDX;
+        $str .= sprintf '<button class="w3-button w3-round w3-border w3-hover-green w3-margin-right w3-right" style="height: 31px; padding: 4px 10px;" onclick="sae_upload(%d, %d, %d, %d);">Upload File</button>', $teamIDX, $TEAM{IN_NUMBER}, $eventIDX, $paperIDX;
+        $str .= '</form>';
+        $str .= '</div>';
+        $str .= sprintf '<div class="w3-col m7 w3-small"  style="height: 44px;"><div nowrap ID="uploadedDisplay_%d" style="height: 25px; overflow-hidden;"><a href="read.html?fileID=%s" target="_blank">%s</a></div></div>', $paperIDX, $DOCS{$paperIDX}{TX_KEYS}, $DOCS{$paperIDX}{TX_FILENAME};
+    }
+    $str .= '</div>';
+    $str .= '<div class="w3-row w3-row-padding w3-center w3-margin-top">';
+    $str .= '<button class="w3-button w3-border w3-round w3-margin-right w3-margin-bottom w3-hover-green" style="width: 155px;" onclick="$(this).close();">Exit</button>';
+    $str .= '</div>';
+    $str .= '</div>';
+
+    # $str .= '<fieldset>';
+    # $str .= '<legend>Documents</legend>';
+    # # my %PAPER = (1=>'Design Report', 2=>'TDS', 3=>'Drawing');
+    # # foreach $uploadIDX (sort {$DOCS{$a}{TX_PAPER} cmp $DOCS{$b}{TX_PAPER}} keys %DOCS) {
+    # foreach $paperIDX (sort {$PAPER{$a} cmp $PAPER{$b}} keys %PAPER) {
+    # $str .= '<div class="w3-row">';
+    #     $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+    #     $str .= '<form action = "javascript:void(0);" method = "post" enctype = "multipart/form-data">';
+    #     $str .= sprintf '<label class="w3-text-grey" >%s</label><br>', $PAPER{$paperIDX};
+    #     $str .= sprintf '<input id="file" class="w3-round w3-border" style="width: 60%;"type="file" name="filename"/>';
+    #     # $str .= '<input style="width: 25%;" class="w3-button w3-round w3-border" type="submit" name="Submit" value="Upload" />';
+    #     $str .= sprintf '<button class="w3-button w3-round w3-border" onclick="sae_upload(%d, %d, %d, %d);">Upload</button>', $teamIDX, $TEAM{IN_NUMBER}, $eventIDX, $paperIDX;
+    #     $str .= '</form>';
+    #     $str .= '</div>';
+    #     $str .= '<div  class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small" >';
+    #     $str .= sprintf '<label class="w3-text-grey" >Uploaded documents</label><br>';
+    #     # $str .= sprintf '<div ID="uploadedDisplay_%d"><a href="read.html?fileID=%s" target="_blank">%s</a></div>', $paperIDX, $DOCS{$paperIDX}{TX_KEYS}, $DOCS{$paperIDX}{TX_FILENAME};       
+    #     # $str .= sprintf '<div ID="uploadedDisplay_%d"><a href="view.html?fileID=%s" target="_blank">%s</a></div>', $paperIDX, $DOCS{$paperIDX}{TX_KEYS}, $DOCS{$paperIDX}{TX_FILENAME};       
+    #     #  $str = sprintf '<a href="read.html?fileID=%s" target="_blank">%s</a>', $txKeys, $newfileName;
+    #     $str .= '</div>';
+    # $str .= '</div>'; 
+    # }
+    # $str .= '</fieldset>';
+
+
+    # $str .= '<fieldset>';
+    # $str .= '<legend>Team Data</legend>';
+    # $str .= '<div class="w3-row">';
+    # $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+    # $str .= '<label for="IN_NUMBER" class="w3-text-grey" >Team #</label>';
+    # $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="number" onblur="sae_autoSelectClass(this);" inputmode="numeric" value="%03d" data-key="IN_NUMBER" ID="IN_NUMBER">', $TEAM{IN_NUMBER};
+    # $str .= '</div>';
+    
+    # $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small">';
+    # $str .= '<label for="TX_SCHOOL" class="w3-text-grey" >School</label>';
+    # $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="text" value="%s" data-key="TX_SCHOOL" ID="TX_SCHOOL">', $TEAM{TX_SCHOOL};
+    # $str .= '</div>';
+    
+    # $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+    # $str .= '<label for="TX_COUNTRY" class="w3-text-grey" >Country</label>';
+    # $str .= '<select ID="TX_COUNTRY" class="w3-select w3-border w3-round">';
+    # $str .= sprintf '<option value="none" disabled>Country </option>';
+    # foreach $countryIDX (sort {lc($COUNTRY{$a}{TX_COUNTRY}) cmp lc($COUNTRY{$b}{TX_COUNTRY})} keys %COUNTRY) {
+    #     my $txCountry = $COUNTRY{$countryIDX}{TX_COUNTRY};
+    #     my $selected = '';
+    #     if ($TEAM{TX_COUNTRY} eq $txCountry) {$selected = 'selected'}
+    #     $str .= sprintf '<option value="%s" %s>%s</option>', $txCountry, $selected, $txCountry;
+    # }
+    # $str .= '</select>';
+    # $str .= '</div>';
+    
+    # $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small" >';
+    # $str .= '<label for="TX_NAME" class="w3-text-grey">Team Name</label>';
+    # $str .= sprintf'<input class="w3-input w3-border w3-round sae_data" type="text" value="%s" data-key="TX_NAME"ID="TX_NAME">', $TEAM{TX_NAME};
+    # $str .= '</div>';
+    
+    # $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+    # $str .= '<label for="FK_CLASS_IDX" class="w3-text-grey" >Class</label>';
+    # $str .= '<select ID="FK_CLASS_IDX" class="w3-select w3-border w3-round">';
+    # $str .= sprintf '<option value="none" disabled>Class</option>';
+    # foreach $classIDX (sort {$a<=>$b} keys %CLASS) {
+    #     my $selected = '';
+    #     if ($classIDX == $TEAM{FK_CLASS_IDX}) {$selected = 'selected'}
+    #     $str .= sprintf '<option value="%d" %s>%s</option>', $classIDX, $selected, $CLASS{$classIDX};
+    # }
+    # $str .= '</select>';
+    # $str .= '</div>';
+    
+    # $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small" >';
+    # $str .= '<label for="TX_CODE" class="w3-text-grey">Team Access Code</label>';
+    # $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="password" inputmode="numeric" value="%s" data-key="TX_CODE" ID="TX_CODE">', $TEAM{TX_CODE};
+    # $str .= sprintf '<input ID="CODE_SHOW" type="checkbox" onchange="sae_changeInputType(this, \'%s\');">', 'TX_CODE';
+    # $str .= '<label for="CODE_SHOW" class="w3-small w3-text-grey">&nbsp;Show</label>';
+    # $str .= '</div>';
+
+    
+    # if ($TEAM{FK_CLASS_IDX}==1){
+    #     $str .= sprintf '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+    #     $str .= '<label for="IN_SLOPE" class="w3-text-grey" >Slope</label>';
+    #     $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="number" inputmode="numeric" step="0.000001" max="0" value="%2.7f" data-key="IN_SLOPE" ID="IN_SLOPE"></div>', $TEAM{IN_SLOPE};
+    #     $str .= sprintf '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+    #     $str .= '<label for="IN_YINT" class="w3-text-grey" >y-Intercept</label>';
+    #     $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="number" inputmode="numeric" value="%2.2f" data-key="IN_YINT" ID="IN_YINT" step="0.01" min="0"></div>', $TEAM{IN_YINT};
+    #     $str .= sprintf '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+    #     $str .= '<label for="IN_LCARGO" class="w3-text-grey" >L-Cargo</label>';
+    #     $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="number" inputmode="numeric" value="%2.2f" data-key="IN_LCARGO" ID="IN_LCARGO" step="0.001" min="0">', $TEAM{IN_LCARGO};
+    #     $str .= '</div><br>';
+    # }
+    # if ($TEAM{FK_CLASS_IDX}==2){
+    #     $str .= sprintf '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+    #     $str .= '<label for="IN_STD" class="w3-text-grey" >Standard Deviation</label>';
+    #     $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="number" inputmode="numeric" step="1" min="" value="%2.1f" data-key="IN_STD" ID="IN_STD"></div>', $TEAM{IN_STD};
+
+    #     $str .= '<br>';
+    # }
+    # $str .= '</div>';
+    # $str .= '</fieldset>';
+    
+    # $str .= '<div class="w3-row w3-row-padding w3-center">';
+    # $str .= '<div class="w3-mobile w3-margin-bottom w3-padding  w3-border-top" >';
+    # $str .= sprintf '<button class="w3-button w3-border w3-round w3-green w3-hover-blue w3-margin-right w3-margin-bottom" style="width: 155px;" onclick="sae_saveTeamProfile(this, %d);">Save</button>', $teamIDX;
+    # # $str .= sprintf '<button class="w3-button w3-border w3-round w3-hover-red w3-margin-right w3-margin-bottom" style="width: 155px;" onclick="sae_deleteTeam(this, %d);">Delete</button>', $teamIDX;
+    # $str .= '<button class="w3-button w3-border w3-round w3-margin-right w3-margin-bottom" style="width: 155px;" onclick="$(this).close();">Cancel</button>';
+    # $str .= '</div>';
+    # $str .= '</div>';
+    
+    return ($str);
+    }
+
+
 # -------------------------------------- 2022 ----------------------------------
 sub sae_openImportTeam(){
     print $q->header();
@@ -83,7 +385,7 @@ sub sae_openImportTeam(){
     $str .= '</div>';
     $str .= '</form>';
     return ($str);
-}
+    }
 # -------------------------------------- 2021 ----------------------------------
 sub sae_saveTeamProfile(){
     print $q->header();
@@ -92,324 +394,205 @@ sub sae_saveTeamProfile(){
     my %DATA = %{decode_json($q->param('jsonData'))};
     my $str = $Team->_saveTeamData($teamIDX , \%DATA);
     return ('Saved');
-}
-sub sae_openTeamProfile(){
-    print $q->header();
-    my $teamIDX = $q->param('teamIDX');
-    my $eventIDX = $q->param('location');
-    my $Team = new SAE::TEAM($teamIDX);
-    my %TEAM = %{$Team->_getTeamData()};
-    my %DOCS = %{$Team->_getTeamDocuments($teamIDX)};
-    my %COUNTRY = %{$Team->_getCountryData()};
-    my %CLASS = (1=>"Regular Class", 2=>"Advanced Class", 3=>"Micro Class");
-    my $str;
-    $str .= '<fieldset>';
-    $str .= '<legend>Team Data</legend>';
-    $str .= '<div class="w3-row">';
-    $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-    $str .= '<label for="IN_NUMBER" class="w3-text-grey" >Team #</label>';
-    $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="number" onblur="sae_autoSelectClass(this);" inputmode="numeric" value="%03d" data-key="IN_NUMBER" ID="IN_NUMBER">', $TEAM{IN_NUMBER};
-    $str .= '</div>';
-    
-    $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small">';
-    $str .= '<label for="TX_SCHOOL" class="w3-text-grey" >School</label>';
-    $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="text" value="%s" data-key="TX_SCHOOL" ID="TX_SCHOOL">', $TEAM{TX_SCHOOL};
-    $str .= '</div>';
-    
-    $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-    $str .= '<label for="TX_COUNTRY" class="w3-text-grey" >Country</label>';
-    $str .= '<select ID="TX_COUNTRY" class="w3-select w3-border w3-round">';
-    $str .= sprintf '<option value="none" disabled>Country </option>';
-    foreach $countryIDX (sort {lc($COUNTRY{$a}{TX_COUNTRY}) cmp lc($COUNTRY{$b}{TX_COUNTRY})} keys %COUNTRY) {
-        my $txCountry = $COUNTRY{$countryIDX}{TX_COUNTRY};
-        my $selected = '';
-        if ($TEAM{TX_COUNTRY} eq $txCountry) {$selected = 'selected'}
-        $str .= sprintf '<option value="%s" %s>%s</option>', $txCountry, $selected, $txCountry;
     }
-    $str .= '</select>';
-    $str .= '</div>';
-    
-    $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small" >';
-    $str .= '<label for="TX_NAME" class="w3-text-grey">Team Name</label>';
-    $str .= sprintf'<input class="w3-input w3-border w3-round sae_data" type="text" value="%s" data-key="TX_NAME"ID="TX_NAME">', $TEAM{TX_NAME};
-    $str .= '</div>';
-    
-    $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-    $str .= '<label for="FK_CLASS_IDX" class="w3-text-grey" >Class</label>';
-    $str .= '<select ID="FK_CLASS_IDX" class="w3-select w3-border w3-round">';
-    $str .= sprintf '<option value="none" disabled>Class</option>';
-    foreach $classIDX (sort {$a<=>$b} keys %CLASS) {
-        my $selected = '';
-        if ($classIDX == $TEAM{FK_CLASS_IDX}) {$selected = 'selected'}
-        $str .= sprintf '<option value="%d" %s>%s</option>', $classIDX, $selected, $CLASS{$classIDX};
-    }
-    $str .= '</select>';
-    $str .= '</div>';
-    
-    $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small" >';
-    $str .= '<label for="TX_CODE" class="w3-text-grey">Team Access Code</label>';
-    $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="password" inputmode="numeric" value="%s" data-key="TX_CODE" ID="TX_CODE">', $TEAM{TX_CODE};
-    $str .= sprintf '<input ID="CODE_SHOW" type="checkbox" onchange="sae_changeInputType(this, \'%s\');">', 'TX_CODE';
-    $str .= '<label for="CODE_SHOW" class="w3-small w3-text-grey">&nbsp;Show</label>';
-    $str .= '</div>';
 
+# sub openManageteam_LEG(){
+#     # print $q->header();
+#     my $eventIDX = $q->param('location');
+#     my $Team = new SAE::TB_TEAM();
+#     my $Class = new SAE::TB_CLASS();
+#     my %TEAM = %{$Team->getAllRecordBy_FkEventIdx($eventIDX)};
+#     %CLASS = %{$Class->getAllRecord()};
     
-    if ($TEAM{FK_CLASS_IDX}==1){
-        $str .= sprintf '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-        $str .= '<label for="IN_SLOPE" class="w3-text-grey" >Slope</label>';
-        $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="number" inputmode="numeric" step="0.000001" max="0" value="%2.7f" data-key="IN_SLOPE" ID="IN_SLOPE"></div>', $TEAM{IN_SLOPE};
-        $str .= sprintf '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-        $str .= '<label for="IN_YINT" class="w3-text-grey" >y-Intercept</label>';
-        $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="number" inputmode="numeric" value="%2.2f" data-key="IN_YINT" ID="IN_YINT" step="0.01" min="0"></div>', $TEAM{IN_YINT};
-        $str .= sprintf '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-        $str .= '<label for="IN_LCARGO" class="w3-text-grey" >L-Cargo</label>';
-        $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="number" inputmode="numeric" value="%2.2f" data-key="IN_LCARGO" ID="IN_LCARGO" step="0.001" min="0">', $TEAM{IN_LCARGO};
-        $str .= '</div><br>';
-    }
-    if ($TEAM{FK_CLASS_IDX}==2){
-        $str .= sprintf '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-        $str .= '<label for="IN_STD" class="w3-text-grey" >Standard Deviation</label>';
-        $str .= sprintf '<input class="w3-input w3-border w3-round sae_data" type="number" inputmode="numeric" step="1" min="" value="%2.1f" data-key="IN_STD" ID="IN_STD"></div>', $TEAM{IN_STD};
+#     my $height = 45;
+#     my $str;
+#     $str .= '<div class=" w3-container w3-margin-top w3-row"><br>';
+#     $str .= '<span class="w3-bar-item w3-xxlarge">Manage Teams</span>';
+#     # $str .= '<div class="w3-bar w3-light-grey">';
+    
+#     $str .= '<div class="w3-dropdown-hover w3-blue-grey w3-margin-left" style="height: 40px;">';
+#     $str .= '<button class="w3-button w3-large">Actions<i class="w3-margin-left fa fa-sort-down"></i></button>';
+#     $str .= '<div class="w3-dropdown-content w3-bar-block w3-card-4">';
+#     $str .= sprintf '<a href="javascript:void(0)" class="w3-bar-item w3-button"  onclick="sae_openAddTeam(%d);">Add Team</a>', $eventIDX;
+#     $str .= '<hr style="margin: 1px; padding: 0px;">';
+#     $str .= '<a href="javascript:void(0);" class="w3-bar-item w3-button" onclick="sae_openImportTeam();">Import</a>';
+#     $str .= '</div>';
+#     $str .= '</div>';
+#     # $str .= '</div>';
+#     # $
+#     # $str .= sprintf '<h3><button class="w3-button w3-border w3-round w3-hover-blue w3-white" onclick="sae_openAddTeam(%d);">+ New</button> TEAM</h3>', $eventIDX;
+#     # $str .= '<h3>Team</h3>';
+#     $str .= '<ul ID="UL_TEAM_LIST" class="w3-ul w3-round w3-transparent">';
+#     foreach $teamIDX (sort {$TEAM{$a}{IN_NUMBER} <=> $TEAM{$b}{IN_NUMBER}} keys %TEAM) {
+#         $str .= &_teamCardTemplate($teamIDX, $TEAM{$teamIDX}{IN_NUMBER}, $TEAM{$teamIDX}{TX_SCHOOL}, $TEAM{$teamIDX}{TX_COUNTRY});
+#     }
+#     $str .= '</ul>';
+#     $str .= '</div>';
+#     return ($str);
+# }
+# sub _teamCardTemplate(){
+#     my ($teamIDX, $inNumber, $txSchool, $txCountry) = @_;
+#     my $height = 45;
+#     my $str;
+#     $str .= sprintf '<li ID="TEAM_%d" class="w3-bar w3-button w3-margin-bottom w3-border w3-round w3-white w3-display-container w3-hover-pale-yellow" onclick="sae_openTeamProfile(%d)">', $teamIDX, $teamIDX;
+#     $str .= '<i class="fa fa-chevron-right fa-2x w3-display-right  w3-margin-right" aria-hidden="true"></i>';
+#     $str .= sprintf '<span class="w3-bar-item w3-circle w3-border w3-blue-grey w3-display-left w3-margin-left w3-center" style="height: %dpx; width: %dpx;">', $height, $height;
+#     $str .= sprintf '<div style="margin-left: -7px; margin-top: 4px;">%03d</div>', $inNumber;
+#     $str .= '</span>';
+#     $str .= '<div class="w3-bar-item w3-small" style="margin-left: 35px; text-align: left; padding-right: 100px;">';
+#     $str .= sprintf '<span class="w3-large">%s</span><br>', $txSchool;
+#     $str .= sprintf '<span>%s</span><br>', $txCountry;
+#     $str .= '</div>';
+#     $str .= '</li>';
+#     return ($str);
+# }
 
-        $str .= '<br>';
-    }
-    $str .= '</div>';
-    $str .= '</fieldset>';
-    $str .= '<fieldset>';
-    $str .= '<legend>Documents</legend>';
-    my %PAPER = (1=>'Design Report', 2=>'TDS', 3=>'Drawing');
-    # foreach $uploadIDX (sort {$DOCS{$a}{TX_PAPER} cmp $DOCS{$b}{TX_PAPER}} keys %DOCS) {
-    foreach $paperIDX (sort {$PAPER{$a} cmp $PAPER{$b}} keys %PAPER) {
-    $str .= '<div class="w3-row">';
-        $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-        $str .= '<form action = "javascript:void(0);" method = "post" enctype = "multipart/form-data">';
-        $str .= sprintf '<label class="w3-text-grey" >%s</label><br>', $PAPER{$paperIDX};
-        $str .= sprintf '<input id="file" class="w3-round w3-border" style="width: 60%;"type="file" name="filename"/>';
-        # $str .= '<input style="width: 25%;" class="w3-button w3-round w3-border" type="submit" name="Submit" value="Upload" />';
-        $str .= sprintf '<button class="w3-button w3-round w3-border" onclick="sae_upload(%d, %d, %d, %d);">Upload</button>', $teamIDX, $TEAM{IN_NUMBER}, $eventIDX, $paperIDX;
-        $str .= '</form>';
-        $str .= '</div>';
-        $str .= '<div  class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small" >';
-        $str .= sprintf '<label class="w3-text-grey" >Uploaded documents</label><br>';
-        $str .= sprintf '<div ID="uploadedDisplay_%d"><a href="read.html?fileID=%s" target="_blank">%s</a></div>', $paperIDX, $DOCS{$paperIDX}{TX_KEYS}, $DOCS{$paperIDX}{TX_FILENAME};       
-        # $str .= sprintf '<div ID="uploadedDisplay_%d"><a href="view.html?fileID=%s" target="_blank">%s</a></div>', $paperIDX, $DOCS{$paperIDX}{TX_KEYS}, $DOCS{$paperIDX}{TX_FILENAME};       
-        #  $str = sprintf '<a href="read.html?fileID=%s" target="_blank">%s</a>', $txKeys, $newfileName;
-        $str .= '</div>';
-    $str .= '</div>'; 
-    }
-    $str .= '</fieldset>';
-    $str .= '<div class="w3-row w3-row-padding w3-center">';
-    $str .= '<div class="w3-mobile w3-margin-bottom w3-padding  w3-border-top" >';
-    $str .= sprintf '<button class="w3-button w3-border w3-round w3-green w3-hover-blue w3-margin-right w3-margin-bottom" style="width: 155px;" onclick="sae_saveTeamProfile(this, %d);">Save</button>', $teamIDX;
-    $str .= sprintf '<button class="w3-button w3-border w3-round w3-hover-red w3-margin-right w3-margin-bottom" style="width: 155px;" onclick="sae_deleteTeam(this, %d);">Delete</button>', $teamIDX;
-    $str .= '<button class="w3-button w3-border w3-round w3-margin-right w3-margin-bottom" style="width: 155px;" onclick="$(this).close();">Cancel</button>';
-    $str .= '</div>';
-    $str .= '</div>';
+# sub sae_openAddTeam(){
+#     print $q->header();
+#     my $Team = new SAE::TEAM();
+#     my $eventIDX = $q->param('eventIDX');
+#     my %COUNTRY = %{$Team->_getCountryData()};
     
-    return ($str);
-}
-sub openManageteam(){
-    print $q->header();
-    my $eventIDX = $q->param('location');
-    my $Team = new SAE::TB_TEAM();
-    my $Class = new SAE::TB_CLASS();
-    my %TEAM = %{$Team->getAllRecordBy_FkEventIdx($eventIDX)};
-    %CLASS = %{$Class->getAllRecord()};
+#     my %CLASS = (1=>"Regular Class", 2=>"Advanced Class", 3=>"Micro Class");
+#     my $str = '<div class="w3-container w3-row">';
     
-    my $height = 45;
-    my $str;
-    $str .= '<div class=" w3-container w3-margin-top w3-row"><br>';
-    $str .= '<span class="w3-bar-item w3-xxlarge">Manage Teams</span>';
-    # $str .= '<div class="w3-bar w3-light-grey">';
+#     $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+#     $str .= '<label for="IN_NUMBER" class="w3-text-grey" >Team #</label>';
+#     $str .= '<input class="w3-input w3-border w3-round sae_data" type="number" onblur="sae_autoSelectClass(this);" inputmode="numeric" data-key="IN_NUMBER" ID="IN_NUMBER">';
+#     $str .= '</div>';
     
-    $str .= '<div class="w3-dropdown-hover w3-blue-grey w3-margin-left" style="height: 40px;">';
-    $str .= '<button class="w3-button w3-large">Actions<i class="w3-margin-left fa fa-sort-down"></i></button>';
-    $str .= '<div class="w3-dropdown-content w3-bar-block w3-card-4">';
-    $str .= sprintf '<a href="javascript:void(0)" class="w3-bar-item w3-button"  onclick="sae_openAddTeam(%d);">Add Team</a>', $eventIDX;
-    $str .= '<hr style="margin: 1px; padding: 0px;">';
-    $str .= '<a href="javascript:void(0);" class="w3-bar-item w3-button" onclick="sae_openImportTeam();">Import</a>';
-    $str .= '</div>';
-    $str .= '</div>';
-    # $str .= '</div>';
-    # $
-    # $str .= sprintf '<h3><button class="w3-button w3-border w3-round w3-hover-blue w3-white" onclick="sae_openAddTeam(%d);">+ New</button> TEAM</h3>', $eventIDX;
-    # $str .= '<h3>Team</h3>';
-    $str .= '<ul ID="UL_TEAM_LIST" class="w3-ul w3-round w3-transparent">';
-    foreach $teamIDX (sort {$TEAM{$a}{IN_NUMBER} <=> $TEAM{$b}{IN_NUMBER}} keys %TEAM) {
-        $str .= &_teamCardTemplate($teamIDX, $TEAM{$teamIDX}{IN_NUMBER}, $TEAM{$teamIDX}{TX_SCHOOL}, $TEAM{$teamIDX}{TX_COUNTRY});
-    }
-    $str .= '</ul>';
-    $str .= '</div>';
-    return ($str);
-}
-sub _teamCardTemplate(){
-    my ($teamIDX, $inNumber, $txSchool, $txCountry) = @_;
-    my $height = 45;
-    my $str;
-    $str .= sprintf '<li ID="TEAM_%d" class="w3-bar w3-button w3-margin-bottom w3-border w3-round w3-white w3-display-container w3-hover-pale-yellow" onclick="sae_openTeamProfile(%d)">', $teamIDX, $teamIDX;
-    $str .= '<i class="fa fa-chevron-right fa-2x w3-display-right  w3-margin-right" aria-hidden="true"></i>';
-    $str .= sprintf '<span class="w3-bar-item w3-circle w3-border w3-blue-grey w3-display-left w3-margin-left w3-center" style="height: %dpx; width: %dpx;">', $height, $height;
-    $str .= sprintf '<div style="margin-left: -7px; margin-top: 4px;">%03d</div>', $inNumber;
-    $str .= '</span>';
-    $str .= '<div class="w3-bar-item w3-small" style="margin-left: 35px; text-align: left; padding-right: 100px;">';
-    $str .= sprintf '<span class="w3-large">%s</span><br>', $txSchool;
-    $str .= sprintf '<span>%s</span><br>', $txCountry;
-    $str .= '</div>';
-    $str .= '</li>';
-    return ($str);
-}
-sub sae_deleteTeam(){
-    print $q->header();
-    $teamIDX = $q->param('teamIDX');
-    $Team = new SAE::TB_TEAM();
-    $Team->deleteRecordById($teamIDX);
-}
-sub sae_openAddTeam(){
-    print $q->header();
-    my $Team = new SAE::TEAM();
-    my $eventIDX = $q->param('eventIDX');
-    my %COUNTRY = %{$Team->_getCountryData()};
+#     $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small">';
+#     $str .= '<label for="TX_SCHOOL" class="w3-text-grey" >School</label>';
+#     $str .= '<input class="w3-input w3-border w3-round sae_data" type="text"  data-key="TX_SCHOOL" ID="TX_SCHOOL">';
+#     $str .= '</div>';
     
-    my %CLASS = (1=>"Regular Class", 2=>"Advanced Class", 3=>"Micro Class");
-    my $str = '<div class="w3-container w3-row">';
+#     $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+#     $str .= '<label for="TX_COUNTRY" class="w3-text-grey" >Country</label>';
+#     $str .= '<select ID="TX_COUNTRY" class="w3-select w3-border w3-round">';
+#     $str .= sprintf '<option value="none" disabled selected>--- Country of Origin ---</option>';
+#     foreach $countryIDX (sort {lc($COUNTRY{$a}{TX_COUNTRY}) cmp lc($COUNTRY{$b}{TX_COUNTRY})} keys %COUNTRY) {
+#         my $txCountry = $COUNTRY{$countryIDX}{TX_COUNTRY};
+#         $str .= sprintf '<option value="%s">%s</option>', $countryIDX, $txCountry;
+#     }
+#     $str .= '</select>';
+#     $str .= '</div>';
     
-    $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-    $str .= '<label for="IN_NUMBER" class="w3-text-grey" >Team #</label>';
-    $str .= '<input class="w3-input w3-border w3-round sae_data" type="number" onblur="sae_autoSelectClass(this);" inputmode="numeric" data-key="IN_NUMBER" ID="IN_NUMBER">';
-    $str .= '</div>';
+#     $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small" >';
+#     $str .= '<label for="TX_NAME" class="w3-text-grey">Team Name</label>';
+#     $str .= sprintf'<input class="w3-input w3-border w3-round sae_data" type="text" value="%s" data-key="TX_NAME"ID="TX_NAME">', $TEAM{TX_NAME};
+#     $str .= '</div>';
     
-    $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small">';
-    $str .= '<label for="TX_SCHOOL" class="w3-text-grey" >School</label>';
-    $str .= '<input class="w3-input w3-border w3-round sae_data" type="text"  data-key="TX_SCHOOL" ID="TX_SCHOOL">';
-    $str .= '</div>';
+#     $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
+#     $str .= '<label for="FK_CLASS_IDX" class="w3-text-grey" >Class</label>';
+#     $str .= '<select ID="FK_CLASS_IDX" class="w3-select w3-border w3-round">';
+#     $str .= sprintf '<option value="none" disabled selected>Class</option>';
+#     foreach $classIDX (sort {$a<=>$b} keys %CLASS) {
+#         $str .= sprintf '<option value="%d">%s</option>', $classIDX, $CLASS{$classIDX};
+#     }
+#     $str .= '</select>';
+#     $str .= '</div>';
     
-    $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-    $str .= '<label for="TX_COUNTRY" class="w3-text-grey" >Country</label>';
-    $str .= '<select ID="TX_COUNTRY" class="w3-select w3-border w3-round">';
-    $str .= sprintf '<option value="none" disabled selected>--- Country of Origin ---</option>';
-    foreach $countryIDX (sort {lc($COUNTRY{$a}{TX_COUNTRY}) cmp lc($COUNTRY{$b}{TX_COUNTRY})} keys %COUNTRY) {
-        my $txCountry = $COUNTRY{$countryIDX}{TX_COUNTRY};
-        $str .= sprintf '<option value="%s">%s</option>', $countryIDX, $txCountry;
-    }
-    $str .= '</select>';
-    $str .= '</div>';
-    
-    $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small" >';
-    $str .= '<label for="TX_NAME" class="w3-text-grey">Team Name</label>';
-    $str .= sprintf'<input class="w3-input w3-border w3-round sae_data" type="text" value="%s" data-key="TX_NAME"ID="TX_NAME">', $TEAM{TX_NAME};
-    $str .= '</div>';
-    
-    $str .= '<div class="w3-mobile w3-quarter w3-margin-bottom w3-padding-small">';
-    $str .= '<label for="FK_CLASS_IDX" class="w3-text-grey" >Class</label>';
-    $str .= '<select ID="FK_CLASS_IDX" class="w3-select w3-border w3-round">';
-    $str .= sprintf '<option value="none" disabled selected>Class</option>';
-    foreach $classIDX (sort {$a<=>$b} keys %CLASS) {
-        $str .= sprintf '<option value="%d">%s</option>', $classIDX, $CLASS{$classIDX};
-    }
-    $str .= '</select>';
-    $str .= '</div>';
-    
-    $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small" >';
-    $str .= '<br>';
-    $str .= sprintf '<button class="w3-button w3-border w3-round w3-green w3-hover-blue w3-margin-left" style="width: 100px;" onclick="sae_addNewTeam(this, %d);">Save</button>', $eventIDX;
-    $str .= '<button class="w3-button w3-border w3-round w3-margin-left" style="width: 100px;" onclick="$(this).close();">Cancel</button>';
-    $str .= '</div>';
-    $str .= '</div>';
-    return ($str);
+#     $str .= '<div class="w3-mobile w3-threequarter w3-margin-bottom w3-padding-small" >';
+#     $str .= '<br>';
+#     $str .= sprintf '<button class="w3-button w3-border w3-round w3-green w3-hover-blue w3-margin-left" style="width: 100px;" onclick="sae_addNewTeam(this, %d);">Save</button>', $eventIDX;
+#     $str .= '<button class="w3-button w3-border w3-round w3-margin-left" style="width: 100px;" onclick="$(this).close();">Cancel</button>';
+#     $str .= '</div>';
+#     $str .= '</div>';
+#     return ($str);
 
-}
-sub sae_addNewTeam(){
-    print $q->header();
-    my $Team = new SAE::TEAM();
-    my $Auth = new SAE::Auth();
-    my %DATA = %{decode_json($q->param('jsonData'))};
-    $DATA{TX_CODE} = $Auth->_getSubscriptionCode(6);
-    my $teamIDX = $Team->_addNewTeam(\%DATA);
-    $str = &_teamCardTemplate($teamIDX, $DATA{IN_NUMBER}, $DATA{TX_SCHOOL}, $DATA{TX_COUNTRY});
-    return ($str);
-}
+# }
+# sub sae_addNewTeam(){
+#     print $q->header();
+#     my $Team = new SAE::TEAM();
+#     my $Auth = new SAE::Auth();
+#     my %DATA = %{decode_json($q->param('jsonData'))};
+#     $DATA{TX_CODE} = $Auth->_getSubscriptionCode(6);
+#     my $teamIDX = $Team->_addNewTeam(\%DATA);
+#     $str = &_teamCardTemplate($teamIDX, $DATA{IN_NUMBER}, $DATA{TX_SCHOOL}, $DATA{TX_COUNTRY});
+#     return ($str);
+# }
 # -------------------------------------- 2021 ----------------------------------
-sub generateAllNewCode() {
-    print $q->header();
-    my $location = $q->param('location');
-    my $Team = new SAE::TB_TEAM();
-    %TEAM =  %{$Team->getAllRecordBy_FkEventIdx($location)};
-    my $Auth = new SAE::Auth();
-    foreach $PkTeamIdx (sort keys %TEAM) {
-        $TxCode = $Auth->getTemporaryPassword(6);
-        $Team->updateTxCode_ById($TxCode, $PkTeamIdx);
-    }
+# sub generateAllNewCode() {
+#     print $q->header();
+#     my $location = $q->param('location');
+#     my $Team = new SAE::TB_TEAM();
+#     %TEAM =  %{$Team->getAllRecordBy_FkEventIdx($location)};
+#     my $Auth = new SAE::Auth();
+#     foreach $PkTeamIdx (sort keys %TEAM) {
+#         $TxCode = $Auth->getTemporaryPassword(6);
+#         $Team->updateTxCode_ById($TxCode, $PkTeamIdx);
+#     }
 
-    return ("Updated Team Code for ".scalar (keys %TEAM)." Teams");
-}
-sub addTeam(){
-    print $q->header();
-    my $InNumber = $q->param('InNumber');
-    my $TxSchool = $q->param('TxSchool');
-    my $TxName = $q->param('TxName');
-    my $PkCountryIdx = $q->param('PkCountryIdx');
-    my $PkClassIdx = $q->param('PkClassIdx');
-    my $location = $q->param('location');
-    my $dbi = new SAE::Db();
-    my $SQL = "INSERT INTO TB_TEAM (IN_NUMBER, TX_SCHOOL, TX_NAME, FK_COUNTRY_IDX, FK_CLASS_IDX, FK_EVENT_IDX)
-        VALUES (?, ?, ?, ?, ?, ?)";
-    my $insert = $dbi->prepare($SQL);
-    $insert->execute($InNumber, $TxSchool, $TxName, $PkCountryIdx, $PkClassIdx, $location);
-    my $PkTeamIdx = $insert->{q{mysql_insertid}};
-    $InNumber = substr("000".$InNumber,-3,3);
-    $str .= &_templateList($PkTeamIdx, $InNumber, $TxSchool, $TxName);
-    return ($str);
-}
-sub showAddTeam(){
-    print $q->header();
-    my $location = $q->param('location');
-    my $Class = new SAE::TB_CLASS();
-    %CLASS = %{$Class->getAllRecord()};
-    my $Country = new SAE::TB_COUNTRY();
-    %COUNTRY = %{$Country->getAllRecord()};
-    my $location = $q->param('location');
-    my $str;
-    $str = '<a class="w3-button w3-border w3-display-topright" onclick="closeModal(\'id01\');">&times;</a>';
-    $str .= '<div class="w3-container w3-blue" >';
-    $str .= '<h2>New Team</h2>';
-    $str .= '</div>';
-    $str .= '<div class="w3-container">';
-    $str .= '<p><label>Team Number</label>';
-    $str .= '<input class="w3-number w3-input" type="number" ID="IN_NUMBER"></p>';
-    $str .= '<p><label>University</label>';
-    $str .= '<input class="w3-input" type="text" ID="TX_SCHOOL"></p>';
-    $str .= '<p><label>Name</label>';
-    $str .= '<input class="w3-input" type="text" ID="TX_NAME" ></p>';
-    $str .= '<p><label>Country</label>';
-    $str .= '<select ID="FK_COUNTRY_IDX" class="w3-input">';
-     $str .= '<option value="0">--- Country of Origin ---</option>';
-    foreach $PkCountryIdx (sort {$COUNTRY{$a}{TX_COUNTRY} cmp $COUNTRY{$b}{TX_COUNTRY}} keys %COUNTRY) {
-        $str .= '<option value="'.$PkCountryIdx.'">'.$COUNTRY{$PkCountryIdx}{TX_COUNTRY}.'</option>';
-    }
-    $str .= '</select>';
-    $str .= '</p>';
-    $str .= '<p><label>Class</label>';
-    $str .= '<select ID="FK_CLASS_IDX" class="w3-input">';
-    $str .= '<option value="0">--- Class ---</option>';
-    foreach $PkClassIdx (sort {$CLASS{$a}{TX_COUNTRY} cmp $CLASS{$b}{TX_CLASS}} keys %CLASS) {
-        $str .= '<option value="'.$PkClassIdx.'">'.$CLASS{$PkClassIdx}{TX_CLASS}.'</option>';
-    }
-    $str .= '</select>';
-    $str .= '</p>';
-    $str .= '</div>';
-    $str .= '<div class="w3-container w3-blue" >';
-    $str .= '<span class="w3-button w3-card-4 w3-margin w3-white" onclick="addTeam();">Add</span>';
-    $str .= '<span class="w3-button w3-card-4 w3-margin w3-white" onclick="closeModal(\'id01\');">Cancel</span>';
-    $str .= '</div>';
-    return ($str);
-}
-sub deleteTeam(){
-    print $q->header();
-    my $PkTeamIdx = $q->param('PkTeamIdx');
-    my $Team = new SAE::TB_TEAM();
-    $Team->deleteRecordById($PkTeamIdx);
-    return();
-}
+#     return ("Updated Team Code for ".scalar (keys %TEAM)." Teams");
+# }
+# sub addTeam(){
+#     print $q->header();
+#     my $InNumber = $q->param('InNumber');
+#     my $TxSchool = $q->param('TxSchool');
+#     my $TxName = $q->param('TxName');
+#     my $PkCountryIdx = $q->param('PkCountryIdx');
+#     my $PkClassIdx = $q->param('PkClassIdx');
+#     my $location = $q->param('location');
+#     my $dbi = new SAE::Db();
+#     my $SQL = "INSERT INTO TB_TEAM (IN_NUMBER, TX_SCHOOL, TX_NAME, FK_COUNTRY_IDX, FK_CLASS_IDX, FK_EVENT_IDX)
+#         VALUES (?, ?, ?, ?, ?, ?)";
+#     my $insert = $dbi->prepare($SQL);
+#     $insert->execute($InNumber, $TxSchool, $TxName, $PkCountryIdx, $PkClassIdx, $location);
+#     my $PkTeamIdx = $insert->{q{mysql_insertid}};
+#     $InNumber = substr("000".$InNumber,-3,3);
+#     $str .= &_templateList($PkTeamIdx, $InNumber, $TxSchool, $TxName);
+#     return ($str);
+# }
+# sub showAddTeam(){
+#     print $q->header();
+#     my $location = $q->param('location');
+#     my $Class = new SAE::TB_CLASS();
+#     %CLASS = %{$Class->getAllRecord()};
+#     my $Country = new SAE::TB_COUNTRY();
+#     %COUNTRY = %{$Country->getAllRecord()};
+#     my $location = $q->param('location');
+#     my $str;
+#     $str = '<a class="w3-button w3-border w3-display-topright" onclick="closeModal(\'id01\');">&times;</a>';
+#     $str .= '<div class="w3-container w3-blue" >';
+#     $str .= '<h2>New Team</h2>';
+#     $str .= '</div>';
+#     $str .= '<div class="w3-container">';
+#     $str .= '<p><label>Team Number</label>';
+#     $str .= '<input class="w3-number w3-input" type="number" ID="IN_NUMBER"></p>';
+#     $str .= '<p><label>University</label>';
+#     $str .= '<input class="w3-input" type="text" ID="TX_SCHOOL"></p>';
+#     $str .= '<p><label>Name</label>';
+#     $str .= '<input class="w3-input" type="text" ID="TX_NAME" ></p>';
+#     $str .= '<p><label>Country</label>';
+#     $str .= '<select ID="FK_COUNTRY_IDX" class="w3-input">';
+#      $str .= '<option value="0">--- Country of Origin ---</option>';
+#     foreach $PkCountryIdx (sort {$COUNTRY{$a}{TX_COUNTRY} cmp $COUNTRY{$b}{TX_COUNTRY}} keys %COUNTRY) {
+#         $str .= '<option value="'.$PkCountryIdx.'">'.$COUNTRY{$PkCountryIdx}{TX_COUNTRY}.'</option>';
+#     }
+#     $str .= '</select>';
+#     $str .= '</p>';
+#     $str .= '<p><label>Class</label>';
+#     $str .= '<select ID="FK_CLASS_IDX" class="w3-input">';
+#     $str .= '<option value="0">--- Class ---</option>';
+#     foreach $PkClassIdx (sort {$CLASS{$a}{TX_COUNTRY} cmp $CLASS{$b}{TX_CLASS}} keys %CLASS) {
+#         $str .= '<option value="'.$PkClassIdx.'">'.$CLASS{$PkClassIdx}{TX_CLASS}.'</option>';
+#     }
+#     $str .= '</select>';
+#     $str .= '</p>';
+#     $str .= '</div>';
+#     $str .= '<div class="w3-container w3-blue" >';
+#     $str .= '<span class="w3-button w3-card-4 w3-margin w3-white" onclick="addTeam();">Add</span>';
+#     $str .= '<span class="w3-button w3-card-4 w3-margin w3-white" onclick="closeModal(\'id01\');">Cancel</span>';
+#     $str .= '</div>';
+#     return ($str);
+# }
+# sub deleteTeam(){
+#     print $q->header();
+#     my $PkTeamIdx = $q->param('PkTeamIdx');
+#     my $Team = new SAE::TB_TEAM();
+#     $Team->deleteRecordById($PkTeamIdx);
+#     return();
+# }
 sub saveTeamInfo(){
     print $q->header();
     my $Team = new SAE::TB_TEAM();
@@ -519,52 +702,52 @@ sub showResetAccessCode(){
     $str .= '</form><br>';
     return ($str);
 }
-sub generateRandomTeamCode(){
-    print $q->header();
-    my $PkTeamIdx = $q->param('PkTeamIdx');
+# sub generateRandomTeamCode(){
+#     print $q->header();
+#     my $PkTeamIdx = $q->param('PkTeamIdx');
 
-    my $str;
-    my $Auth = new SAE::Auth();
-    $str = $Auth->getTemporaryPassword(10);
-    return ($str);
-}
-sub showTeamList(){
-    print $q->header();
-    my $location = $q->param('location');
-    my $Team = new SAE::TB_TEAM();
-    my $Class = new SAE::TB_CLASS();
-    %TEAM = %{$Team->getAllRecordBy_FkEventIdx($location)};
-    %CLASS = %{$Class->getAllRecord()};
-    my $str;
-    my $c=1;
-    $str .= '<span class="w3-button w3-card w3-margin" onclick="loadSetupAndAdministration();">Back</span>';
-    $str .= '<span class="w3-button w3-card w3-margin"  onclick="showAddTeam();">Add Team 000</span>';
-    $str .= '<span class="w3-button w3-card w3-margin"  onclick="generateAllNewCode();">Generate New Codes</span>';
-    $str .= '<ul ID="TeamList" class="w3-ul w3-card-4">';
-    foreach $PkTeamIdx (sort {$TEAM{$a}{IN_NUMBER} <=> $TEAM{$b}{IN_NUMBER}} keys %TEAM) {
-        $InNumber = substr("000".$TEAM{$PkTeamIdx}{IN_NUMBER},-3,3);
-        $TxSchool = $TEAM{$PkTeamIdx}{TX_SCHOOL};
-        $TxName = $TEAM{$PkTeamIdx}{TX_NAME};
-        $str .= &_templateList($PkTeamIdx, $InNumber, $TxSchool, $TxName);
-    }
-    $str .= '</ul>';
-    return ($str);
-}
+#     my $str;
+#     my $Auth = new SAE::Auth();
+#     $str = $Auth->getTemporaryPassword(10);
+#     return ($str);
+# }
+# sub showTeamList(){
+#     print $q->header();
+#     my $location = $q->param('location');
+#     my $Team = new SAE::TB_TEAM();
+#     my $Class = new SAE::TB_CLASS();
+#     %TEAM = %{$Team->getAllRecordBy_FkEventIdx($location)};
+#     %CLASS = %{$Class->getAllRecord()};
+#     my $str;
+#     my $c=1;
+#     $str .= '<span class="w3-button w3-card w3-margin" onclick="loadSetupAndAdministration();">Back</span>';
+#     $str .= '<span class="w3-button w3-card w3-margin"  onclick="showAddTeam();">Add Team 000</span>';
+#     $str .= '<span class="w3-button w3-card w3-margin"  onclick="generateAllNewCode();">Generate New Codes</span>';
+#     $str .= '<ul ID="TeamList" class="w3-ul w3-card-4">';
+#     foreach $PkTeamIdx (sort {$TEAM{$a}{IN_NUMBER} <=> $TEAM{$b}{IN_NUMBER}} keys %TEAM) {
+#         $InNumber = substr("000".$TEAM{$PkTeamIdx}{IN_NUMBER},-3,3);
+#         $TxSchool = $TEAM{$PkTeamIdx}{TX_SCHOOL};
+#         $TxName = $TEAM{$PkTeamIdx}{TX_NAME};
+#         $str .= &_templateList($PkTeamIdx, $InNumber, $TxSchool, $TxName);
+#     }
+#     $str .= '</ul>';
+#     return ($str);
+# }
 
-sub _templateList(){
-    my ($PkTeamIdx, $InNumber, $TxSchool, $TxName) = @_;
-    my $str;
-    $str = '<li ID="LIST_TEAM_'.$PkTeamIdx.'" class="w3-bar">';
-    $str .= '<span class="w3-bar-item w3-button w3-white w3-xlarge w3-right" onclick="deleteTeam('.$PkTeamIdx.')">&times;</span>';
-#     $str .= '<span class="w3-bar-item w3-button w3-white w3-xxlarge w3-left fa fa-user-secret" onclick="showResetAccessCode('.$PkTeamIdx.')"></span>';
-#     $str .= '<span class="w3-bar-item w3-button w3-white w3-xxlarge w3-left fa fa-pencil-square-o" onclick="showEditTeamInformation('.$PkTeamIdx.');"></span>';
-    $str .= '<img src="../images/users.png" class="w3-bar-item w3-circle w3-hide-small" style="width:85px" onclick="showEditTeamInformation('.$PkTeamIdx.');">';
-    $str .= '<div class="w3-bar-item">';
-    $str .= '<span class="w3-medium" ><a ID="SPAN_NUMBER_SCHOOL_'.$PkTeamIdx.'" href="javascript:void(0);" onclick="showEditTeamInformation('.$PkTeamIdx.');">#'.$InNumber.' - '.$TxSchool.'</a></span><br>';
-#     $str .= '<span class="w3-small"ID="SPAN_NAME_'.$PkTeamIdx.'" >'.$TxName.'</span><br>';
-    $str .= '<span class="fa fa-pencil-square-o" style="cursor: pointer;" onclick="showResetAccessCode('.$PkTeamIdx.')"> Team Code: ******</span>';
-    $str .= '</div>';
-    $str .= '</li>';
-    return ($str);
-}
+# sub _templateList(){
+#     my ($PkTeamIdx, $InNumber, $TxSchool, $TxName) = @_;
+#     my $str;
+#     $str = '<li ID="LIST_TEAM_'.$PkTeamIdx.'" class="w3-bar">';
+#     $str .= '<span class="w3-bar-item w3-button w3-white w3-xlarge w3-right" onclick="deleteTeam('.$PkTeamIdx.')">&times;</span>';
+# #     $str .= '<span class="w3-bar-item w3-button w3-white w3-xxlarge w3-left fa fa-user-secret" onclick="showResetAccessCode('.$PkTeamIdx.')"></span>';
+# #     $str .= '<span class="w3-bar-item w3-button w3-white w3-xxlarge w3-left fa fa-pencil-square-o" onclick="showEditTeamInformation('.$PkTeamIdx.');"></span>';
+#     $str .= '<img src="../images/users.png" class="w3-bar-item w3-circle w3-hide-small" style="width:85px" onclick="showEditTeamInformation('.$PkTeamIdx.');">';
+#     $str .= '<div class="w3-bar-item">';
+#     $str .= '<span class="w3-medium" ><a ID="SPAN_NUMBER_SCHOOL_'.$PkTeamIdx.'" href="javascript:void(0);" onclick="showEditTeamInformation('.$PkTeamIdx.');">#'.$InNumber.' - '.$TxSchool.'</a></span><br>';
+# #     $str .= '<span class="w3-small"ID="SPAN_NAME_'.$PkTeamIdx.'" >'.$TxName.'</span><br>';
+#     $str .= '<span class="fa fa-pencil-square-o" style="cursor: pointer;" onclick="showResetAccessCode('.$PkTeamIdx.')"> Team Code: ******</span>';
+#     $str .= '</div>';
+#     $str .= '</li>';
+#     return ($str);
+# }
 

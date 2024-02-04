@@ -607,7 +607,28 @@ footer h2 i{
     background: #f2f2f2;
 }
 
+.w3-column-3{
+    overflow:hidden;
+    -webkit-column-count:3;
+    -moz-column-count:3;
+    -o-column-count:3;
+    column-count:3;
+}
 
+.w3-column-2{
+    overflow:hidden;
+    -webkit-column-count:2;
+    -moz-column-count:2;
+    -o-column-count:2;
+    column-count:2;
+}
+.w3-column-4{
+    overflow:hidden;
+    -webkit-column-count:4;
+    -moz-column-count:4;
+    -o-column-count:4;
+    column-count:4;
+}
 
 
 

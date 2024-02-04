@@ -43,8 +43,15 @@ sub attend_viewSummary (){
     $str .= '<table class="w3-table-all">';
     my $totalRegistered = $SUMMARY{REG_TOT} + $SUMMARY{ADV_TOT} + $SUMMARY{MIC_TOT};
     my $totalCheckedIn  = $SUMMARY{REG} + $SUMMARY{ADV} + $SUMMARY{MIC};
-    my $totalTickets    = ($totSatMin + $totSunMin) / ($totalCheckedIn * .9);
-    my $sundayTicket    = $totSunMin/($totalCheckedIn * .9);
+    my $totalTickets    = 0;
+    my $sundayTicket    = 0;
+    my $averageCount    = 0;
+    if ($totalCheckedIn != 0){
+        $totalTickets    = ($totSatMin + $totSunMin) / ($totalCheckedIn * .9);
+        $sundayTicket    = $totSunMin/($totalCheckedIn * .9);
+        $averageCount   = $SUMMARY{TOT}/$totalCheckedIn
+    }
+    $str .= 'Total Checked In ='. $totalCheckedIn;
     $str .= sprintf '<tr><td style="width: 160px">Total Check-In Status</td><td><span class="w3-text-blue">%d</span> / %d<br>%2.1f&#37; In Attendance</td></tr>', $totalCheckedIn, $totalRegistered, ($totalCheckedIn/$totalRegistered) * 100;
     $str .= sprintf '<tr><td >Regular Checked-In Status</td><td><span class="w3-text-blue">%d</span> / %d<br>%2.1f&#37; Checked In </td></tr>', $SUMMARY{REG}, $SUMMARY{REG_TOT}, 100*($SUMMARY{REG}/$SUMMARY{REG_TOT});
     $str .= sprintf '<tr><td >Advanced Checked-In Status</td><td><span class="w3-text-blue">%d</span> / %d<br>%2.1f&#37; Checked In </td></tr>', $SUMMARY{ADV}, $SUMMARY{ADV_TOT}, 100*($SUMMARY{ADV}/$SUMMARY{ADV_TOT});
@@ -52,7 +59,7 @@ sub attend_viewSummary (){
     $str .= sprintf '<tr><td >Total Student Attendance</td>';
     $str .= sprintf '<td>';
     $str .= sprintf '<span class="w3-text-blue">%d</span> Total<br>', $SUMMARY{TOT};
-    $str .= sprintf '<span class="w3-text-blue">%2.1f</span> Average # of Students/Team', $SUMMARY{TOT}/$totalCheckedIn;
+    $str .= sprintf '<span class="w3-text-blue">%2.1f</span> Average # of Students/Team', $averageCount;
     $str .= sprintf '</td></tr>';
     $str .= sprintf '<tr><td >Recommend Total # of<br>Tickets for this Event </td>';
     $str .= sprintf '<td>';

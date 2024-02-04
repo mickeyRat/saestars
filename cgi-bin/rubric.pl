@@ -40,6 +40,49 @@ exit;
 # ***********************************************************************************************************************************
 #  REPORT RUBRIC 2024
 # ***********************************************************************************************************************************
+sub rubric_addNewSection (){
+    print $q->header();
+    my $Rubric       = new SAE::RUBRIC();
+    my $classIDX     = $q->param('classIDX');
+    my $txType       = $q->param('txType');
+    my $inSection    = $q->param('inSection');
+    my $txSection    = $q->param('txSection');
+    my $inWeight     = 0;
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my $str;
+    $str = sprintf '<h3><i>Section %d </i>- <b>%s</b> (<a class="SectionWeight_%d" href="javascript:void(0);" onclick="rubric_balanceSectionWeight(this, \'%s\', %d, %d);">%2.1f%</a>)</h3>', $inSection, $txSection, $inSection, $txType, $inSection, $classIDX, $secWeight;
+    $str .= '<table class="w3-table-all">';
+    $str .= '<thead>';
+    $str .= '<tr>';
+    $str .= '<th style="width: 5%">#</th>';
+    $str .= sprintf '<th style="width:85%;"><button class="w3-button w3-border w3-round w3-hover-green w3-card-2" onclick="rubric_addNewSubSection(this, %d, \'%s\', \'%s\', \'%2.1f\', %d, %d);">Add New Title</button></th>', $inSection, $txType, $txSection, $secWeight, $nextSubsentionNumber, $classIDX;
+    $str .= '<th style="width: 10%; text-align: right;">Weight</th>';
+    $str .= '</tr>';
+    $str .= '</thead>';
+    $str .= '<tbody>';
+    $str .= '</tbody>';
+    $str .= '</table>';
+
+    return ($str);
+    }
+sub rubric_openAddNewSection (){
+    print $q->header();
+    my $Rubric    = new SAE::RUBRIC();
+    my $classIDX  = $q->param('classIDX');
+    my $txType    = $q->param('txType');
+    my $inSection = $Rubric->_getNextSectionNumber($classIDX, $txType);
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my $str;
+    $str .= '<div class="w3-container w3-padding">';
+    $str .= sprintf '<h2>Section %d</h2>', $inSection;
+    $str .= '<input type="text" class="w3-input w3-border w3-round" placeholder="Section Title">';
+    $str .= '<div class="w3-container w3-center w3-padding-24">';
+    $str .= '<button class="w3-button w3-round w3-border w3-margin-right" onclick="$(this).close();">Cancel</button>';
+    $str .= sprintf '<button class="w3-button w3-round w3-border w3-pale-green w3-hover-green w3-margin-left" onclick="rubric_addNewSection(this, %d, \'%s\', %d);">Create</button>', $classIDX, $txType, $inSection;
+    $str .= '</div>';
+    $str .= '</div>';
+    return ($str);
+    }
 sub rubric_deleteSubsection (){
     print $q->header();
     my $Ref = new SAE::REFERENCE();
@@ -113,7 +156,7 @@ sub rubric_addNewSubSection (){
         $str .= '</tr>';
         $str .= '<tr>';
         $str .= '<td colspan="2" class="w3-display-container">';
-        $str .= sprintf '<button class="w3-button w3-hover-red w3-border w3-round w3-left" onclick="$(\'#%s\').remove();">cancel</button>', $divName;
+        $str .= sprintf '<button class="w3-button w3-hover-red w3-border w3-round w3-left" onclick="$(this).close();">cancel</button>';
         $str .= sprintf '<button class="w3-button w3-green w3-border w3-round w3-right" onclick="rubric_saveNewSubSectionRecord(this, \'%s\', \'%s\', %d);">Save</button>',$divName, $txType, $classIDX;
         $str .= '</td>';
         $str .= '</tr>';
@@ -319,11 +362,16 @@ sub rubric_loadClassRubric (){
     my %SECTION = %{$Rubric->_getRubricSectionListByType($txType, $classIDX)};
     my $txClass = $CLASS{$classIDX};
     my $str;
-    $str .= sprintf '<h2 class="w3-bar w3-border w3-light-grey w3-padding">%s</h2>', $txClass;
+    # $str .= sprintf '<h2 class="w3-bar w3-border w3-light-grey w3-padding">';
+    $str .= '<div class="w3-container w3-bar w3-border w3-light-gre w3-padding">';
+    $str .= sprintf '<button class="w3-button w3-border w3-round w3-margin-right w3-card-2 w3-hover-green" onclick="rubric_openAddNewSection(this, %d, \'%s\');">Add New %s Section</button>', $classIDX, $txType, $txClass;
+    # $str .= sprintf '<span class="w3-margin-right w3-xlarge">%s</span>', $txClass;
+    $str .= '</div>';
     foreach $txSection (sort { $SECTION{$a}{IN_SEC} <=> $SECTION{$b}{IN_SEC} } keys %SECTION) {
         my $inSection = $SECTION{$txSection}{IN_SEC};
         my $secWeight = $SECTION{$txSection}{IN_SEC_WEIGHT};
         my $nextSubsentionNumber = $Rubric->_getLastSubSectionNumber($txType, $inSection, $classIDX);
+        # $str .= '<div class="w3-container">';
         $str .= sprintf '<h3><i>Section %d </i>- <b>%s</b> (<a class="SectionWeight_%d" href="javascript:void(0);" onclick="rubric_balanceSectionWeight(this, \'%s\', %d, %d);">%2.1f%</a>)</h3>', $inSection, $txSection, $inSection, $txType, $inSection, $classIDX, $secWeight;
         $str .= '<table class="w3-table-all">';
         $str .= '<thead>';
@@ -348,6 +396,7 @@ sub rubric_loadClassRubric (){
         }
         $str .= '</tbody>';
         $str .= '</table>';
+        # $str .= '</div>';
     }
     return ($str);
     }

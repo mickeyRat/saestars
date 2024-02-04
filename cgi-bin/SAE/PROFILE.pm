@@ -14,6 +14,30 @@ sub new{
 	bless($self, $className);
 	return $self;
 }
+sub _getVolunteerList (){
+    my ($self, $eventIDX, $classIDX, $inType) = @_;
+    my $SQL = "SELECT * FROM TB_PROFILE WHERE (FK_EVENT_IDX=? and FK_CLASS_IDX=? AND IN_TYPE=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($eventIDX, $classIDX, $inType);
+    my %HASH = %{$select->fetchall_hashref('FK_USER_IDX')}; 
+    return (\%HASH);
+    }
+sub _getVolunteerProfile (){
+    my ($self, $userIDX) = @_;
+    my $SQL = "SELECT PRO.*, EVENT.* FROM TB_PROFILE AS PRO JOIN TB_EVENT AS EVENT ON PRO.FK_EVENT_IDX=EVENT.PK_EVENT_IDX WHERE PRO.FK_USER_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($userIDX);
+    my %HASH = %{$select->fetchall_hashref(['PK_EVENT_IDX','PK_PROFILE_IDX'])}; 
+    return (\%HASH);
+    }
+sub _getVolunteerAssignmentCount (){
+    my ($self, $eventIDX, $inType, $classIDX) = @_;
+    my $SQL = "SELECT FK_USER_IDX, COUNT(FK_USER_IDX) AS IN_COUNT FROM TB_CARD WHERE FK_EVENT_IDX=? AND FK_CARDTYPE_IDX=? AND FK_CLASS_IDX=? GROUP BY FK_USER_IDX";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($eventIDX, $inType, $classIDX);
+    my %HASH = %{$select->fetchall_hashref('FK_USER_IDX')}; 
+    return (\%HASH);
+    }
 sub _getListofJudgesBySite (){
     my ($self, $field, $txYear) = @_;
     my $SQL= "SELECT U.TX_EMAIL FROM TB_PROFILE AS P JOIN TB_USER AS U ON P.FK_USER_IDX=U.PK_USER_IDX WHERE ($field=? AND P.TX_YEAR=?)";
@@ -60,12 +84,14 @@ sub _getAvailableJudges (){
 	    my $select = $dbi->prepare($SQL);
 	       $select->execute( $txYear, 1, 1 );
 	       %HASH = %{$select->fetchall_hashref('PK_USER_IDX')};
+           # print $SQL."\n";;
     } else {
     	# print "Other Report \n";
     	my $SQL = "SELECT U.* FROM TB_PROFILE AS P JOIN TB_USER AS U ON P.FK_USER_IDX=U.PK_USER_IDX WHERE (P.TX_YEAR=? AND $boType=?)";
     	my $select = $dbi->prepare($SQL);
        	   $select->execute( $txYear, 1);
        	   %HASH = %{$select->fetchall_hashref('PK_USER_IDX')};
+           print $SQL."\n";;
     }
     
     return (\%HASH);
@@ -197,6 +223,14 @@ sub _getUserPreferenceHistory (){
     my %HASH = %{$select->fetchall_hashref('PK_PROFILE_IDX')};
 
     return (\%HASH);
+    }
+sub _checkForEmptyProfile (){
+    my ($self, $userIDX, $eventIDX) = @_;
+    my $SQL = "SELECT * FROM TB_PROFILE WHERE (FK_USER_IDX=? AND FK_EVENT_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $userIDX, $eventIDX );
+    my $row = $select->rows();
+    return ($row);
     }
 sub _checkForCurrentProfile (){
     my ($self, $userIDX) = @_;

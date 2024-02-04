@@ -9,6 +9,7 @@ use Cwd 'abs_path';
 use CGI::Session;
 use SAE::TEAM;
 use SAE::Auth;
+use File::Path qw(make_path);
 
 
 my $path = abs_path($0);
@@ -20,13 +21,13 @@ $qs = new CGI($ENV{'QUERY_STRING'});
 my $Team = new SAE::TEAM();
 my $Auth = new SAE::Auth();
 
-my $teamIDX = $q->param('teamIDX');
+my $teamIDX  = $q->param('teamIDX');
 my $eventIDX = $q->param('eventIDX');
 my $inNumber = $q->param('inNumber');
-my $inPaper = $q->param('paperIDX');
-my $inYear = $Team->_getEventYear($eventIDX);
-my $txKeys = $Auth->getTemporaryPassword(16);
-my %PAPER = (1=>'Design Report', 2=>'TDS', 3=>'Drawing');
+my $inPaper  = $q->param('paperIDX');
+my $inYear   = $Team->_getEventYear($eventIDX);
+my $txKeys   = $Auth->getTemporaryPassword(16);
+my %PAPER    = (1=>'Design Report', 2=>'TDS', 3=>'Drawing');
 $Team->_deleteUploadedFile($teamIDX, $inPaper);
 print $q->header();
     my $filename = $q->param('filename');
@@ -34,11 +35,12 @@ print $q->header();
     my $file_handle = $q->upload('filename');
     my $regex = qr/[\{\(\)#]/mp;
     my $subst = '-';
-    my $newfileName = $filename =~ s/$regex/$subst/rg;
-
+    # my $newfileName = $filename =~ s/$regex/$subst/rg;
+    my $newfileName = sprintf "Team_%03d-%s", $inNumber, $PAPER{$inPaper}; # $Auth->getTemporaryPassword(16);
     my $newDirectory = sprintf "../uploads/%d/%d/%d", $inYear, $eventIDX, $inNumber;
+
     if (!-e $newDirectory){
-        mkdir($newDirectory, 0755);
+        make_path($newDirectory);
     }
     my $newPath = "$newDirectory/$newfileName";
     open (OUTFILE,">$newPath");

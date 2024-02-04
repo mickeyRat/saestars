@@ -144,7 +144,7 @@ sub generateOverallScores (){
     }
 sub _activatePublicView(){  #Keep 2024 
     my ($self, $publishIDX, $checked) = @_;
-    my $SQL = "UPDATE TB_PUBLISH SET IN_SHOW=? WHERE PK_PUBLISH_IDX=?";
+    my $SQL    = "UPDATE TB_PUBLISH SET IN_SHOW=? WHERE PK_PUBLISH_IDX=?";
     my $update = $dbi->prepare($SQL);
        $update->execute( $checked, $publishIDX );
     return;
@@ -209,21 +209,34 @@ sub _getPublishedList (){ #Keep 2024
     my %HASH = %{$select->fetchall_hashref(['FK_CLASS_IDX', 'PK_PUBLISH_IDX'])};
     return (\%HASH);
     }
-# sub _getPublishStatus (){
-#     my ($self, $eventIDX, $classIDX, $txTitle) = @_;
-#     my $SQL = "SELECT IN_SHOW FROM TB_PUBLISH WHERE (FK_EVENT_IDX=? AND TX_TITLE=? AND IN_SHOW=? AND FK_CLASS_IDX=?)";
-#     my $select = $dbi->prepare($SQL);
-#        $select->execute( $eventIDX, $txTitle, 1, $classIDX );
-#     my $rows = $select->rows();
-#     # print "$eventIDX, $txTitle, 1\n";
-#     # print $rows;
-#     # print "\n";
-#     if ($rows){
-#         return (1);
-#     } else {
-#         return(0);
-#     }
-#     }
+
+sub _getPubishStatus (){
+    my ($self, $eventIDX, $classIDX, $inType) = @_;
+    my $SQL = "SELECT IN_SHOW FROM TB_PUBLISH WHERE (FK_EVENT_IDX=? AND FK_CLASS_IDX=? AND IN_TYPE=? AND IN_SHOW=1)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $eventIDX, $classIDX, $inType );
+    my $rows = $select->rows();
+    if ($rows){
+        return (1);
+    } else {
+        return(0);
+    }
+    }
+sub _getPublishStatus(){
+    my ($self, $eventIDX, $classIDX, $txTitle) = @_;
+    my $SQL = "SELECT IN_SHOW FROM TB_PUBLISH WHERE (FK_EVENT_IDX=? AND TX_TITLE=? AND IN_SHOW=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( $eventIDX, $txTitle, 1, $classIDX );
+    my $rows = $select->rows();
+    # print "$eventIDX, $txTitle, 1\n";
+    # print $rows;
+    # print "\n";
+    if ($rows){
+        return (1);
+    } else {
+        return(0);
+    }
+    }
 # sub _getSelectedFinalReportFileID(){
 #     my ($self, $eventIDX) = @_;
 #     my $SQL = "SELECT * FROM TB_PUBLISH WHERE (FK_EVENT_IDX=? AND IN_INCLUDE=?)";

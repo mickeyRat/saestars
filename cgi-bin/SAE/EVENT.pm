@@ -22,6 +22,19 @@ sub new{
 	bless($self, $className);
 	return $self;
 }
+sub _checkUserPreferences (){
+    my ($self, $userIDX, $eventIDX, $classIDX, $inType) = @_;
+    my $SQL = "SELECT * FROM TB_PROFILE WHERE FK_USER_IDX=? AND FK_EVENT_IDX=? AND FK_CLASS_IDX=? AND IN_TYPE=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($userIDX, $eventIDX, $classIDX, $inType);
+    my $row = $select->rows();
+    if ($row) {
+        my %HASH = %{$select->fetchrow_hashref()};
+        return  (1, $HASH{PK_PROFILE_IDX})
+    } else {
+        return (0, 0);
+    }
+    }
 sub _getEventData(){
     my $self = shift;
     return (\%EVENT);

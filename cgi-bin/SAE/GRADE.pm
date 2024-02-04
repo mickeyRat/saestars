@@ -19,30 +19,86 @@ sub new{
 # ===============================================================
 # GET
 # ===============================================================
-sub getAssessmentScore_byCard(){
-    my ($cardIDX, $txType) = @_;
-    my $score = 0;
-    my $SQL = "SELECT CARD.IN_POINTS AS IN_MAX_SCORE
-                , (PAPER.IN_VALUE/10) AS IN_VALUE
-                , (REPORT.IN_SEC_WEIGHT/100) AS IN_SEC_WEIGHT
-                , (REPORT.IN_SUB_WEIGHT/100) AS IN_SUB_WEIGHT
-                ,  REPORT.IN_SUB, REPORT.IN_SEC FROM TB_PAPER AS PAPER
+sub _getTeamOverallScore (){
+    my ($self, $teamIDX) = @_;
+    my $str;
+
+    return ();
+    }
+sub _getScoringSummary (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT C.FK_CARDTYPE_IDX, PAPER.FK_CARD_IDX, 
+        SUM(CARD.IN_POINTS * (PAPER.IN_VALUE/10) * (REPORT.IN_SEC_WEIGHT/100) * (REPORT.IN_SUB_WEIGHT/100)) AS IN_SCORE 
+        FROM TB_PAPER AS PAPER 
+        JOIN TB_REPORT AS REPORT ON REPORT.PK_REPORT_IDX=PAPER.FK_REPORT_IDX 
+        JOIN TB_CARDTYPE AS CARD ON REPORT.TX_TYPE=CARD.TX_TYPE 
+        JOIN TB_CARD AS C ON C.PK_CARD_IDX = PAPER.FK_CARD_IDX WHERE (C.FK_TEAM_IDX=?) GROUP BY C.FK_CARDTYPE_IDX, PAPER.FK_CARD_IDX";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($teamIDX);
+    my %HASH = %{$select->fetchall_hashref(['FK_CARDTYPE_IDX','FK_CARD_IDX'])}; 
+    my %SCORES = ();
+    foreach $inType (sort keys %HASH) {
+        my @score = ();
+        foreach $cardIDX (keys %{$HASH{$inType}}) {
+            push(@score, $HASH{$inType}{$cardIDX}{IN_SCORE});
+            # print "   $HASH{$inType}{$cardIDX}{IN_SCORE}\n";
+        }   
+        # print join(", ", @score)."\n\n";
+        $SCORES{$inType} = mean(@score);
+        # printf "%d\t%d\t%1.4f\n", $teamIDX, $inType, mean(@score);
+    }
+
+    return (\%SCORES);
+    }
+
+sub _getCardAssessmentWeightedScores (){
+    my ($self, $txType, $teamIDX) = @_;
+    my $SQL = "SELECT PAPER.FK_CARD_IDX, SUM(CARD.IN_POINTS * (PAPER.IN_VALUE/10) * (REPORT.IN_SEC_WEIGHT/100) * (REPORT.IN_SUB_WEIGHT/100)) AS IN_SCORE 
+    FROM TB_PAPER AS PAPER
             JOIN TB_REPORT AS REPORT ON REPORT.PK_REPORT_IDX=PAPER.FK_REPORT_IDX
             JOIN TB_CARDTYPE AS CARD ON REPORT.TX_TYPE=CARD.TX_TYPE
-        WHERE (FK_CARD_IDX=? AND CARD.TX_TYPE=?)";
+            JOIN TB_CARD AS C ON C.PK_CARD_IDX = PAPER.FK_CARD_IDX
+        WHERE (CARD.TX_TYPE=? AND C.FK_TEAM_IDX=?) 
+        GROUP BY PAPER.FK_CARD_IDX";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($txType, $teamIDX);
+    my %HASH = %{$select->fetchall_hashref('FK_CARD_IDX')}; 
+    # print $SQL, "<br>$txType, $teamIDX";
+    # print "Test = ".join("<br>",keys %HASH);
+    return (\%HASH);
+    }
+sub getAssessmentScore_byCard(){
+    my ($cardIDX, $teamIDX) = @_;
+    # my $score = 0;
+    # my $SQL = "SELECT CARD.IN_POINTS AS IN_MAX_SCORE
+    #             , (PAPER.IN_VALUE/10) AS IN_VALUE
+    #             , (REPORT.IN_SEC_WEIGHT/100) AS IN_SEC_WEIGHT
+    #             , (REPORT.IN_SUB_WEIGHT/100) AS IN_SUB_WEIGHT
+    #             ,  REPORT.IN_SUB, REPORT.IN_SEC FROM TB_PAPER AS PAPER
+    #         JOIN TB_REPORT AS REPORT ON REPORT.PK_REPORT_IDX=PAPER.FK_REPORT_IDX
+    #         JOIN TB_CARDTYPE AS CARD ON REPORT.TX_TYPE=CARD.TX_TYPE
+    #     WHERE (FK_CARD_IDX=? AND CARD.TX_TYPE=?)";
+    my $SQL = "SELECT SUM(CARD.IN_POINTS * (PAPER.IN_VALUE/10) * (REPORT.IN_SEC_WEIGHT/100) * (REPORT.IN_SUB_WEIGHT/100)) AS IN_SCORE 
+    FROM TB_PAPER AS PAPER
+            JOIN TB_REPORT AS REPORT ON REPORT.PK_REPORT_IDX=PAPER.FK_REPORT_IDX
+            JOIN TB_CARDTYPE AS CARD ON REPORT.TX_TYPE=CARD.TX_TYPE
+            JOIN TB_CARD AS C ON C.PK_CARD_IDX = PAPER.FK_CARD_IDX
+        WHERE (C.PK_CARD_IDX=? AND C.FK_TEAM_IDX=?) 
+        GROUP BY PAPER.FK_CARD_IDX";
     # print "cardIDX = $cardIDX\n\n";
     my $select = $dbi->prepare($SQL);
-       $select->execute($cardIDX, $txType);
-    while (my ($maxScore, $inValue, $inSecWeight, $inSubWeight, $inSub, $inSec) = $select->fetchrow_array()) {
+       $select->execute($cardIDX, $teamIDX);
+    my ($score) = $select->fetchrow_array();
+    # while (my ($maxScore, $inValue, $inSecWeight, $inSubWeight, $inSub, $inSec) = $select->fetchrow_array()) {
         # print " $inSec.$inSub = $maxScore, $inValue, $inSecWeight, $inSubWeight\n";
-        $score += ($inValue * $inSecWeight * $inSubWeight * $maxScore);
-    }
+        # $score += ($inValue * $inSecWeight * $inSubWeight * $maxScore);
+    # }
     return ($score);
 }
 
 sub _getAssessmentScore_byCard() {
-    my ($self, $cardIDX, $txType) = @_;
-    my $score = &getAssessmentScore_byCard($cardIDX, $txType);
+    my ($self, $cardIDX, $teamIDX) = @_;
+    my $score = &getAssessmentScore_byCard($cardIDX, $teamIDX);
     return ($score);
 }
 sub _getTeamData(){

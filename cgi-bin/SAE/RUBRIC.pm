@@ -14,6 +14,24 @@ sub new{
 # =====================================================================================================
 #  GETTERS
 # =====================================================================================================
+sub _getNextSectionNumber (){
+    my ($self, $classIDX, $txType) = @_;
+    my $SQL = "SELECT DISTINCT MAX(IN_SEC) AS IN_NEXT FROM TB_REPORT WHERE FK_CLASS_IDX=? AND TX_TYPE=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($classIDX, $txType);
+    my $inNext = $select->fetchrow_array();
+    $inNext++;
+    return ($inNext);
+    }
+sub _getRubric() {
+    my ($self, $txType, $classIDX) = @_;
+    my $SQL    = "SELECT DISTINCT TX_SEC, IN_SEC, IN_SUB, IN_SEC_WEIGHT, PK_REPORT_IDX FROM TB_REPORT WHERE (TX_TYPE=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($txType, $classIDX);
+    my %DATA =  %{$select->fetchall_hashref(['IN_SEC','IN_SUB'])};
+    # print "$txType, $classIDX";
+    return (\%DATA);
+}
 sub _getPresentationRubric {
     my ($self, $classIDX) = @_;
     my $SQL = "SELECT * FROM TB_REPORT WHERE TX_TYPE=? AND FK_CLASS_IDX=?";

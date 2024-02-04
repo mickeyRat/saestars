@@ -78,6 +78,7 @@ function attend_CheckIn(o, teamIDX, inNumber) {
     });
 }
 function attend_openTeamList(o) {
+    // console.log("test");
 	$('#mainPageContent').html(loading);
     var eventIDX = $.cookie('LOCATION');
     $.ajax({

@@ -3,6 +3,81 @@
     var loading = '<div class="w3-padding" style="margin: auto;"><img src="../../images/loader.gif"> Loading...</div>';
 
 
+// ===============2024 ==========================================
+function user_addNewVolunteer(o, userIDX) {
+    var userIDX          = $(o).closest('tr').find('select option:selected').val();
+    if (userIDX==0){return}
+    var row = $(o).closest('tr');
+    var ajxData          = {};
+    var data             = {};
+    ajxData.do           = 'user_addNewVolunteer';
+    ajxData.act          = 'print';
+    ajxData.userIDX      = userIDX;
+    ajxData.eventIDX     = $.cookie('LOCATION');
+    // console.log(ajxData);
+    $(o).closest('tr').find('select option:selected').remove();
+    $.ajax({
+        type: 'GET',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $(str).insertAfter(row);
+        }
+    });
+}
+function user_dropAll(o, userIDX) {
+    var jsYes = confirm('Click [ OK ] to confirm the action to REMOVE this Judge from the Event Volunteer List');
+    if (!jsYes){return}
+    var ajxData          = {};
+    ajxData.do           = 'user_dropAll';
+    ajxData.act          = 'print';
+    ajxData.userIDX      = userIDX;
+    ajxData.eventIDX     = $.cookie('LOCATION');
+    $.ajax({
+        type: 'GET',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            $(o).closest('tr').remove();
+        }
+    });
+    }
+function user_addRemoveVolunteer(o, userIDX, inType, classIDX) {
+    var profileIDX       = $(o).data('value');
+    var ajxData          = {};
+    var data             = {};
+    ajxData.do           = 'user_addRemoveVolunteer';
+    ajxData.act          = 'print';
+    data.IN_TYPE         = inType;
+    data.FK_CLASS_IDX    = classIDX;
+    data.FK_USER_IDX     = userIDX;
+    data.IN_LIMIT        = 5;
+    data.FK_EVENT_IDX    = $.cookie('LOCATION');
+    // console.log("profileIDX = " + profileIDX);
+    if(o.checked){
+        // console.log("Add");
+        ajxData.boAdd      = 1;
+        ajxData.profileIDX = 0;
+    } else {
+        ajxData.boAdd      = 0;
+        ajxData.profileIDX = profileIDX ;
+        // console.log("Remove");
+    }
+    ajxData['jsonData'] = JSON.stringify(data);
+    // console.log(ajxData);
+    // return
+    $.ajax({
+        type: 'GET',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $(o).data('value', str);
+            // console.log("Done");
+        }
+    });
+}
 // ===============2023 ==========================================
 function user_openGeneralEmailForm (o, field) {
     var ajxData = {};

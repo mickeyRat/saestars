@@ -108,7 +108,7 @@ sub login(){
     my $str;
     my %DATA = %{decode_json($q->param('jsonData'))};
     my $User = new SAE::USER();
-    my %USER = %{$User->_login($DATA{TX_EMAIL}, $DATA{TX_PASSWORD})};
+    my %USER = %{$User->_login($DATA{TX_EMAIL}, $DATA{TX_PASSWORD}, $DATA{FK_EVENT_IDX})};
 
     # $USER{FK_EVENT_IDX} = $DATA{FK_EVENT_IDX};
     $USER{LOCATION} = $DATA{FK_EVENT_IDX};

@@ -48,6 +48,70 @@ if ($act eq "print"){
     &{$do= $q->param("do")};
 }
 exit;
+# ================== 2024 =========================================
+sub user_dropAll (){
+    print $q->header();
+    my $eventIDX     = $q->param('eventIDX');
+    my $userIDX      = $q->param('userIDX');
+    my $JsonDB       = new SAE::JSONDB();
+    my $str          = $JsonDB->_delete('TB_PROFILE', qq(FK_USER_IDX=$userIDX AND FK_EVENT_IDX=$eventIDX));
+    return ($str);
+    }
+sub user_addNewVolunteer (){
+    print $q->header();
+    my $User         = new SAE::USER();
+    my $eventIDX     = $q->param('eventIDX');
+    my $userIDX      = $q->param('userIDX');
+    my %USER         = %{$User->_getUserDetails($userIDX)};
+    # my %DATA = %{decode_json($q->param('jsonData'))};
+    my $txLast  = $USER{TX_LAST_NAME};
+    my $txFirst = $USER{TX_FIRST_NAME};
+    my $txEmail = $USER{TX_EMAIL};
+    my $str;
+    $str = '<tr>';
+    $str .= sprintf '<td>%s, %s<br><span class="w3-small">%s</span></td>', $txLast, $txFirst, $txEmail;
+    $str .= &user_templatePreferenceSelection(0, 0, $userIDX, 1, 1);
+    $str .= &user_templatePreferenceSelection(0, 0, $userIDX, 1, 2);
+    $str .= &user_templatePreferenceSelection(0, 0, $userIDX, 1, 3);
+    $str .= &user_templatePreferenceSelection(0, 0, $userIDX, 2, 0);
+    $str .= &user_templatePreferenceSelection(0, 0, $userIDX, 3, 0);
+    $str .= &user_templatePreferenceSelection(0, 0, $userIDX, 4, 0);
+    $str .= &user_templatePreferenceSelection(0, 0, $userIDX, 5, 0);
+    $str .= '<td>';
+    $str .= sprintf '<button style="width: 100%;" class="w3-button w3-round w3-border w3-pale-red w3-hover-red" onclick="user_dropAll(this, %d);">Remove</button>', $userIDX;
+    $str .= '</td>';
+    $str .= '</tr>';
+    return ($str);
+    }
+
+sub user_addRemoveVolunteer (){
+    print $q->header();
+    my $JsonDB = new SAE::JSONDB();
+    my $eventIDX   = $q->param('eventIDX');
+    my $boAdd      = $q->param('boAdd');
+    my $profileIDX = $q->param('profileIDX');
+
+    if ($boAdd == 0) {
+        $JsonDB->_delete('TB_PROFILE', qq(PK_PROFILE_IDX=$profileIDX));
+        return(0);
+    } else {
+        my %DATA = %{decode_json($q->param('jsonData'))};
+        my $newIDX = $JsonDB->_insert('TB_PROFILE', \%DATA);
+        return($newIDX);
+    }
+    }
+sub user_templatePreferenceSelection(){
+    my ($checked, $profileIDX, $userIDX, $inType, $classIDX) = @_;
+    my $str;
+    if ($inType==2 || $inType==5){
+            $str .= sprintf '<td class="w3-border-left" style="text-align: center;">';
+        } else {
+            $str .= sprintf '<td style="text-align: center;">';
+        }
+    $str .= sprintf '<input class="w3-check" %s data-value="%d" type="checkbox" onclick="user_addRemoveVolunteer(this, %d, %d, %d);">', $checked, $profileIDX, $userIDX, $inType, $classIDX;
+    $str .= sprintf '</td>';
+    return($str);
+}
 # ================== 2023 =========================================
 sub user_openGeneralEmailForm (){
     print $q->header();
@@ -307,119 +371,228 @@ sub sae_removeEventPreference(){
     }
 sub openManageJudges(){
     print $q->header(); 
-    my @tm       = localtime();
-    my $txYear   = ($tm[5] + 1900);
-    my $User     = new SAE::USER();
-    my $Profile  = new SAE::PROFILE();
-    my $eventIDX = $q->param('eventIDX');
-    my %EVENTS   = %{$Profile->_getEvents($txYear)};
-    my $Ref      = new SAE::REFERENCE();
-    my %USERS    = %{$Profile->_getUsers()};
-    my %JUDGES   = %{$Profile->_getJudges( $txYear )};
-    # %EVENTS      = %{$Ref->_getEventList()};
-    # %EVPREF      = %{$Ref->_getEventPreference()};
-    # %CLPREF      = %{$Ref->_getClassPreference()};
-    %CLASS       = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
+    my @tm         = localtime();
+    my $txYear     = ($tm[5] + 1900);
+    my $User       = new SAE::USER();
+    my $Profile    = new SAE::PROFILE();
+    my $eventIDX   = $q->param('eventIDX');
+    my %EVENTS     = %{$Profile->_getEvents($txYear)};
+    my $Ref        = new SAE::REFERENCE();
+    my %USERS      = %{$Profile->_getUsers()};
+    my %JUDGES     = %{$Profile->_getJudges( $txYear )};
+    # %EVENTS        = %{$Ref->_getEventList()};
+    # %EVPREF        = %{$Ref->_getEventPreference()};
+    # %CLPREF        = %{$Ref->_getClassPreference()};
+    %CLASS         = (1=>'Regular', 2=>'Advanced', 3=>'Micro');
+    my %VOLLIST    = %{$User->_getEventVolunteer($eventIDX)};
+    my %REGPREF    = %{$User->_getEventVolunteerPreferences($eventIDX, 1)};
+    my %ADVPREF    = %{$User->_getEventVolunteerPreferences($eventIDX, 1)};
+    my %MICPREF    = %{$User->_getEventVolunteerPreferences($eventIDX, 1)};
+    my %TDSPREF    = %{$User->_getEventVolunteerPreferences($eventIDX, 2)};
+    my %DRWPREF    = %{$User->_getEventVolunteerPreferences($eventIDX, 3)};
+    my %REQPREF    = %{$User->_getEventVolunteerPreferences($eventIDX, 4)};
+    my %PREPREF    = %{$User->_getEventVolunteerPreferences($eventIDX, 5)};
+    my %VOLUNTEERS = %{$User->_getAllVolunteers()};
 
     # my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
     # $year += 1900;
     my $str;
-    my $count = 1;
-    my $countEast  = 0;
-    my $countWest  = 0;
-    my $countReg   = 0;
-    my $countAdv   = 0;
-    my $countMic   = 0;
-    my $countPreso = 0;
-    foreach $userIDX (keys %JUDGES) {
-        if ($JUDGES{$userIDX}{BO_EAST} == 1){$countEast++}
-        if ($JUDGES{$userIDX}{BO_WEST} == 1){$countWest++}
-        if ($JUDGES{$userIDX}{BO_REGULAR} == 1){$countReg++}
-        if ($JUDGES{$userIDX}{BO_ADVANCE} == 1){$countAdv++}
-        if ($JUDGES{$userIDX}{BO_MICRO} == 1){$countMic++}
-        if ($JUDGES{$userIDX}{BO_PRESO} == 1){$countPreso++}
-    }
-    $str .= '<div class="w3-container w3-margin-top">';
-    $str .= '<br><h2 class="w3-margin-top">'.$txYear.' Judge Preferences</h2>';
-    $str .= '<div class="w3-bar w3-light-grey w3-border w3-padding">';
-    $str .= '<button class="w3-bar-item w3-border w3-button w3-hover-green" onclick="user_openJudgeList(this, '.$eventIDX.');">Add Judge To Event</button>';
-    $str .= '<div class="w3-dropdown-hover">';
-    $str .= '<button class="w3-button">Send Email</button> <i class="fa fa-caret-down"></i>';
-    $str .= '<div class="w3-dropdown-content w3-bar-block w3-card-4">';
-    $str .= '<button CLASS="w3-bar-item w3-button w3-pale-yellow w3-hover-orange" onclick="user_openGeneralEmailForm(this, \'BO_EAST\');">Send Email to EAST Judges</button>';
-    $str .= '<button CLASS="w3-bar-item w3-button w3-pale-yellow w3-hover-orange" onclick="user_openGeneralEmailForm(this, \'BO_WEST\');">Send Email to WEST Judges</button>';
-    $str .= '</div>';
-    $str .= '</div>';
-    $str .= '<div class="w3-dropdown-hover">';
-    $str .= '<button class="w3-button">Export</button> <i class="fa fa-caret-down"></i>';
-    $str .= '<div class="w3-dropdown-content w3-bar-block w3-card-4">';
-    $str .= '<a class="w3-bar-item w3-border w3-text-black  w3-pale-yellow w3-button w3-hover-green" href="cgi-bin/export.pl?do=export_emailExcel&act=print&eventIDX='.$eventIDX.'" target="_blank">Export Email (*.csv)</a>';
-    $str .= '<a class="w3-bar-item w3-border w3-text-black w3-pale-yellow w3-button w3-hover-green" href="cgi-bin/export.pl?do=export_volunteerEmailFormat&act=print&eventIDX='.$eventIDX.'" target="_blank">Export E-mail Format (*.txt)</a>';
-    $str .= '</div>';
-    $str .= '</div>';
-    $str .= '</div>';
+    $str = '<div class="w3-container w3-margin-top">';
+        $str .= '<h2 class="w3-margin-top">Judge Preferences for Current Event</h2>';
 
-    $str .= '<table class="w3-table-all w3-border w3-bordered">';
-    $str .= '<thead>';
-    $str .= '<tr>';
-    $str .= '<th rowspan="2" class=" w3-border" style=" vertical-align: bottom;">Judge</th>';
-    $str .= '<th colspan="2" class="w3-center w3-border">Event</th>';
-    $str .= '<th colspan="6" class="w3-center w3-border" >Design Report Preferences</th>';
-    $str .= sprintf '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Technical Presentations<br>(%d)</th>', $countPreso;
-    $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Max. # of Papers</th>';
-    $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Exp.<br> Level</th>';
-    $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 250px; vertical-align: bottom">School Affiliation</th>';
-    $str .= '</tr>';
-    $str .= '<tr class="w3-white">';
-    $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">East<br>(%d)</th>', $countEast;
-    $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">West<br>(%d)</th>', $countWest;
-    # $str .= '<th class="w3-border w3-center" style="width: 100px;">West</th>';
-    $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">Reg<br>(%d)</th>', $countReg;
-    $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">Adv<br>(%d)</th>', $countAdv;
-    $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">Mic<br>(%d)</th>', $countMic;
-    $str .= '<th class="w3-border w3-center" style="width: 100px;">Drawing</th>';
-    $str .= '<th class="w3-border w3-center" style="width: 100px;">TDS</th>';
-    $str .= '<th class="w3-border w3-center" style="width: 100px;">Req</th>';
-    $str .= '</tr>';
-    $str .= '</thead>';
-    $str .= '<tbody>';
-    foreach $userIDX (sort {lc($USERS{$a}{TX_LAST_NAME}) cmp lc($USERS{$b}{TX_LAST_NAME})} keys %JUDGES) {
-        my $boEastCheck = '';
-        if ($JUDGES{$userIDX}{BO_EAST} == 1){$boEastCheck = 'checked'} 
-        my $boWestCheck = '';
-        if ($JUDGES{$userIDX}{BO_WEST} == 1){$boWestCheck = 'checked'}
-        my $boRegCheck = '';
-        if ($JUDGES{$userIDX}{BO_REGULAR} == 1){$boRegCheck = 'checked'}
-        my $boAdvCheck = '';
-        if ($JUDGES{$userIDX}{BO_ADVANCE} == 1){$boAdvCheck = 'checked'}
-        my $boMicCheck = '';
-        if ($JUDGES{$userIDX}{BO_MICRO} == 1){$boMicCheck = 'checked'}
-        my $boDrwCheck = '';
-        if ($JUDGES{$userIDX}{BO_DRW} == 1){$boDrwCheck = 'checked'}
-        my $boTdsCheck = '';
-        if ($JUDGES{$userIDX}{BO_TDS} == 1){$boTdsCheck = 'checked'}
-        my $boReqCheck = '';
-        if ($JUDGES{$userIDX}{BO_REQ} == 1){$boReqCheck = 'checked'}
-        my $boPresoCheck = '';
-        if ($JUDGES{$userIDX}{BO_PRESO} == 1){$boPresoCheck = 'checked'}
-        $str .= '<tr ID="JUDGE_PREFERENCES_'.$userIDX.'">';
-        $str .= sprintf '<td>%d: <b>%s, %s</b><br><i class="w3-small">%s</i></td>', $count++, $USERS{$userIDX}{TX_LAST_NAME}, $USERS{$userIDX}{TX_FIRST_NAME}, $USERS{$userIDX}{TX_EMAIL};
-        $str .= sprintf '<td class="w3-center w3-border required"><input ID="BO_EAST_'.$userIDX.'" data-field="BO_EAST"    %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boEastCheck;
-        $str .= sprintf '<td class="w3-center w3-border required"><input ID="BO_WEST_'.$userIDX.'" data-field="BO_WEST"    %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boWestCheck;
-        $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_REGULAR" %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boRegCheck;
-        $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_ADVANCE" %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boAdvCheck;
-        $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_MICRO"   %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boMicCheck;
-        $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_DRW"     %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boDrwCheck;
-        $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_TDS"     %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boTdsCheck;
-        $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_REQ"     %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boReqCheck;
-        $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_PRESO"   %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boPresoCheck;
-        $str .= sprintf '<td class="w3-center w3-border">%d</td>', $JUDGES{$userIDX}{IN_LIMIT};
-        $str .= sprintf '<td class="w3-center w3-border">%d</td>', $USERS{$userIDX}{TX_YEAR};
-        $str .= sprintf '<td class="w3-center w3-border">%s</td>', $USERS{$userIDX}{TX_SCHOOL};
-    }
-    $str .= '</tbody>';
+        # $str .= '<div class="w3-bar w3-border w3-blue-grey w3-border-grey w3-margin-top">';
+
+        # # $str .= '<button class="w3-bar-item w3-button " onclick="grade_instructions();">Add Judge</button>';
+
+        # $str .= '<div class="w3-dropdown-hover">';
+        # $str .= '<button class="w3-button">Send Email</button> <i class="fa fa-caret-down"></i>';
+        # $str .= '<div class="w3-dropdown-content w3-bar-block w3-card-4">';
+        # $str .= '<button CLASS="w3-bar-item w3-button w3-pale-yellow w3-hover-orange" onclick="user_openGeneralEmailForm(this, \'BO_EAST\');">Send Email to EAST Judges</button>';
+        # $str .= '<button CLASS="w3-bar-item w3-button w3-pale-yellow w3-hover-orange" onclick="user_openGeneralEmailForm(this, \'BO_WEST\');">Send Email to WEST Judges</button>';
+        # $str .= '</div>';
+        # $str .= '</div>';
+
+        # $str .= '<div class="w3-dropdown-hover">';
+        # $str .= '<button class="w3-button">Export</button> <i class="fa fa-caret-down"></i>';
+        # $str .= '<div class="w3-dropdown-content w3-bar-block w3-card-4">';
+        # $str .= '<a class="w3-bar-item w3-border w3-text-black  w3-pale-yellow w3-button w3-hover-green" href="cgi-bin/export.pl?do=export_emailExcel&act=print&eventIDX='.$eventIDX.'" target="_blank">Export Email (*.csv)</a>';
+        # $str .= '<a class="w3-bar-item w3-border w3-text-black w3-pale-yellow w3-button w3-hover-green" href="cgi-bin/export.pl?do=export_volunteerEmailFormat&act=print&eventIDX='.$eventIDX.'" target="_blank">Export E-mail Format (*.txt)</a>';
+        # $str .= '</div>';
+        # $str .= '</div>';
+        # $str .= '</div>';
+    # $str .= %VOLLIST;
+    $str .= '<table class="w3-table-all">';
+        $str .= '<thead>';
+        $str .= '<tr class="w3-border w3-light-grey">';
+        $str .= '<th class="w3-border" rowspan="2" style="vertical-align: bottom;">Name</th>';
+        $str .= '<th class="w3-border" colspan="3" style="text-align: center">Design Report</th>';
+        $str .= '<th class="w3-border" colspan="3" style="text-align: center">Technical Report</th>';
+        $str .= '<th class="w3-border" rowspan="2" style="vertical-align: bottom; width: 10%; text-align: center">Presentation</th>';
+        $str .= '<th class="w3-border" rowspan="2" style="vertical-align: bottom; width: 10%; text-align: center">Add/Remove</th>';
+        $str .= '</tr>';
+        $str .= '<tr class="w3-border w3-light-grey w3-small">';
+        $str .= '<th style="text-align: center; width: 10%; ">Regular</th>';
+        $str .= '<th style="text-align: center; width: 10%; ">Advanced</th>';
+        $str .= '<th style="text-align: center; width: 10%; ">Micro</th>';
+        $str .= '<th style="text-align: center; width: 10%; ">TDS</th>';
+        $str .= '<th style="text-align: center; width: 10%; ">Drawing</th>';
+        $str .= '<th style="text-align: center; width: 10%; ">Requirements</th>';
+        $str .= '</tr>';
+        $str .= '<tr>';
+        $str .= '<td>';
+        $str .= '<select class="w3-input w3-border w3-round">';
+        $str .= '<option value="0">-Select-</option>';
+        foreach $userIDX (sort {lc($VOLUNTEERS{$a}{TX_LAST_NAME}) cmp lc($VOLUNTEERS{$b}{TX_LAST_NAME})} keys %VOLUNTEERS) {
+            if (exists $VOLLIST{$userIDX}){next}
+            $str .= sprintf '<option value="%d">%s, %s</option>', $userIDX, $VOLUNTEERS{$userIDX}{TX_LAST_NAME}, $VOLUNTEERS{$userIDX}{TX_FIRST_NAME};
+        }
+        $str .= '</select>';
+        $str .= '</td>';
+        $str .= '<td colspan="8">';
+        $str .= sprintf '<button class="w3-button w3-round w3-border w3-pale-green w3-hover-green" style="width: 110px;" onclick="user_addNewVolunteer(this, %d);">Add</button>';
+        $str .= '</td>';
+        $str .= '</tr>';
+        $str .= '</thead>';
+        $str .= '<tbody>';
+        foreach $userIDX (sort {lc($VOLLIST{$a}{TX_LAST_NAME}) cmp lc($VOLLIST{$b}{TX_LAST_NAME})} keys %VOLLIST) {
+            my $txLast     = $VOLLIST{$userIDX}{TX_LAST_NAME};
+            my $txFirst    = $VOLLIST{$userIDX}{TX_FIRST_NAME};
+            my $txEmail    = $VOLLIST{$userIDX}{TX_EMAIL};
+            my $boReg      = '';
+            my $boAdv      = '';
+            my $boMic      = '';
+            my $boTDS      = '';
+            my $boDRW      = '';
+            my $boREQ      = '';
+            my $boPRE      = '';
+            my $profileIDX = 0;
+            $str .= '<tr>';
+            $str .= sprintf '<td>%s, %s<br><span class="w3-small">%s</span></td>', $txLast, $txFirst, $txEmail;
+            if (exists $REGPREF{$userIDX}{1}) {$boReg = 'checked'; $profileIDX = $REGPREF{$userIDX}{1}{PK_PROFILE_IDX}}
+            $str .= &user_templatePreferenceSelection($boReg, $profileIDX, $userIDX, 1, 1);
+            $profileIDX = 0;
+            if (exists $ADVPREF{$userIDX}{2}) {$boAdv = 'checked'; $profileIDX = $ADVPREF{$userIDX}{2}{PK_PROFILE_IDX}}
+            $str .= &user_templatePreferenceSelection($boAdv, $profileIDX, $userIDX, 1, 2);
+            $profileIDX = 0;
+            if (exists $MICPREF{$userIDX}{3}) {$boMic = 'checked'; $profileIDX = $MICPREF{$userIDX}{3}{PK_PROFILE_IDX}}
+            $str .= &user_templatePreferenceSelection($boMic, $profileIDX, $userIDX, 1, 3);
+            $profileIDX = 0;
+            if (exists $TDSPREF{$userIDX}) {$boTDS = 'checked'; $profileIDX = $TDSPREF{$userIDX}{PK_PROFILE_IDX}}
+            $str .= &user_templatePreferenceSelection($boTDS, $profileIDX, $userIDX, 2, 0);
+            $profileIDX = 0;
+            if (exists $DRWPREF{$userIDX}) {$boDRW = 'checked'; $profileIDX = $DRWPREF{$userIDX}{PK_PROFILE_IDX}}
+            $str .= &user_templatePreferenceSelection($boDRW, $profileIDX, $userIDX, 3, 0);
+            $profileIDX = 0;
+            if (exists $REQPREF{$userIDX}) {$boREQ = 'checked'; $profileIDX = $REQPREF{$userIDX}{PK_PROFILE_IDX}}
+            $str .= &user_templatePreferenceSelection($boREQ, $profileIDX, $userIDX, 4, 0);
+            $profileIDX = 0;
+            if (exists $PREPREF{$userIDX}) {$boPRE = 'checked'; $profileIDX = $PREPREF{$userIDX}{PK_PROFILE_IDX}}
+            $str .= &user_templatePreferenceSelection($boPRE, $profileIDX, $userIDX, 5, 0);
+            $str .= '<td>';
+            $str .= sprintf '<button style="width: 100%;" class="w3-button w3-round w3-border w3-pale-red w3-hover-red"  onclick="user_dropAll(this, %d);">Remove</button>', $userIDX;
+            $str .= '</td>';
+            $str .= '</tr>';
+        }
+        $str .= '</tbody>';
     $str .= '</table>';
-    $str .= '</div>';
+
+# =============================
+    # my $count = 1;
+    # my $countEast  = 0;
+    # my $countWest  = 0;
+    # my $countReg   = 0;
+    # my $countAdv   = 0;
+    # my $countMic   = 0;
+    # my $countPreso = 0;
+    # foreach $userIDX (keys %JUDGES) {
+    #     if ($JUDGES{$userIDX}{BO_EAST} == 1){$countEast++}
+    #     if ($JUDGES{$userIDX}{BO_WEST} == 1){$countWest++}
+    #     if ($JUDGES{$userIDX}{BO_REGULAR} == 1){$countReg++}
+    #     if ($JUDGES{$userIDX}{BO_ADVANCE} == 1){$countAdv++}
+    #     if ($JUDGES{$userIDX}{BO_MICRO} == 1){$countMic++}
+    #     if ($JUDGES{$userIDX}{BO_PRESO} == 1){$countPreso++}
+    # }
+    # $str .= '<div class="w3-container w3-margin-top">';
+    # $str .= '<br><h2 class="w3-margin-top">'.$txYear.' Judge Preferences</h2>';
+    # $str .= '<div class="w3-bar w3-light-grey w3-border w3-padding">';
+    # $str .= '<button class="w3-bar-item w3-border w3-button w3-hover-green" onclick="user_openJudgeList(this, '.$eventIDX.');">Add Judge To Event</button>';
+    # $str .= '<div class="w3-dropdown-hover">';
+    # $str .= '<button class="w3-button">Send Email</button> <i class="fa fa-caret-down"></i>';
+    # $str .= '<div class="w3-dropdown-content w3-bar-block w3-card-4">';
+    # $str .= '<button CLASS="w3-bar-item w3-button w3-pale-yellow w3-hover-orange" onclick="user_openGeneralEmailForm(this, \'BO_EAST\');">Send Email to EAST Judges</button>';
+    # $str .= '<button CLASS="w3-bar-item w3-button w3-pale-yellow w3-hover-orange" onclick="user_openGeneralEmailForm(this, \'BO_WEST\');">Send Email to WEST Judges</button>';
+    # $str .= '</div>';
+    # $str .= '</div>';
+    # $str .= '<div class="w3-dropdown-hover">';
+    # $str .= '<button class="w3-button">Export</button> <i class="fa fa-caret-down"></i>';
+    # $str .= '<div class="w3-dropdown-content w3-bar-block w3-card-4">';
+    # $str .= '<a class="w3-bar-item w3-border w3-text-black  w3-pale-yellow w3-button w3-hover-green" href="cgi-bin/export.pl?do=export_emailExcel&act=print&eventIDX='.$eventIDX.'" target="_blank">Export Email (*.csv)</a>';
+    # $str .= '<a class="w3-bar-item w3-border w3-text-black w3-pale-yellow w3-button w3-hover-green" href="cgi-bin/export.pl?do=export_volunteerEmailFormat&act=print&eventIDX='.$eventIDX.'" target="_blank">Export E-mail Format (*.txt)</a>';
+    # $str .= '</div>';
+    # $str .= '</div>';
+    # $str .= '</div>';
+
+    # $str .= '<table class="w3-table-all w3-border w3-bordered">';
+    # $str .= '<thead>';
+    # $str .= '<tr>';
+    # $str .= '<th rowspan="2" class=" w3-border" style=" vertical-align: bottom;">Judge</th>';
+    # $str .= '<th colspan="2" class="w3-center w3-border">Event</th>';
+    # $str .= '<th colspan="6" class="w3-center w3-border" >Design Report Preferences</th>';
+    # $str .= sprintf '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Technical Presentations<br>(%d)</th>', $countPreso;
+    # $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Max. # of Papers</th>';
+    # $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 100px; vertical-align: bottom">Exp.<br> Level</th>';
+    # $str .= '<th rowspan="2" class="w3-center w3-border" style="width: 250px; vertical-align: bottom">School Affiliation</th>';
+    # $str .= '</tr>';
+    # $str .= '<tr class="w3-white">';
+    # $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">East<br>(%d)</th>', $countEast;
+    # $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">West<br>(%d)</th>', $countWest;
+    # # $str .= '<th class="w3-border w3-center" style="width: 100px;">West</th>';
+    # $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">Reg<br>(%d)</th>', $countReg;
+    # $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">Adv<br>(%d)</th>', $countAdv;
+    # $str .= sprintf '<th class="w3-border w3-center" style="width: 100px;">Mic<br>(%d)</th>', $countMic;
+    # $str .= '<th class="w3-border w3-center" style="width: 100px;">Drawing</th>';
+    # $str .= '<th class="w3-border w3-center" style="width: 100px;">TDS</th>';
+    # $str .= '<th class="w3-border w3-center" style="width: 100px;">Req</th>';
+    # $str .= '</tr>';
+    # $str .= '</thead>';
+    # $str .= '<tbody>';
+    # foreach $userIDX (sort {lc($USERS{$a}{TX_LAST_NAME}) cmp lc($USERS{$b}{TX_LAST_NAME})} keys %JUDGES) {
+    #     my $boEastCheck = '';
+    #     if ($JUDGES{$userIDX}{BO_EAST} == 1){$boEastCheck = 'checked'} 
+    #     my $boWestCheck = '';
+    #     if ($JUDGES{$userIDX}{BO_WEST} == 1){$boWestCheck = 'checked'}
+    #     my $boRegCheck = '';
+    #     if ($JUDGES{$userIDX}{BO_REGULAR} == 1){$boRegCheck = 'checked'}
+    #     my $boAdvCheck = '';
+    #     if ($JUDGES{$userIDX}{BO_ADVANCE} == 1){$boAdvCheck = 'checked'}
+    #     my $boMicCheck = '';
+    #     if ($JUDGES{$userIDX}{BO_MICRO} == 1){$boMicCheck = 'checked'}
+    #     my $boDrwCheck = '';
+    #     if ($JUDGES{$userIDX}{BO_DRW} == 1){$boDrwCheck = 'checked'}
+    #     my $boTdsCheck = '';
+    #     if ($JUDGES{$userIDX}{BO_TDS} == 1){$boTdsCheck = 'checked'}
+    #     my $boReqCheck = '';
+    #     if ($JUDGES{$userIDX}{BO_REQ} == 1){$boReqCheck = 'checked'}
+    #     my $boPresoCheck = '';
+    #     if ($JUDGES{$userIDX}{BO_PRESO} == 1){$boPresoCheck = 'checked'}
+    #     $str .= '<tr ID="JUDGE_PREFERENCES_'.$userIDX.'">';
+    #     $str .= sprintf '<td>%d: <b>%s, %s</b><br><i class="w3-small">%s</i></td>', $count++, $USERS{$userIDX}{TX_LAST_NAME}, $USERS{$userIDX}{TX_FIRST_NAME}, $USERS{$userIDX}{TX_EMAIL};
+    #     $str .= sprintf '<td class="w3-center w3-border required"><input ID="BO_EAST_'.$userIDX.'" data-field="BO_EAST"    %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boEastCheck;
+    #     $str .= sprintf '<td class="w3-center w3-border required"><input ID="BO_WEST_'.$userIDX.'" data-field="BO_WEST"    %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boWestCheck;
+    #     $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_REGULAR" %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boRegCheck;
+    #     $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_ADVANCE" %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boAdvCheck;
+    #     $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_MICRO"   %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boMicCheck;
+    #     $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_DRW"     %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boDrwCheck;
+    #     $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_TDS"     %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boTdsCheck;
+    #     $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_REQ"     %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boReqCheck;
+    #     $str .= sprintf '<td class="w3-center w3-border"><input data-field="BO_PRESO"   %s class="w3-check" type="checkbox" onclick="profile_adminSaveCheck(this,'.$txYear.','.$userIDX.');"></td>', $boPresoCheck;
+    #     $str .= sprintf '<td class="w3-center w3-border">%d</td>', $JUDGES{$userIDX}{IN_LIMIT};
+    #     $str .= sprintf '<td class="w3-center w3-border">%d</td>', $USERS{$userIDX}{TX_YEAR};
+    #     $str .= sprintf '<td class="w3-center w3-border">%s</td>', $USERS{$userIDX}{TX_SCHOOL};
+    # }
+    # $str .= '</tbody>';
+    # $str .= '</table>';
+    # $str .= '</div>';
 
     # $str .= '<div class="w3-container w3-margin-top" >';
     # $str .= '<br><h2 class="w3-margin-top">Judges</h2>';

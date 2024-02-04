@@ -23,12 +23,14 @@
             }
             return;
         }
+        console.log("publishIDX = " + publishIDX);
+        console.log("checked = " + checked);
         $.ajax({
             type: 'POST',
             url: '../cgi-bin/publish.pl',
-            data: {'do':'sae_activatePublicView','act':'print','publishIDX':publishIDX,'checked':checked},
+            data: {'do':'publish_activatePublicView','act':'print','publishIDX':publishIDX,'checked':checked},
             success: function(str){
-
+                console.log(str);
             }
         });
         }
@@ -46,6 +48,7 @@
         });
     }
     function publish_GenerateDesignReport(o, classIDX) {
+        $('.genLoading_'+classIDX).show();
         var eventIDX = $.cookie('LOCATION');
         var userIDX = $.cookie('userIDX');
         $.ajax({
@@ -54,6 +57,8 @@
             data: {'do':'publish_GenerateDesignReport','act':'print','eventIDX':eventIDX,'classIDX':classIDX, 'userIDX':userIDX},
             success: function(str){
                 $(o).closest('table').append(str);
+                $('.genLoading_'+classIDX).hide();
+                // $(o).closest('span').hide();
                 // $('#TABLE_'+classIDX).append(str);
             }
         });
@@ -77,12 +82,14 @@
     function publish_GeneratePresenationResults(o, classIDX) {
         var eventIDX = $.cookie('LOCATION');
         var userIDX = $.cookie('userIDX');
+        $('.genLoading_'+classIDX).show();
         $.ajax({
             type: 'POST',
             url: '../cgi-bin/publish.pl',
             data: {'do':'publish_GeneratePresenationResults','act':'print','eventIDX':eventIDX,'classIDX':classIDX, 'userIDX':userIDX},
             success: function(str){
                 $(o).closest('table').append(str);
+                $('.genLoading_'+classIDX).hide();
                 // $('#TABLE_'+classIDX).append(str);
             }
         });
@@ -103,6 +110,7 @@
 // 2024 MISSION ===============================================================
     function publish_GenerateMissionResults(o, classIDX) {
         var eventIDX = $.cookie('LOCATION');
+        $('.genLoading_'+classIDX).show();
             var userIDX = $.cookie('userIDX');
             $.ajax({
                 type: 'POST',
@@ -110,6 +118,7 @@
                 data: {'do':'publish_GenerateMissionResults','act':'print','eventIDX':eventIDX,'classIDX':classIDX, 'userIDX':userIDX},
                 success: function(str){
                     $(o).closest('table').append(str);
+                    $('.genLoading_'+classIDX).hide();
                     // $('#TABLE_'+classIDX).append(str);
                 }
             });
@@ -130,6 +139,7 @@
 // 2024 OVERALL ===============================================================
     function publish_GenerateOverallResults(o, classIDX) {
         var eventIDX = $.cookie('LOCATION');
+        $('.genLoading_'+classIDX).show();
             var userIDX = $.cookie('userIDX');
             $.ajax({
                 type: 'POST',
@@ -137,6 +147,7 @@
                 data: {'do':'publish_GenerateOverallResults','act':'print','eventIDX':eventIDX,'classIDX':classIDX, 'userIDX':userIDX},
                 success: function(str){
                     $(o).closest('table').append(str);
+                    $('.genLoading_'+classIDX).hide();
                     // $('#TABLE_'+classIDX).append(str);
                 }
             });

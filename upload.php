@@ -70,9 +70,23 @@ if(isset($_FILES['upl'])  && $_FILES['upl']['error'] == 0){
     // If Folder does not exist, create a folder and give permission to write to folder
     $folder = "uploads/".$row['IN_YEAR']."/$eventIDX/".$teamNumber;
     if (!file_exists($folder)) {mkdir($folder, 0777, true);} 
+    // if (!file_exists($folder)) {mkdir($folder, 0777, true);}
+    
+
+    //
+    if (strpos(strtolower($fileName), 'design_report')>0 || strpos(strtolower($fileName), 'technical_design_report' )>0){ // Change the fileName to lower case and find the position of 
+        $newFileName = "Team_".$teamNumber."_Design_Report";
+    } else if ( strpos(strtolower($fileName), 'tech_data_sheet')>0 || strpos(strtolower($fileName), 'data_sheet')>0 || strpos(strtolower($fileName), 'technical_data_sheet')>0) {
+        $newFileName = "Team_".$teamNumber."_TDS";
+    } else if ( strpos(strtolower($fileName), 'drawings')>0 ) {
+        $newFileName = "Team_".$teamNumber."_Drawing";
+    } else {
+        $newFileName = "Team_Unknown_Drawing";
+    }
     
     // Establish the new Path for the file location
-    $newFilePath = $folder."/".$fileName;
+    $newFilePath = $folder."/".$newFileName;
+    // $newFilePath = $folder."/".$fileName;
     
     // Upload and move the file to the target location $newFilePath
     if(move_uploaded_file($_FILES['upl']['tmp_name'], $newFilePath)){
@@ -103,7 +117,8 @@ if(isset($_FILES['upl'])  && $_FILES['upl']['error'] == 0){
         $insert->bindParam(':eTeamIDX',$teamIDX);
         $insert->bindParam(':eEventIDX',$eventIDX);
         $insert->bindParam(':eKeys',$_FILES['upl']['tmp_name']);
-        $insert->bindParam(':eFileName',$fileName);
+        $insert->bindParam(':eFileName',$newFileName);
+        // $insert->bindParam(':eFileName',$fileName);
         $insert->bindParam(':eType',$_FILES['upl']['type']);
         $insert->bindParam(':ePaper',$PAPER);
         $insert->bindParam(':eInPaper',$inPaper);

@@ -4,7 +4,7 @@ var time = now.getTime();
 
 
 // ============= 2024 ========================
-function selectAllCheckBox (o, className, cardIDX, txType) {
+function selectAllCheckBox (o, className, cardIDX, teamIDX, txType, teamIDX) {
     var inValue = 0;
     if ($(o).is(':checked')){inValue = 10}
     $('.'+className).each(function(){
@@ -12,14 +12,12 @@ function selectAllCheckBox (o, className, cardIDX, txType) {
         var paperIDX = $(this).data('value');
         var inSection = $(this).data('number');
         var inSubSection = $(this).data('key');
-        grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType);
-        // console.log("cardIDX = " + cardIDX);
-        // console.log("txType = " + txType);
+        grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType, teamIDX);
          
     });
-    grade_subimtUpdateAssessment(cardIDX, 1); //After each update the status of the card will be set back to Draft
+    grade_subimtUpdateAssessment(cardIDX, 1, teamIDX); //After each update the status of the card will be set back to Draft
 }
-function grade_subimtUpdateAssessment(cardIDX, inStatus) {
+function grade_subimtUpdateAssessment(cardIDX, inStatus, teamIDX) {
     var ajxData         = {}; 
     var data            = {};
     data.IN_STATUS      = inStatus;
@@ -37,13 +35,15 @@ function grade_subimtUpdateAssessment(cardIDX, inStatus) {
             var data = JSON.parse(str);
             $('.actionStatus_'+cardIDX).html(data.LABEL);
             $('.bar_Assessment_'+cardIDX).removeClass('w3-white w3-yellow w3-pale-blue').addClass(data.COLOR);
+            $('#JUDGE_BUTTON_'+cardIDX).removeClass('w3-white w3-yellow w3-pale-blue w3-light-grey').addClass(data.COLOR);
             $('#CARD_SCORE_'+cardIDX).html(data.SCORE.toFixed(2));
-            // $('.start_'+cardIDX).html(data.LABEL);
-            // $('.start_'+cardIDX).removeClass('w3-white w3-yellow w3-blue');
-            // $('.start_'+cardIDX).addClass(data.COLOR);
+            $('.max_'+teamIDX).html(parseFloat(data.IN_MAX).toFixed(2));
+            $('.min_'+teamIDX).html(parseFloat(data.IN_MIN).toFixed(2));
+            $('.std_'+teamIDX).html(parseFloat(data.IN_STD).toFixed(2));
+            $('.avg_'+teamIDX).html(parseFloat(data.IN_MEAN).toFixed(2));
         },
     });}
-function grade_subimtAssessment(o, cardIDX, inStatus, txType) {
+function grade_subimtAssessment(o, cardIDX, inStatus, teamIDX, txType) {
     var ajxData         = {}; 
     var data            = {};
     data.IN_STATUS      = inStatus;
@@ -51,6 +51,8 @@ function grade_subimtAssessment(o, cardIDX, inStatus, txType) {
     ajxData.act         = 'print';
     ajxData.cardIDX     = cardIDX;
     ajxData.txType      = txType;
+    ajxData.inStatus    = inStatus;
+    ajxData.teamIDX     = teamIDX;
     ajxData.txFirstName = $.cookie('TX_FIRST_NAME');
     ajxData['jsonData'] = JSON.stringify(data);
     console.log(ajxData);
@@ -61,13 +63,15 @@ function grade_subimtAssessment(o, cardIDX, inStatus, txType) {
         success: function(str){
             var data = JSON.parse(str);
             console.log(str);
-            // console.log(data.LABEL);
             $(o).close();
             $('.actionStatus_'+cardIDX).html(data.LABEL);
             $('.bar_Assessment_'+cardIDX).removeClass('w3-white w3-yellow w3-pale-blue').addClass(data.COLOR);
             $('#CARD_SCORE_'+cardIDX).html(parseFloat(data.SCORE).toFixed(1));
-            // $('.start_'+cardIDX);
-            // $('.start_'+cardIDX);
+            $('#JUDGE_BUTTON_'+cardIDX).removeClass('w3-white w3-yellow w3-pale-blue w3-light-grey').addClass(data.COLOR);
+            $(o).parent().parent().find('.stat_max').html(parseFloat(data.IN_MAX).toFixed(2));
+            $(o).parent().parent().find('.stat_min').html(parseFloat(data.IN_MIN).toFixed(2));
+            $(o).parent().parent().find('.stat_std').html(parseFloat(data.IN_STD).toFixed(2));
+            $(o).parent().parent().find('.stat_avg').html(parseFloat(data.IN_MEAN).toFixed(2));
         },
     });}
 function grade_instructions(argument) {
@@ -82,7 +86,6 @@ function grade_instructions(argument) {
         data: ajxData,
         success: function(str){
             $('#modal2_content').html(str);
-            // console.log(str);
         }
     });
 }
@@ -112,15 +115,12 @@ function grade_viewOtherFeedback(o, teamIDX, reportIDX, inSection, inSubSection,
 }
 
 function grade_loadTemplate (o, tempIDX, inSection, inSubSection) {
-    // console.log('#CL_FEEDBACK_'+inSection+'_'+inSubSection);
     $('#CL_FEEDBACK_'+inSection+'_'+inSubSection).val($(o).data('value'));
     $(o).close('sae-top2');
     $('#CL_FEEDBACK_'+inSection+'_'+inSubSection).focus();
     }
 function grade_openTemplate (o, inSection, inSubSection, txSubSection) {
-    // console.log('#CL_FEEDBACK_'+inSection+'_'+inSubSection);
     var feedback         = $('#CL_FEEDBACK_'+inSection+'_'+inSubSection).val();
-    // console.log(feedback);
     var data             = {};
     var ajxData          = {}; 
     var userIDX          = $.cookie('PK_USER_IDX');
@@ -219,15 +219,15 @@ function grade_expandRubric(divName) {
     $('#arrow_'+divName).toggleClass('fa-angle-double-down');
     
     }
-function grade_breakingScoringThreshold(paperIDX, divName, inValue, inSection, inSubSection, cardIDX, txType){            
+function grade_breakingScoringThreshold(paperIDX, divName, inValue, inSection, inSubSection, cardIDX, txType, teamIDX){            
     if (inValue<=5){
         $('#arrow_'+divName).addClass('fa-angle-double-down');
         if ($('.'+divName).hasClass('w3-hide')) {
             $('.'+divName).toggleClass('w3-hide');
         } 
     }
-
-    grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType);
+    // console.log("team IDX = " + teamIDX);
+    grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType, teamIDX);
     }
 function grade_showSaveBanner(message) {
     var newID = Math.floor(Math.random()*100000);
@@ -243,12 +243,12 @@ function grade_showSaveBanner(message) {
     setInterval(function () {$('#'+newID).hide(300)}, 1500);
     setInterval(function () {$('#'+newID).remove()}, 2300);
     }
-function grade_saveCheckAssessment(o, paperIDX, inSection, inSubSection, cardIDX, txType) {
+function grade_saveCheckAssessment(o, paperIDX, inSection, inSubSection, cardIDX, txType, teamIDX) {
     var inValue = 0;
     if ($(o).prop('checked')){inValue = 10} 
-    grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType);
+    grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType, teamIDX);
     }
-function grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType) {
+function grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardIDX, txType, teamIDX) {
     var data            = {};
     var ajxData         = {}; 
     data.IN_VALUE       = inValue;
@@ -257,15 +257,27 @@ function grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardID
     ajxData.paperIDX    = paperIDX;
     ajxData.cardIDX     = cardIDX;
     ajxData.txType      = txType;
+    ajxData.teamIDX     = teamIDX;
     ajxData['jsonData'] = JSON.stringify(data);
-    // console.log(ajxData);
+    console.log(ajxData);
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/grade.pl',
         data: ajxData,
-        success: function(score){
+        success: function(str){
+            console.log(str);
+            var data = JSON.parse(str);
+            
+            $('.actionStatus_'+cardIDX).html(data.LABEL);
+            $('.bar_Assessment_'+cardIDX).removeClass('w3-white w3-yellow w3-pale-blue').addClass(data.COLOR);
+            $('#JUDGE_BUTTON_'+cardIDX).removeClass('w3-white w3-yellow w3-pale-blue w3-light-grey').addClass(data.COLOR);
+            $('#CARD_SCORE_'+cardIDX).html(data.SCORE.toFixed(2));
+            $('.max_'+teamIDX).html(parseFloat(data.IN_MAX).toFixed(2));
+            $('.min_'+teamIDX).html(parseFloat(data.IN_MIN).toFixed(2));
+            $('.std_'+teamIDX).html(parseFloat(data.IN_STD).toFixed(2));
+            $('.avg_'+teamIDX).html(parseFloat(data.IN_MEAN).toFixed(2));
             // console.log("Score = " + score);
-            $('#CARD_SCORE_'+cardIDX).html(parseFloat(score).toFixed(1));
+            // $('#CARD_SCORE_'+cardIDX).html(parseFloat(score).toFixed(1));
             grade_showSaveBanner("Saving ( "+inValue+" ) for SECTION "+inSection+"."+inSubSection+" ...");
             if (inValue>0){
                 $('#SECTION_'+inSection+'_'+inSubSection).removeClass('w3-light-grey').addClass('w3-teal');
@@ -275,7 +287,7 @@ function grade_saveAssessment(paperIDX, inValue, inSection, inSubSection, cardID
             
         },
     });
-    grade_subimtUpdateAssessment(cardIDX, 1);
+    grade_subimtUpdateAssessment(cardIDX, 1, teamIDX);
     }
 function grade_autosaveComments(element, paperIDX, value) {
     var data            = {};
@@ -350,52 +362,7 @@ function grade_loadInstructions(argument) {
             $('#AssessmentHelper').html(str);
         }
     });
-    
-    // body...
 }
-
-
-// function grade_openTemplateList (o, userIDX) {
-//     var ajxData         = {}; 
-//     ajxData.do          = 'grade_openTemplateList';
-//     ajxData.act         = 'print';
-//     ajxData.userIDX     = userIDX;
-//     $.modal2("Load from Template", "80%");
-//     $.ajax({
-//         type: 'POST',
-//         url: '../cgi-bin/grade.pl',
-//         data: ajxData,
-//         success: function(str){
-//             // console.log(str);
-//             $('#modal2_content').html(str);
-//         }
-//     });
-// }
-// function grade_saveTemplate (o) {
-//     var userIDX         = $.cookie('PK_USER_IDX');
-//     var comments        = $('#templateComment').val();
-//     var txTitle         = $('#templateTitle').val();
-//     if (txTitle == '') {alert("Missing Template Title"); return}
-//     var data            = {};
-//     var ajxData         = {}; 
-//     data.CL_COMMENT     = comments;
-//     data.TX_TITLE       = txTitle;
-//     data.FK_USER_IDX    = userIDX;
-//     ajxData.do          = 'grade_saveTemplate';
-//     ajxData.act         = 'print';
-//     ajxData['jsonData'] = JSON.stringify(data);
-//     console.log(ajxData);
-//     $.ajax({
-//         type: 'POST',
-//         url: '../cgi-bin/grade.pl',
-//         data: ajxData,
-//         success: function(str){
-//             $(o).close('sae-top2');
-//             // setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250);
-//         }
-//     });
-//     }
-
 function grade_updateComments (o, commentIDX) {
     var comments = $('#subsectionComment_update').val();
     var data    = {};

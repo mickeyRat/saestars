@@ -192,11 +192,11 @@ sub startAssessment(){
     ,SUB.IN_WEIGHT AS SUB_SEC_WEIGHT
     ,SUB.TX_SUB_SECTION
     ,Q.*
- FROM TB_TYPE AS T
-	JOIN TB_SECTION AS SEC ON T.TX_TYPE=SEC.TX_SECTION
-	JOIN TB_SUB_SECTION AS SUB ON SEC.PK_SECTION_IDX = SUB.FK_SECTION_IDX
-    JOIN TB_QUESTION AS Q ON SUB.PK_SUB_SECTION_IDX=Q.FK_SUB_SECTION_IDX
-WHERE T.TX_TYPE=? AND SEC.FK_CLASS_IDX=?";
+     FROM TB_TYPE AS T
+    	JOIN TB_SECTION AS SEC ON T.TX_TYPE=SEC.TX_SECTION
+    	JOIN TB_SUB_SECTION AS SUB ON SEC.PK_SECTION_IDX = SUB.FK_SECTION_IDX
+        JOIN TB_QUESTION AS Q ON SUB.PK_SUB_SECTION_IDX=Q.FK_SUB_SECTION_IDX
+    WHERE T.TX_TYPE=? AND SEC.FK_CLASS_IDX=?";
     my $select = $dbi->prepare($SQL);
     $select->execute($txType, $FkClassIdx);
     while (my ($typeWeight, $sectionWeight, $subSectionWieght, $txSubSection, $pkQuestionIdx, $FkSubSectionIdx, $inCheck, $txTitle, $TxDescription, $questionWeight, $inOrder) = $select->fetchrow_array()) {
@@ -229,9 +229,9 @@ WHERE T.TX_TYPE=? AND SEC.FK_CLASS_IDX=?";
 
 
     $str = '<div class="w3-sidebar w3-bar-block w3-light-grey w3-card w3-display-container" style="width:200px; top: 0px; left: 0px!improtant;">';
-#     $str .= '('.$PkUserIdx.') '.scalar(keys %COMMENT_TEMP);
+    #     $str .= '('.$PkUserIdx.') '.scalar(keys %COMMENT_TEMP);
     $str .= '<h5 class="w3-bar-item">Team #:'.substr("000".$teamNummber,-3,3).'<br>'.$Team->getTxSchool().'</h5>';
-#     $str .= '<h5 class="w3-bar-item">Assessment Summary</h5>';
+    #     $str .= '<h5 class="w3-bar-item">Assessment Summary</h5>';
    my $sectionCounter = 0;
    foreach $fkSubSectionIdx (sort {$a <=> $b} keys %SUBSECTION){
         $str .= '<div class="w3-display-container w3-small">';
@@ -276,7 +276,7 @@ WHERE T.TX_TYPE=? AND SEC.FK_CLASS_IDX=?";
             $str .= '<div class="w3-normal">'.$QUESTION{$txSubSection}{$pkQuestionIdx}{TX_TITLE}.'</div>';
             $str .= '<div class="w3-small">'.$QUESTION{$txSubSection}{$pkQuestionIdx}{TX_DESCRIPTION}.'</div>';
             $str .= '<div class="w3-bar-item">';
-#             $str .= '('.$fkSubSectionIdx.')'.$tWeight.','.$uWeight.','.$qWeight.br;
+    #             $str .= '('.$fkSubSectionIdx.')'.$tWeight.','.$uWeight.','.$qWeight.br;
             if ($QUESTION{$txSubSection}{$pkQuestionIdx}{IN_CHECK} == 1) {
                 my $checked = '';
                 if ($VALUE{$pkQuestionIdx}{IN_VALUE}>0){
@@ -293,7 +293,7 @@ WHERE T.TX_TYPE=? AND SEC.FK_CLASS_IDX=?";
                 $str .= '<span class="w3-tiny w3-margin-left w3-text-grey">Range from 0 - 100%</span>';
             }
 
-#             $str .= '<input type="number" max="100" step="0.5" min="0" maxlength="5" placeholder="0.00%" >';
+    #             $str .= '<input type="number" max="100" step="0.5" min="0" maxlength="5" placeholder="0.00%" >';
 
             $str .= '<button tabindex="-1" class="w3-button w3-margin-left w3-border w3-round-xlarge" onclick="openForm('.$pkQuestionIdx.',0)"><span class="fa fa-comments-o">&nbsp;</span>Comments</button>';
             $str .= '</div><br>';
@@ -351,8 +351,8 @@ WHERE T.TX_TYPE=? AND SEC.FK_CLASS_IDX=?";
     $DATA{SUBSECTION} = join(",",keys %SUBSECTION);
     my $json = encode_json \%DATA;
     return ($json);
-#     return ($str);
-}
+    #     return ($str);
+    }
 sub _templateForTemplate(){
     my $idx = shift;
     my $title = shift;

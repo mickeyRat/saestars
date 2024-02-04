@@ -22,6 +22,7 @@ sub _displayResults (){
       $select->execute($key);
    my ($publishIDX, $eventIDX, $inType, $txTitle, $classIDX, $txClass, $txTime) = $select->fetchrow_array();
    my $str;
+   # $str .= "$publishIDX, $eventIDX, $inType, $txTitle, $classIDX, $txClass, $txTime";
    $str = &getResults($publishIDX, $eventIDX, $classIDX, $txClass, $txTime, $inType);
    return ($str);
    }
@@ -33,24 +34,28 @@ sub getResults (){
    my %SCORE   = %{&getTeamList($publishIDX)};
    my $str;
    foreach $teamIDX (sort keys %SCORE) {
-      $TEAMS{$teamIDX}{IN_SCORE} = $SCORE{$teamIDX}{IN_SCORE};
+         my $inPenalty = $TEAMS{$teamIDX}{IN_DAYS}*5;
+         $TEAMS{$teamIDX}{IN_SCORE} = $SCORE{$teamIDX}{IN_SCORE}-$inPenalty;
+         $TEAMS{$teamIDX}{IN_PENALTY} = $inPenalty;
+         if ($TEAMS{$teamIDX}{IN_SCORE}<0){$TEAMS{$teamIDX}{IN_SCORE} = 0}
       if ($inType == 4) {
-         $TEAMS{$teamIDX}{IN_DESIGN}  = $SCORE{$teamIDX}{IN_DESIGN};
+         my $inPenalty = $TEAMS{$teamIDX}{IN_DAYS}*5;
+         $TEAMS{$teamIDX}{IN_DESIGN}  = $SCORE{$teamIDX}{IN_DESIGN} - $inPenalty;
          $TEAMS{$teamIDX}{IN_PRESO}   = $SCORE{$teamIDX}{IN_PRESO};
          $TEAMS{$teamIDX}{IN_MISSION} = $SCORE{$teamIDX}{IN_MISSION};
          $TEAMS{$teamIDX}{IN_PENALTY} = $SCORE{$teamIDX}{IN_PENALTY};
       }
    }
    if ($inType == 4) {
-         $str .= &results_overallTableTemplate($TITLE{$inType}, $txClass, $txTime, \%TEAMS);
+         $str .= &results_overallTableTemplate($TITLE{$inType}, $txClass, $txTime, $inType, \%TEAMS);
       } else {
-         $str .= &results_tableTemplate($TITLE{$inType}, $txClass, $txTime, \%TEAMS);
+         $str .= &results_tableTemplate($TITLE{$inType}, $txClass, $txTime, $inType, \%TEAMS);
       }
    
    return ($str);
    }
 sub results_overallTableTemplate (){
-   my ($txTitle, $txClass, $txTime, $teams) = @_;
+   my ($txTitle, $txClass, $txTime, $inType, $teams) = @_;
    my $Team   = new SAE::TEAM();
    my %TEAMS  = %{$teams};
    $str .= sprintf '<h1>%s Results - %s</h1>', $txTitle, $txClass;
@@ -67,7 +72,7 @@ sub results_overallTableTemplate (){
    $str .= '<th data-type="float"  style="width: 100px;" >Presentation</th>';
    $str .= '<th data-type="float"  style="width: 100px;" >Mission</th>';
    $str .= '<th data-type="float"  style="width: 100px;" >Penalties</th>';
-   $str .= '<th data-type="float"  style="width: 100px;" >Score</th>';
+   $str .= '<th data-type="float"  style="width: 100px; text-align: right;" >Score</th>';
    $str .= '</tr>';
    $str .= '</thead>';
    my $i = 1;
@@ -85,8 +90,8 @@ sub results_overallTableTemplate (){
       $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $TEAMS{$teamIDX}{IN_DESIGN};
       $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $TEAMS{$teamIDX}{IN_PRESO};
       $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $TEAMS{$teamIDX}{IN_MISSION};
-      $str .= sprintf '<td style="text-align: right;">%2.1f</td>', $TEAMS{$teamIDX}{IN_PENALTY};
-      $str .= sprintf '<td style="text-align: right;">%2.4f</td>', $TEAMS{$teamIDX}{IN_SCORE};
+      $str .= sprintf '<td class="w3-text-red" style="text-align: right; ">%2.1f</td>', $TEAMS{$teamIDX}{IN_PENALTY};
+      $str .= sprintf '<td style="text-align: right; font-weight: bold;">%2.4f</td>', $TEAMS{$teamIDX}{IN_SCORE};
       $str .= sprintf '</tr>';
    }
    $str .= '</tbody>';
@@ -98,7 +103,7 @@ sub results_overallTableTemplate (){
    return ($str);
    }
 sub results_tableTemplate (){
-   my ($txTitle, $txClass, $txTime, $teams) = @_;
+   my ($txTitle, $txClass, $txTime, $inType, $teams) = @_;
    my $Team   = new SAE::TEAM();
    my %TEAMS  = %{$teams};
    $str .= sprintf '<h1>%s Results - %s</h1>', $txTitle, $txClass;
@@ -111,7 +116,11 @@ sub results_tableTemplate (){
    $str .= '<th data-type="int"    style="width: 50px;" >#</th>';
    $str .= '<th data-type="string" style="width: 175px;" >Country</th>';
    $str .= '<th data-type="string" style="             " >University (Team)</th>';
-   $str .= '<th data-type="float"  style="width: 100px;" >Score</th>';
+   if ($inType==1){
+      $str .= '<th data-type="float"  style="width: 100px;" >Penalty</th>';
+   }
+   
+   $str .= '<th data-type="float"  style="width: 100px; text-align: right" >Score</th>';
    $str .= '</tr>';
    $str .= '</thead>';
    my $i = 1;
@@ -126,7 +135,11 @@ sub results_tableTemplate (){
       $str .= sprintf '<td >%003d</td>', $TEAMS{$teamIDX}{IN_NUMBER};
       $str .= sprintf '<td >%s</td>', $TEAMS{$teamIDX}{TX_COUNTRY};
       $str .= sprintf '<td >%s (<i>%s</i>)</td>', $TEAMS{$teamIDX}{TX_SCHOOL}, $TEAMS{$teamIDX}{TX_NAME};
-      $str .= sprintf '<td class="w3-right">%2.4f</td>', $TEAMS{$teamIDX}{IN_SCORE};
+      if ($inType==1){
+         # $str .= '<th data-type="float"  style="width: 100px;" >Penalty</th>';
+         $str .= sprintf '<td class="w3-text-red" style="text-align: right;">%2.1f</td>', $TEAMS{$teamIDX}{IN_PENALTY};
+      }
+      $str .= sprintf '<td style="text-align: right; font-weight: bold;">%2.4f</td>', $TEAMS{$teamIDX}{IN_SCORE};
       $str .= sprintf '</tr>';
    }
    $str .= '</tbody>';

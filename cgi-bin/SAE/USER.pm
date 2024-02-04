@@ -30,8 +30,59 @@ sub new{
 	return $self;
 }
 
+# 2024================================================================================
+sub _getAllVolunteers (){
+    my ($self) = @_;
+    my $SQL = "SELECT * FROM TB_USER WHERE IN_USER_TYPE>?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute( 0 );
+    my %HASH = %{$select->fetchall_hashref('PK_USER_IDX')};
+    return (\%HASH);
+    }
+sub _getEventVolunteer (){
+    my ($self, $eventIDX) = @_;
+    my $SQL = "SELECT DISTINCT USER.PK_USER_IDX, USER.TX_FIRST_NAME, USER.TX_LAST_NAME, concat(LEFT(USER.TX_FIRST_NAME,1), '. ',  USER.TX_LAST_NAME) AS TX_INIT, USER.TX_EMAIL
+        FROM TB_PROFILE AS PREF JOIN TB_USER AS USER ON PREF.FK_USER_IDX=USER.PK_USER_IDX 
+        WHERE PREF.FK_EVENT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($eventIDX);
+    my %HASH = %{$select->fetchall_hashref('PK_USER_IDX')};
+    return (\%HASH);
+    }
+sub _getEventVolunteerPreferences (){
+    my ($self, $eventIDX, $inType) = @_;
+    my $SQL = "SELECT PREF.PK_PROFILE_IDX, PREF.FK_USER_IDX, PREF.FK_CLASS_IDX, PREF.IN_TYPE, PREF.IN_LIMIT, USER.TX_FIRST_NAME, USER.TX_LAST_NAME, concat(LEFT(USER.TX_FIRST_NAME,1), '. ',  USER.TX_LAST_NAME) AS TX_INIT
+        FROM TB_PROFILE AS PREF JOIN TB_USER AS USER ON PREF.FK_USER_IDX=USER.PK_USER_IDX 
+        WHERE PREF.FK_EVENT_IDX=? AND PREF.IN_TYPE=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($eventIDX, $inType);
+    my %HASH;
+    if ($inType==1){
+            %HASH = %{$select->fetchall_hashref(['FK_USER_IDX','FK_CLASS_IDX'])};
+        } else {
+            %HASH = %{$select->fetchall_hashref('FK_USER_IDX')};
+        }
+    
+    return (\%HASH);
+    }
+
+
 # 2023================================================================================
+sub _getUserFirstInitialAndLastName(){
+    my ($self) = @_;
+    my %HASH;
+    my $SQL = "SELECT PK_USER_IDX, LEFT(TX_FIRST_NAME,1) AS TX_FIRST, TX_LAST_NAME FROM TB_USER";
+    my $select = $dbi->prepare($SQL);
+       $select->execute();
+    while (($userIDX, $txFirst, $txLast) = $select->fetchrow_array()) {
+        $txLast =~ s/\b(\w)/\U$1/g;
+        my $txInitials = sprintf '%s. %s', uc($txFirst), $txLast;
+        $HASH{$userIDX} = $txInitials;
+    }
+    return (\%HASH);
+    }
 sub _getUserInitialList(){
+    my ($self) = @_;
     my %HASH;
     my $SQL = "SELECT PK_USER_IDX, LEFT(TX_FIRST_NAME,1) AS TX_FIRST, LEFT(TX_LAST_NAME,1) AS TX_LAST FROM TB_USER";
     my $select = $dbi->prepare($SQL);
@@ -163,9 +214,9 @@ sub _updateAccessTime(){
     return;
 }
 sub _login(){
-    my ($self, $login, $txPassword) = @_;
+    my ($self, $login, $txPassword, $eventIDX) = @_;
     my $Secure = new SAE::SECURE();
-    my %DATA = %{&getLoginData($login)};
+    my %DATA = %{&getLoginData($login, $eventIDX)};
     my $saltedPassword;
     if ($DATA{PK_USER_IDX}) {
         my $firstFour = substr($DATA{TX_PASSWORD},0,4);
@@ -199,6 +250,7 @@ sub _login(){
 
 sub getLoginData (){
     my $txEmail = shift;
+    my $eventIDX = shift;
     my $SQL = "SELECT * FROM TB_USER WHERE TX_EMAIL=?";
     my $select = $dbi->prepare($SQL);
        $select->execute($txEmail);
@@ -209,7 +261,8 @@ sub getLoginData (){
     } else {
         my $Profile = new SAE::PROFILE();
         # my $row = $Profile->_checkForCurrentProfile($USERDATA{PK_USER_IDX});
-        $USERDATA{IN_PROFILE} = $Profile->_checkForCurrentProfile($USERDATA{PK_USER_IDX});
+        $USERDATA{IN_PROFILE} = $Profile->_checkForEmptyProfile($USERDATA{PK_USER_IDX}, $eventIDX);
+        # $USERDATA{IN_PROFILE} = $Profile->_checkForCurrentProfile($USERDATA{PK_USER_IDX});
         return (\%USERDATA);
     }
 }

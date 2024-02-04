@@ -6,6 +6,77 @@
     var evalFeedback = {}; // Created an Object to Collect New Evaluation Form Data before saving to Database.
 
 // ================ 2024 ==================================
+function preso_loadJudgesStatisics(o, userIDX) {
+    var eventIDX = $.cookie('LOCATION');
+    $('#JUDGE_HISTORY_'+userIDX).toggleClass('w3-hide');
+    
+    var className = 'vol_'+userIDX;
+        if ($(o).closest('tr').next('tr').hasClass(className)){
+            do {
+                $(o).closest('tr').next('tr').remove();
+            } while ($(o).closest('tr').next('tr').hasClass(className));
+            $(o).children('i').removeClass('fa-chevron-down');
+            $(o).children('i').addClass('fa-chevron-right');
+        } else {
+            
+            var row = $(o).closest('tr');
+            // $('#JUDGE_HISTORY_'+userIDX).html(loading);
+            $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/preso.pl',
+            data: {'do':'preso_loadJudgesStatisics','act':'print','userIDX':userIDX,'eventIDX':eventIDX},
+            success: function(str){
+                $(str).insertAfter(row);
+                $(o).children('i').removeClass('fa-chevron-right');
+                $(o).children('i').addClass('fa-chevron-down');
+            }
+            });
+        }
+}
+function preso_showTeamStatistics(o,teamIDX, classIDX) {
+        // console.log("teamIDX = " + teamIDX);
+        $('#TEAM_STAT_'+teamIDX).html(loading);
+        $('#TEAM_STAT_'+teamIDX).toggleClass('w3-hide');
+        $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/preso.pl',
+        data: {'do':'preso_showTeamStatistics','act':'print','teamIDX':teamIDX,'classIDX':classIDX},
+        success: function(str){
+            // console.log(str);
+            // $(o).close();
+            $('#TEAM_STAT_'+teamIDX).html(str);
+        }
+        });
+    }
+function preso_updateTimeLimit(o) {
+    $('#TIME_LIMIT').prop('checked', o.checked);
+    if (o.checked){
+        evalFormData[90] = 10;
+    } else {
+        evalFormData[90] = 0;
+    }
+    console.log(JSON.stringify(evalFormData)) ;
+    // body...
+}
+function preso_confirmPresentationTime(o, classIDX, teamIDX) {
+    var timeLimit = 0;
+    if ($('#TIME_LIMIT').prop('checked')) {
+        timeLimit = 1;
+    }
+    $(o).close();
+    $.modal2("Confirm Presentation Time", "50%");
+    var eventIDX = $.cookie('LOCATION');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/preso.pl',
+        data: {'do':'preso_confirmPresentationTime','act':'print','classIDX':classIDX,'teamIDX':teamIDX,'eventIDX':eventIDX,'timeLimit':timeLimit},
+        success: function(str){
+            // console.log(str);
+            // $(o).close();
+            $('#modal2_content').html(str);
+        }
+    });
+    }
 function preso_showSaveBanner(message) {
     var newID = Math.floor(Math.random()*100000);
     var div = document.createElement("div");
@@ -64,18 +135,23 @@ function preso_updatePresentationScore(o, cardIDX, teamIDX) {
     });
     }
 function preso_saveNewEvaluation(o, classIDX, teamIDX) {
+
     var data            = {};
     var ajxData         = {}; 
     var userIDX         = $.cookie('PK_USER_IDX');
     ajxData.do          = 'preso_saveNewEvaluation';
     ajxData.act         = 'print';
+
     ajxData.classIDX    = classIDX;
     ajxData.userIDX     = userIDX;
     ajxData.teamIDX     = teamIDX;
     ajxData['jsonCard'] = JSON.stringify(evalCardData);
     ajxData['jsonData'] = JSON.stringify(evalFormData);
     ajxData['jsonFeed'] = JSON.stringify(evalFeedback);
-    console.log(ajxData);
+    // console.log(ajxData);
+    // $('.sae_top').remove();
+
+    console.log("ID=" + $('.sae_top').prop('ID'));
     // return;
     $.ajax({
         type: 'POST',
@@ -89,7 +165,8 @@ function preso_saveNewEvaluation(o, classIDX, teamIDX) {
             $('#MIN_STAT_'+teamIDX).html(parseFloat(data.IN_MIN).toFixed(2));
             $('#STD_STAT_'+teamIDX).html(parseFloat(data.IN_STD).toFixed(2));
             $('#MEAN_STAT_'+teamIDX).html(parseFloat(data.IN_MEAN).toFixed(2));
-            $(o).close();
+            $(o).close('sae-top2');
+            
         }
     });
     }
@@ -120,7 +197,7 @@ function changeLineItemColor(reportIDX, color) {
     } else {
         $('#LINE_ITEM_'+reportIDX).removeClass(color).addClass(defaultColor);
     }
-}
+    }
 function preso_updateBreakingScoringThreshold(o, divName, paperIDX, cardIDX, reportIDX, teamIDX) {
     var inValue = $(o).val();
     // console.log("paperIDX = " + paperIDX);   

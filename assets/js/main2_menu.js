@@ -133,6 +133,7 @@ function mainMenuItemClick(menuItem, obj){
             break;
         case 18: // Manager Papers
             openManagePapers();
+            // paper_openTab()
             // openMenuItem('ManagePapers');
             // loadTabContent('ManagePapers_divTeam_view');
             break; 
@@ -165,7 +166,8 @@ function mainMenuItemClick(menuItem, obj){
             window.open("preso_upload.html?location="+$.cookie('LOCATION'), "preso_upload", "width=600, height=600, toolbar=no, scrollbars=yes, resizable=yes");
             break;
         case 29: //Change Event Location
-            sae_showModalEventSelection();
+            // sae_showModalEventSelection();
+            main2_showModalEventSelection();
             break; 
         case 30: //show User Profile
             sae_showUserProfile(); // main2.js ---> main2.pl
@@ -231,6 +233,8 @@ function openManagePapers(){
         data: {'do':'paper_openManagePapers','act':'print','location':location},
         success: function(str){
             $('#mainPageContent').html(str);
+            // openManagePapers();
+            // paper_openTab();
         }
     });
 }
@@ -333,17 +337,7 @@ function openFileUpload(toDo){
     var location=$.cookie("LOCATION");
     window.open("upload.html?location="+location, "_blank", "width=600, height=600, toolbar=no, scrollbars=yes, resizable=yes");
 }
-// function showPublishPage(){
-//     var location = $.cookie('LOCATION');
-//     $.ajax({
-//         type: 'POST',
-//         url: '../cgi-bin/results.pl',
-//         data: {'do':'showPublishPage','act':'print','location':location},
-//         success: function(str){
-//             $('#mainPageContent').html(str);
-//         }
-//     });
-// }
+
 function showPublishPage(){
     $('#mainPageContent').html(loading);
     var location = $.cookie('LOCATION');

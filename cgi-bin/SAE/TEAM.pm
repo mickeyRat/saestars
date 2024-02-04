@@ -31,6 +31,15 @@ sub new{
 	bless($self, $className);
 	return $self;
 }
+sub getTeamIndex (){
+    my ($self, $inCode) = @_;
+    my $SQL = "SELECT PK_TEAM_IDX FROM TB_TEAM WHERE TX_CODE=?";
+    my $select = $dbi->prepare($SQL);
+       $select -> execute($inCode);
+    my ($teamIDX) = $select->fetchrow_array();
+
+    return ($teamIDX);
+    }
 sub _getTeamDetails (){
     my ($self, $teamIDX) = @_;
     my $SQL = "SELECT * FROM TB_TEAM WHERE PK_TEAM_IDX=?";
@@ -81,12 +90,29 @@ sub _addNewTeam(){
 	my $newIDX = $insert->{q{mysql_insertid}};
 	return ($newIDX);
 }
+sub _getCountryList (){
+    my ($self, $eventIDX) = @_;
+    my $SQL = "SELECT DISTINCT TX_COUNTRY FROM TB_TEAM;";
+    # my $SQL = "SELECT * FROM TB_COUNTRY";
+    my $select = $dbi->prepare($SQL);
+       $select->execute();
+    my %HASH = %{$select->fetchall_hashref('TX_COUNTRY')};
+    return(\%HASH);
+    }
 sub _getTeamList(){
     my ($self, $eventIDX) = @_;
     my $SQL = "SELECT * FROM TB_TEAM WHERE FK_EVENT_IDX=?";
     my $select = $dbi->prepare($SQL);
        $select->execute($eventIDX);
     my %HASH = %{$select->fetchall_hashref('PK_TEAM_IDX')};
+    return(\%HASH);
+}
+sub _getClassTeamList(){
+    my ($self, $eventIDX) = @_;
+    my $SQL = "SELECT * FROM TB_TEAM WHERE FK_EVENT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+       $select->execute($eventIDX);
+    my %HASH = %{$select->fetchall_hashref(['FK_CLASS_IDX','PK_TEAM_IDX'])};
     return(\%HASH);
 }
 sub _getUserTeam(){

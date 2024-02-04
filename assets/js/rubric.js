@@ -4,6 +4,32 @@ var time = now.getTime();
 var newSubSection = {};
 
 // 2024 ==========================================================================
+function rubric_addNewSection(o, classIDX, txType, inSection) {
+    var txSection = $(o).closest('div').parent().find('input').val();
+    // $('#tabContent').append('<h3><i>Section '+inSection+' - </i><b>'+txSection+'</b></h3>');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/rubric.pl',
+        data: {'do':'rubric_addNewSection','act':'print','txType':txType,'classIDX':classIDX,'inSection':inSection,'txSection':txSection},
+        success: function(str){
+            $('#tabContent').append(str);
+            // $('#tabContent').html(str);
+            $(o).close();
+        }
+    }); 
+    // body...
+    }
+function rubric_openAddNewSection(o, classIDX, txType) {
+    $.modal("New Section", "45%");
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/rubric.pl',
+        data: {'do':'rubric_openAddNewSection','act':'print','classIDX':classIDX,'txType':txType},
+        success: function(str){
+            $('#modal_content').html(str);
+        }
+    }); 
+    }
 function rubric_openTabClass(o, txType, classIDX) {
     // $('.tabClass').hide();
     $('.tabs').removeClass('w3-red');
@@ -17,11 +43,7 @@ function rubric_openTabClass(o, txType, classIDX) {
             $('#tabContent').html(str);
         }
     }); 
-    
-
-
-
-}
+    }
 function rubric_deleteSubsection(o, divName, reportIDX) {
     var jsYes = confirm("Click [ Ok ] to confirm this DELETE action.");
     if (!jsYes){return}    
@@ -36,7 +58,7 @@ function rubric_deleteSubsection(o, divName, reportIDX) {
 
     $('#ROW_SUBSECTION_'+reportIDX).remove();
     $('#'+divName).remove();
-}
+    }
 function rubric_saveNewSubSectionRecord(o, divName, txType, classIDX) {
     if (!newSubSection.TX_SUB) {alert ('Missing Required Field'); return} 
 
@@ -47,7 +69,7 @@ function rubric_saveNewSubSectionRecord(o, divName, txType, classIDX) {
     ajxData.do          = 'rubric_saveNewSubSectionRecord';
     ajxData.act         = 'print';
     ajxData['jsonData'] = JSON.stringify(newSubSection);
-    // console.log(ajxData);
+    console.log(ajxData);
     // return;
     $.ajax({
         type: 'POST',
@@ -57,15 +79,14 @@ function rubric_saveNewSubSectionRecord(o, divName, txType, classIDX) {
             // console.log(str);
             setTimeout(function(){ $('#savedMessage').fadeOut(350); }, 250); 
             newSubSection = {};
-            $('#'+divName).remove();
+            $(o).close();
+            // $('#'+divName).remove();
             // console.log('newSubSection Object = ' + JSON.stringify(newSubSection));
             rubric_openTabClass(o, txType, classIDX);
 
         },
     });
-
-}
-
+    }
 function collectNewSubsectionData(o) {
     var key = $(o).data('key');
     newSubSection[key] = $(o).val();
@@ -77,8 +98,7 @@ function collectNewSubsectionData(o) {
         }
     }
     // console.log('newSubSection Object = ' + JSON.stringify(newSubSection));
-}
-
+    }
 function rubric_updateSubsectionData(reportIDX, field, inValue) {
     $('#savedMessage').show();
     var data            = {};
@@ -110,7 +130,7 @@ function rubric_updateSubsectionData(reportIDX, field, inValue) {
             }
         },
     });
-}
+    }
 function rubric_updateSubSectionSelection(o, reportIDX) {
 
     var inValue;
@@ -131,7 +151,7 @@ function rubric_updateSubSectionSelection(o, reportIDX) {
     // console.log("inValue = " + inValue);
     // console.log("reportIDX = " + reportIDX);
     // console.log("field = " + field);
-}
+    }
 function rubric_addNewSubSection(o, inSection, txType, txSection, inSectionWeight, nextSubSection, classIDX) {
     // console.log('inSection = ' + inSection);
     // console.log('txType = ' + txType);
@@ -142,17 +162,19 @@ function rubric_addNewSubSection(o, inSection, txType, txSection, inSectionWeigh
     newSubSection.IN_SUB        = nextSubSection;
     newSubSection.FK_CLASS_IDX  = classIDX;
     // console.log('newSubSection Object = ' + JSON.stringify(newSubSection));
-    var divName = 'TEMP_DIV_UPDATE_SUBSECTION';
-    createNewModalDiv('<h3>Section '+inSection+': '+txSection+'</h3>',divName,800);
+    $.modal('Section '+inSection+': '+txSection, '45%');
+    // var divName = 'TEMP_DIV_UPDATE_SUBSECTION';
+    // createNewModalDiv('<h3>Section '+inSection+': '+txSection+'</h3>',divName,800);
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/rubric.pl',
-        data: {'do':'rubric_addNewSubSection','act':'print','divName':divName,'inSection':inSection,'txType':txType,'txSection':txSection,'classIDX':classIDX},
+        data: {'do':'rubric_addNewSubSection','act':'print','inSection':inSection,'txType':txType,'txSection':txSection,'classIDX':classIDX},
         success: function(str){
-            $('#x_modal_Content').html(str);
+            // $('#x_modal_Content').html(str);
+            $('#modal_content').html(str);
         }
     });   
-}
+    }
 function rubric_updateSection(o, txType) {
     $('#savedMessage').show();
     var data            = {};
@@ -179,7 +201,7 @@ function rubric_updateSection(o, txType) {
         },
     });
 
-}
+    }
 function rubric_openSubSection(o, reportIDX, classIDX) {
     var divName = 'TEMP_DIV_UPDATE_SUBSECTION';
     createNewModalDiv('Edit: Subsection',divName,800);
@@ -191,7 +213,7 @@ function rubric_openSubSection(o, reportIDX, classIDX) {
             $('#x_modal_Content').html(str);
         }
     });   
-}
+    }
 function rubric_updateSectionWeight(o, inSection, txType, classIDX) {
     // console.log('inSection = ' + inSection);
     var total = 0;
@@ -227,10 +249,7 @@ function rubric_updateSectionWeight(o, inSection, txType, classIDX) {
             $('.SectionWeight_'+inSection).html(parseFloat($(o).val()).toFixed(1)+'%');    
         },
     });
-
-
-}
-
+    }
 function rubric_updateWeight(o, reportIDX, inSubSection, link) {
     // console.log('reportIDX = ' + reportIDX);
     var totalReg = 0;
@@ -265,7 +284,7 @@ function rubric_updateWeight(o, reportIDX, inSubSection, link) {
             }
         },
     });
-}
+    }
 function rubric_balanceSectionWeight(o, txType, inSection, classIDX) {
     var divName = 'TEMP_DIV_BALANCE';
     createNewModalDiv('Balance Section Setup',divName,600);
@@ -277,7 +296,7 @@ function rubric_balanceSectionWeight(o, txType, inSection, classIDX) {
             $('#x_modal_Content').html(str);
         }
     });    
-}
+    }
 function rubric_balanceSubsectionWeight(o, txType, inSection, classIDX) {
     var divName = 'TEMP_DIV_BALANCE';
     createNewModalDiv('Balance SubSection Setup',divName,600);
@@ -289,7 +308,7 @@ function rubric_balanceSubsectionWeight(o, txType, inSection, classIDX) {
             $('#x_modal_Content').html(str);
         }
     });    
-}
+    }
 function rubric_loadRubric(o, txType) {
     $('.menu').removeClass('w3-red');
     $(o).addClass('w3-red');
@@ -303,9 +322,7 @@ function rubric_loadRubric(o, txType) {
             $('.tab1').addClass('w3-red');
         }
     });    
-}
-
-
+    }
 // 2024 ==========================================================================
 
 

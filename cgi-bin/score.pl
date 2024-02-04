@@ -19,7 +19,12 @@ use SAE::REFERENCE;
 use SAE::REG_SCORE;
 use SAE::ADV_SCORE;
 use SAE::MIC_SCORE;
+use SAE::PAPER;
+use SAE::GRADE;
+use SAE::PRESO;
 use List::Util qw(sum first) ;
+use Statistics::Basic qw(:all);
+use Statistics::PointEstimation;
 
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
@@ -49,6 +54,7 @@ sub viewMyScoreCard(){
     my $eIDX     = $q->param('teamIDX');
     my $location = $q->param('location');
     my $tileIDX  = $q->param('source');
+    my $inType   = 1;
     my $Score    = new SAE::SCORE();
     # my $Home = new SAE::HOME();
     # %TILES = %{$Home->_getTiles()};
@@ -59,9 +65,11 @@ sub viewMyScoreCard(){
     my $classIDX = $TEAMS{$eIDX}{FK_CLASS_IDX};
    
     if ($tileIDX == 14){
-        $str = &_displayReportScores($teamIDX, $classIDX, $txFullName);
+        # $str = &_displayReportScores($teamIDX, $classIDX, $txFullName);
+        $str = &displayDesignAssessments($teamIDX, $classIDX, $txFullName, 1);
     } elsif ($tileIDX == 15) {
-        $str = &_displayPresoScores($teamIDX, $classIDX, $txFullName, $tileIDX);
+        # $str = &_displayPresoScores($teamIDX, $classIDX, $txFullName, $tileIDX);
+        $str = &displayPreoAssessments($teamIDX, $classIDX, $txFullName, 5);
     } elsif ($tileIDX == 16) {
         $str = &_displayPenalties($teamIDX, $classIDX, $txFullName, $tileIDX, $location );
     } elsif ($tileIDX == 17){
@@ -75,6 +83,188 @@ sub viewMyScoreCard(){
     }
     return ($str);
     };
+
+sub displayDesignAssessments (){
+    my ($teamIDX, $classIDX, $txFullName, $inType) = @_;
+    my %CARDTYPE  = (1=>'Design Report Assessments', 2=>'Techincal Data Sheet', 3=>'Drawings', 4=>'Requirements');
+    my %TYPE      = (1=>'Assessment', 2=>'TDS', 3=>'Drawing', 4=>'Requirement');
+    my $Paper     = new SAE::PAPER();
+    # my $Rubric    = new SAE::RUBRIC();
+    my $Grade     = new SAE::GRADE(); 
+    my %VOL       = %{$Paper->_getJudgeAssignmentByTeam_cardIDX($inType, $teamIDX)};
+    my %CARDS     = %{$Paper->_getCardSCcores($teamIDX)};
+    my %RUBRIC    = %{$Grade->_getReportRubric($TYPE{$inType}, $classIDX)};
+    my %SCORE     = %{$Grade->_getCardAssessmentWeightedScores($TYPE{$inType}, $teamIDX)};
+    my $inScore   =   $Paper->_generateDesignScores($eventIDX, $teamIDX);
+    my $inLateScore  =   $Paper->_getLateScore($teamIDX);
+    my $str;
+    $str .= '<div class="w3-container w3-border w3-round">';
+    $str .= sprintf '<h3 class="w3-blue-grey w3-round" style="padding: 5px 10px; text-align: right">Team #%s</h3>', $txFullName;
+    $str .= '<table class="w3-table-all">';
+    $str .= '<thead>';
+    $str .= '<tr>';
+    $str .= '<th style="text-align: right; width: 85%;">Report Score</th>';
+    $str .= sprintf '<th style="text-align: right;">%1.4f</th>', $inScore;
+    $str .= '</tr>';
+    $str .= '<tr>';
+    $str .= '<th style="text-align: right;">Late Submission Penalty</th>';
+    $str .= sprintf '<th class="w3-text-red" style="text-align: right;">- %1.1f</th>', $inLateScore;
+    $str .= '</tr>';
+    $str .= '<tr>';
+    $str .= '<th style="text-align: right;">Final Report Score</th>';
+    if ($inScore - $inLateScore>0){
+        $str .= sprintf '<th style="text-align: right;">%1.4f</th>', $inScore - $inLateScore;
+    } else {
+        $str .= sprintf '<th style="text-align: right;">%1.4f</th>', 0;
+        }
+    $str .= '</tr>';
+    $str .= '</tbody>';
+    $str .= '</table>';
+    # $str .= sprintf '<p style="padding: 0px 10px; margin: 0px;">Report Score: <u>%2.4f</u> pts</p>', $overallScore;
+    # $str .= sprintf '<p style="padding: 0px 10px; margin: 0px;">Late Penalty: <u class="w3-text-red">%2.1f</u> pts</p>', $late;
+    # $str .= sprintf '<p style="padding: 0px 10px; margin: 0px;">Total Score: <u>%2.4f</u> pts</p>', $overallScore;
+    $str .= '</div>';
+    $str .= '<h4 class="w3-center w3-light-grey w3-border">Evaluation Details</h4>';
+    my @score  = ();
+    my @points = ();
+    foreach $inType (sort {$a <=> $b} keys %CARDTYPE) {
+        my %VOL = %{$Paper->_getJudgeAssignmentByTeam_cardIDX($inType, $teamIDX)};
+        my %RUBRIC   = %{$Grade->_getReportRubric($TYPE{$inType}, $classIDX)};
+        my $totalPoints = 0;
+        $str .= '<div class="w3-container w3-border w3-round-large w3-margin-bottom">';
+        $str .= sprintf '<h4>%s</h4>', $CARDTYPE{$inType};
+        $str .= '<table class="w3-table-all w3-border w3-round">';
+        $str .= '<thead>';
+        $str .= '<tr>';
+        $str .= '<th>Section</th>';
+        my $inJudge = 1;
+        my $col = 1; 
+        foreach $userIDX (sort keys %VOL) {
+            $str .= sprintf '<th style="text-align: right; width: 100px;">Judge #%d</th>', $inJudge++;
+            $col++;
+        }
+        $str .= '<th style="text-align: right; width: 100px;">Average Score</th>';
+        $col++;
+        $str .= '<th style="text-align: right; width: 100px;">Points</th>';
+        $str .= '</tr>';
+        $str .= '</thead>';
+        $str .= '<tbody>';
+            foreach $inSec (sort {$a <=> $b} keys %RUBRIC) {
+                foreach $inSub (sort {$a <=> $b} keys %{$RUBRIC{$inSec}}) {
+                    $str .= sprintf '<tr class="w3-white">';
+                    $str .= sprintf '<td class="w3-text-grey" >%d.%d %s-%s</td>', $inSec,$inSub, $RUBRIC{$inSec}{$inSub}{TX_SEC}, $RUBRIC{$inSec}{$inSub}{TX_SUB};
+                    @score = ();
+                    @points = ();
+                    foreach $cardIDX (sort keys %VOL) {
+                        $str .= sprintf '<td class="w3-text-grey" style="text-align: right;">%1.1f</td>', $CARDS{$cardIDX}{$inSec}{$inSub}{IN_VALUE};
+                        push (@score, $CARDS{$cardIDX}{$inSec}{$inSub}{IN_VALUE});
+                        push (@points, $CARDS{$cardIDX}{$inSec}{$inSub}{IN_SCORE});
+                    }
+
+                    $str .= sprintf '<td class="w3-border-left" style="text-align: right;"><b>%2.1f</b></td>', mean(@score);
+                    $str .= sprintf '<td class="w3-border-left" style="text-align: right;"><b>%2.2f</b></td>', mean(@points);
+                    $totalPoints += mean(@points);
+                    $str .= sprintf '</tr>';
+                    $inJudge = 1;
+                    foreach $cardIDX (sort keys %VOL) {
+                        if ($CARDS{$cardIDX}{$inSec}{$inSub}{CL_FEEDBACK} ne ''){
+                            $str .= '<tr class="w3-light-grey">';
+                            $str .= sprintf '<td colspan="10"><span class="w3-small"><b>Feedback from Judge #%d</b></span><br><i>%s</i></td>', $inJudge, $CARDS{$cardIDX}{$inSec}{$inSub}{CL_FEEDBACK};
+                            $str .= '</tr>';
+                        }
+                        $inJudge++;
+                    }
+                }
+            }
+        $str .= '</tbody>';
+        $str .= '<tr class="w3-blue">';
+        $str .= sprintf '<td colspan="%d" style="text-align: right;">Total Points Earned for this Section: </td>', $col;
+        $str .= sprintf '<th style="text-align: right;">%1.4f</th>', $totalPoints;
+        $str .= '</tr>';
+        $str .= '</table><br>';
+        $str .= '</div>';
+    }
+
+    return ($str);
+    }
+sub displayPreoAssessments (){
+    my ($teamIDX, $classIDX, $txFullName, $inType) = @_;
+    my $eventIDX     = $q->param('eventIDX');
+    my $inType       = 5;  #5 - Presentation 
+    my $Paper      = new SAE::PAPER();
+    my $Grade      = new SAE::GRADE();
+    my %PRESO      = %{$Grade->_getScoringSummary($teamIDX)};
+    my %VOL        = %{$Paper->_getJudgeAssignmentByTeam_cardIDX($inType, $teamIDX)};
+    my $Preso      = new SAE::PRESO();
+    my $txType     = 'Presentation';
+    my %RUBRIC     = %{$Preso->_getPresoRubric($txType, $classIDX)};
+    my %SCORES     = %{$Preso->_getTeamPresoScores($teamIDX)};
+    my $str;
+    $str .= '<div class="w3-container">';
+    $str .= sprintf '<h3 class="w3-blue-grey w3-round" style="padding: 5px 10px; text-align: right">Team #%s</h3>', $txFullName;
+    $str .= '<table class="w3-table-all">';
+    $str .= '<thead>';
+    $str .= '<tr>';
+    $str .= '<th style="text-align: right; width: 85%;">Presentation Score</th>';
+    $str .= sprintf '<th style="text-align: right;">%1.4f</th>', $PRESO{5};
+    $str .= '</tr>';
+    $str .= '</tbody>';
+    $str .= '</table>';
+    $str .= '</div>';
+    $str .= '<div class="w3-container">';
+    $str .= '<h4 class="w3-center w3-light-grey w3-border">Evaluation Details</h4>';
+    $str .= '<table class="w3-table-all">';
+    $str .= '<thead>';
+    $str .= '<tr>';
+    $str .= '<th>Evaluation Category</th>';
+    my $inJudge = 1;
+    foreach $cardIDX (sort {$a <=> $b} keys %VOL) {
+        $str .= sprintf '<th style="width: 100px; text-align: right;">Judge #%d</th>', $inJudge++;
+    }
+    $str .= '<th style="width: 100px; text-align: right;">Average</th>';
+    $str .= '<th style="width: 100px; text-align: right;">Points</th>';
+    $str .= '</tr>';
+    $str .= '</thead>';
+    $str .= '<tbody>';
+    foreach $inSec (sort {$a <=> $b} keys %RUBRIC) {
+        foreach $inSub (sort {$a <=> $b} keys %{$RUBRIC{$inSec}}) {
+            my @score = ();
+            $str .= sprintf '<tr class="w3-white">';
+            $str .= sprintf '<td class="w3-text-grey" >%d.%d %s</td>', $inSec,$inSub,  $RUBRIC{$inSec}{$inSub}{TX_SUB};
+            my $inWeight = 0;
+            foreach $cardIDX (sort keys %VOL) {
+                my $inValue = $SCORES{$cardIDX}{$inSec}{$inSub}{IN_VALUE};
+                $inWeight = $RUBRIC{$inSec}{$inSub}{IN_SUB_WEIGHT};
+                $str .= sprintf '<td style="text-align: right;">%1.1f</td>', $inValue;
+                push(@score, $inValue);
+
+            }
+            my $inAverage = mean(@score);
+            $str .= sprintf '<td style="text-align: right;">%1.2f</td>', $inAverage;
+            $str .= sprintf '<td style="text-align: right;">%1.2f</td>', ($inWeight/10) * $inAverage;
+            $str .= sprintf '</tr>';
+            $inJudge = 1;
+            foreach $cardIDX (sort keys %VOL) {
+                if ($SCORES{$cardIDX}{$inSec}{$inSub}{CL_FEEDBACK} ne ''){
+                    $str .= '<tr class="w3-light-grey">';
+                    $str .= sprintf '<td colspan="10"><span class="w3-small"><b>Feedback from Judge #%d</b></span><br><i>%s</i></td>', $inJudge, $SCORES{$cardIDX}{$inSec}{$inSub}{CL_FEEDBACK};
+                    $str .= '</tr>';
+                }
+                $inJudge++;
+            }
+        }
+    }
+    $str .= '<tr>';
+    $str .= sprintf '<th colspan="%d" style="text-align: right;">Presentation Score</th>', $inJudge+1;
+    $str .= sprintf '<th style="text-align: right;">%1.4f</th>', $PRESO{5};
+    $str .= '</tr>';
+    $str .= '</tbody>';
+    $str .= '</table>';
+    $str .= '</div>';
+
+
+    return ($str);
+    }
 sub _displayPresoScores(){
     my $teamIDX = shift;
     my $classIDX = shift;

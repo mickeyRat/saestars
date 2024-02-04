@@ -1,14 +1,15 @@
-$('#mainPageContent').html(loading);
-    var eventIDX = $.cookie('LOCATION');
-    $.ajax({
-        type: 'POST',
-        url: '../cgi-bin/attend.pl',
-        // url: '../cgi-bin/main2.pl',
-        data: {'do':'attend_openTeamList','act':'print','eventIDX':eventIDX},
-        success: function(str){
-            $('#mainPageContent').html(str);
-        }
-    });    var d=document;
+// $('#mainPageContent').html(loading);
+//     var eventIDX = $.cookie('LOCATION');
+//     $.ajax({
+//         type: 'POST',
+//         url: '../cgi-bin/attend.pl',
+//         // url: '../cgi-bin/main2.pl',
+//         data: {'do':'attend_openTeamList','act':'print','eventIDX':eventIDX},
+//         success: function(str){
+//             $('#mainPageContent').html(str);
+//         }
+//     });    
+    var d=document;
     var sid = $.cookie('SID');
     // var loading = '<div class="w3-padding" style="margin: auto;"><img src="../../images/loader.gif"> Loading...</div>';
     // var loading = '<i class="fa fa-refresh fa-spin fa-3x fa-fw"></i><span class="sr-only">Loading...</span>';

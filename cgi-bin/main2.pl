@@ -25,6 +25,9 @@ use SAE::CARD;
 use SAE::TEAM;
 use SAE::USER;
 use SAE::PROFILE;
+use SAE::EVENT;
+use SAE::TABLE;
+use SAE::JSONDB;
 
 $q = new CGI;
 $qs = new CGI($ENV{'QUERY_STRING'});
@@ -34,6 +37,8 @@ $path =~ s/\\[^\\]+$//;
 $path =~ s/\/[^\/]+$//;
 
 my $act = $q->param("act");
+my %LABEL      = (1=>'Design Report',2=>'TDS', 3=>'Drawing', 4=>'Requirement', 5=>'Presentation');
+my %CLASS      = (1=>'Regular',2=>'Advanced', 3=>'Micro', 0=>'All');
 
 if ($act eq "print"){
     print &{$do= $q->param("do")};
@@ -125,7 +130,7 @@ sub sae_resetPasswordSubmit(){
     $User->updateTxPassword_byId($saltedPassword, $userIDX);
     $User->updateBoReset_byId(1, $userIDX);
     return ($saltedPassword);
-}
+    }
 sub sae_resetPassword(){ #Resetting password from the Admin Screen
     print $q->header();
     my $Ref = new SAE::REFERENCE();
@@ -140,7 +145,7 @@ sub sae_resetPassword(){ #Resetting password from the Admin Screen
     $str .= '</form>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub sae_changeMyPasswordSubmit(){
     print $q->header();
     my $userIDX = $q->param('userIDX');
@@ -151,7 +156,7 @@ sub sae_changeMyPasswordSubmit(){
     my $userPassword = $salt.crypt($passwordNew, $salt);
     $User->updateTxPassword_byId($userPassword, $userIDX);
     return ("$userPassword, $userIDX");
-}
+    }
 sub sae_validateCurrentPassword(){
     print $q->header();
     my $userIDX = $q->param('userIDX');
@@ -167,7 +172,7 @@ sub sae_validateCurrentPassword(){
         return (0);
     }
 
-}
+    }
 sub sae_changeMyPassword(){ 
     print $q->header();
     my $Auth = new SAE::AUTO();
@@ -188,7 +193,7 @@ sub sae_changeMyPassword(){
     $str .= '<a ID="btn_changePassword" class="w3-disabled w3-button w3-border w3-card-4 w3-display-bottommiddle w3-margin-bottom" href="javascript:void(0);" onclick="sae_changeMyPasswordSubmit('.$userIDX.',\''.$divName.'\');">Change</a>';
     $str .= '</div>';
     return ($str);
-}
+    }
 sub sae_saveProfile(){
     print $q->header();
     my $Auth = new SAE::AUTO();
@@ -199,25 +204,75 @@ sub sae_saveProfile(){
     my $Auth = new SAE::Auth();
        $Auth->_setProfile($txFirst , $txLast , $txEmail , $userIDX);
     return;
-}
+    }
+# 2024 ===========================================================================================================================
+sub main2_updateInLimit (){
+    print $q->header();
+    my $profileIDX  = $q->param('profileIDX');
+    my $inLimit     = $q->param('inLimit');
+    my $JsonDB      = new SAE::JSONDB();
+    my %DATA;
+    $DATA{IN_LIMIT} = $inLimit;
+    $JsonDB->_update('TB_PROFILE',\%DATA,qq(PK_PROFILE_IDX=$profileIDX));
+    # my $str;
+
+    return ($str);
+    }
+
+sub main2_delete (){
+    print $q->header();
+    my $profileIDX = $q->param('profileIDX');
+    my $JsonDB     = new SAE::JSONDB();
+    $JsonDB->_delete('TB_PROFILE', qq(PK_PROFILE_IDX=$profileIDX));
+    return ($str);
+    }
+sub main2_templateRow(){
+    my ($eventName, $inType, $inLimit, $classIDX, $profileIDX) = @_;
+    my $str;
+    $str .= '<tr>';
+    $str .= sprintf '<td>%s</td>', $eventName;
+    if ($inType ==1){
+            $str .= sprintf '<td><input class="w3-input w3-round w3-border" type="number" value="%d" onchange="main2_updateInLimit(this, %d);"></td>', $inLimit, $profileIDX;
+        } else {
+            $str .= sprintf '<td>-</td>';
+        }
+    $str .= sprintf '<td>%s</td>', $LABEL{$inType};
+    $str .= sprintf '<td>%s</td>', $CLASS{$classIDX};
+    # $str .= sprintf '<td style="text-align: middle"><i class="fa fa-times fa-2x w3-text-red" style="cursor: pointer;" aria-hidden="true" onclick="main2_delete(this, %d);"></i></td>', $profileIDX;
+    $str .= sprintf '<td style="text-align: middle"><button class="w3-button w3-border w3-round w3-hover-red" onclick="main2_delete(this, %d);">Drop out</button></td>', $profileIDX;
+    $str .= '</tr>';
+    return($str);
+    }
+sub main2_addVolunteerPreference(){
+    print $q->header();
+    my $eventIDX      = $q->param('eventIDX');
+    my $Event         = new SAE::EVENT();
+    my $Table         = new SAE::TABLE();
+    my %EVENTS        = %{$Event->_getEventList()};
+    my $Table         = new SAE::TABLE();
+    my %DATA          = %{decode_json($q->param('jsonData'))};
+    my $newProfileIDX = $Table->_saveAsNew('TB_PROFILE', $q->param('jsonData'));
+    my $str           = &main2_templateRow($EVENTS{$eventIDX}{TX_EVENT_NAME}, $DATA{IN_TYPE}, $DATA{IN_LIMIT}, $DATA{FK_CLASS_IDX}, $newProfileIDX);
+    return ($str);
+    }
+
 sub sae_showUserProfile(){
     print $q->header();
-    my $userIDX = $q->param('userIDX');
-    my $eventIDX = $q->param('location');
+    my $userIDX    = $q->param('userIDX');
+    my $eventIDX   = $q->param('location');
     # my $userName = $q->param('userName');
-    my $User = new SAE::USER($userIDX);
-    my $Team = new SAE::TEAM();
-    my $Profile = new SAE::PROFILE();
-    my %USER = %{$User->_getUserData()};
-    my %TEAMS    = %{$Team->_getTeamList($eventIDX)};
-    my %USERTEAM = %{$Team->_getUserTeam($userIDX, $eventIDX)};
-    my %PROFILE = %{$Profile->_getUserPreferenceHistory($userIDX)};
-    
-    my $Ref = new SAE::REFERENCE();
-    # my $location = $q->param('location');  
-    # my $userIDX = $q->param('userIDX');  
-    # my %USER = %{$Ref->_getUserRecord($userIDX)};
+    my $User       = new SAE::USER($userIDX);
+    my $Team       = new SAE::TEAM();
+    my $Profile    = new SAE::PROFILE();
+    my $Event      = new SAE::EVENT();
+    my %USER       = %{$User->_getUserData()};
+    my %TEAMS      = %{$Team->_getTeamList($eventIDX)};
+    my %USERTEAM   = %{$Team->_getUserTeam($userIDX, $eventIDX)};
+    # my %PROFILE  = %{$Profile->_getUserPreferenceHistory($userIDX)};
+    my %PROFILE    = %{$Profile->_getVolunteerProfile($userIDX)};
+    my $Ref        = new SAE::REFERENCE();
     my %SUBSCRIPTION = %{$Ref->_getUserTeamList($userIDX, $eventIDX)};
+    my %EVENTS     = %{$Event->_getEventList()};
     my $activeTab = 'w3-white w3-border-left w3-border-top w3-border-right';
     my $str = '<div class="w3-container" style="padding: 10px!important">';
     $str .= '<br />'x2;
@@ -261,23 +316,59 @@ sub sae_showUserProfile(){
     $str .= '</div>';    
 
     $str .= '<div id="Preference" class="w3-container w3-border-left w3-border-right w3-border-bottom userTabs w3-hide w3-white w3-round">';
-    $str .= sprintf '<h3>Event Preferences</h3>';
-    $str .= '<ul class="w3-ul">';
-    foreach $profileIDX (sort {$PROFILE{$b}{TX_YEAR} <=> $PROFILE{$a}{TX_YEAR}} keys %PROFILE)  {
-        $str .= '<li ID="EVENT_PROFILE_BAR_'.$profileIDX.'" class="w3-bar w3-border w3-white w3-round w3-card-2">';
-        # $str .= '<div class="w3-bar-item w3-right">';
-        # $str .= '</div>';
-        $str .= '<div class="w3-bar-item">';
-        $str .= sprintf '<a ID="Profile_'.$profileIDX.'" class="w3-large" href="javascript:void(0);" onclick="profile_openMyPreferences(this, %d, %d);">My %s Event Preferences</a>', $profileIDX, $PROFILE{$profileIDX}{TX_YEAR}, $PROFILE{$profileIDX}{TX_YEAR};
-        $str .= '</div>';
-        $str .= '</li>';
+    $str .= sprintf '<h3>As a Volunteer Judge, I like to participate in the following activities</h3>';
+    $str .= '<table class="w3-table-all">';
+    $str .= '<thead>';
+    $str .= '<tr>';
+    $str .= '<th style="width: 20%;">Event Participation</th>';
+    $str .= '<th style="width: 76px"># of Report</th>';
+    $str .= '<th>Assessment</th>';
+    $str .= '<th style="width: 20%;">Class</th>';
+    $str .= '<th style="width: 7%;">Remove</th>';
+    $str .= '</tr>';
+    $str .= '</thead>';
+    $str .= '<tbody>';
+    foreach $eventIDX (sort {$b <=> $a} keys %PROFILE) {
+        foreach $profileIDX (sort {$a <=> $b} keys %{$PROFILE{$eventIDX}}) {
+            my $classIDX  = $PROFILE{$eventIDX}{$profileIDX}{FK_CLASS_IDX};
+            my $inType    = $PROFILE{$eventIDX}{$profileIDX}{IN_TYPE};
+            my $inLimit   = $PROFILE{$eventIDX}{$profileIDX}{IN_LIMIT};
+            my $eventName = $PROFILE{$eventIDX}{$profileIDX}{TX_EVENT_NAME};
+            $str .= &main2_templateRow($eventName, $inType, $inLimit, $classIDX, $profileIDX);
+        }
     }
-    $str .= '</ul><br>';
+    $str .= '</tbody>';
+    $str .= '<tfoot>';
+    $str .= '<tr class="w3-grey">';
+    $str .= '<td>';
+    $str .= '<select ID="EVENT_LIST" class="w3-input w3-border w3-round">';
+    foreach $eventIDX (sort {$b <=> $a} keys %EVENTS) {
+        $str .= sprintf '<option value="%d" >%s</option>', $eventIDX, $EVENTS{$eventIDX}{TX_EVENT_NAME};
+    }
+    $str .= '</select>';
+    $str .= '</td>';
+    $str .= '<td><input ID="IN_LIMIT" class="w3-input w3-round w3-border" type="number" value="5"></td>';
+    $str .= '<td>';
+    $str .= '<select ID="TYPE_LIST" class="w3-input w3-border w3-round" onchange="main2_reloadClassList(this);">';
+    $str .= sprintf '<option value="0" >- Select -</option>';
+    foreach $key (sort keys %LABEL) {
+        $str .= sprintf '<option value="%d" >%s</option>', $key, $LABEL{$key};
+    }
+    $str .= '</select>';
+    $str .= '</td>';
+    $str .= '<td>';
+    $str .= '<select ID="CLASS_LIST" class="w3-input w3-border w3-round">';
+    $str .= '</select>';
+    $str .= '</td>';
+    $str .= '<td><button class="w3-button w3-border w3-round w3-pale-green w3-hover-green" onclick="main2_addVolunteerPreference(this);" style="width: 100px;">Add</button></td>';
+    $str .= '</tr>';
+    $str .= '<tfoot>';
+    $str .= '</table>';
     $str .= '</div>';  
 
     $str .= '</div>';
     return ($str);
-}
+    }
 sub _tempSubscribers(){
     my $str;
     my $name = shift;
@@ -289,7 +380,7 @@ sub _tempSubscribers(){
     $str .= '<span>'.$txCountry.'</span>';
     $str .= '</li>';
     return ($str);
-}
+    }
 sub sae_subscribeToTeam(){
     print $q->header();
     my $location = $q->param('location');  
@@ -313,10 +404,28 @@ sub sae_subscribeToTeam(){
         return 0;
     }
 
-}
+    }
 # ***********************************************************************************************************************************
 # Set Event 
 # ***********************************************************************************************************************************
+sub main2_showModalEventSelection(){
+    print $q->header();
+    my $Ref       = new SAE::REFERENCE();
+    my $eventIDX  = $q->param('eventIDX');
+    my %EVENTS    = %{$Ref->_getEventList()};
+    $str .= '<div class="w3-container w3-border w3-round w3-margin-top">';
+    $str .= '<h2>Competition Database Source</h2>';
+    $str .= '<fieldset>';
+    $str .= '<legend>Select Event Database</legend>';
+    foreach $fkEventIDX (sort {$b <=> $a} keys %EVENTS) {
+        my $select = '';
+        if ($eventIDX == $fkEventIDX){$select = 'checked'}
+        $str .= sprintf '<input class="w3-radio" %s value="%d" type="radio" name="EVENTNAME" onclick="main2_updateEventLocation(this);"><label class="w3-margin-left">%s</label><br>', $select, $fkEventIDX, $EVENTS{$fkEventIDX}{TX_EVENT_NAME};
+    }
+    $str .= '</fieldset>';
+    $str .= '</div>';
+    return($str);
+    }
 sub sae_showModalEventSelection(){
     print $q->header();
     my $Ref = new SAE::REFERENCE();
@@ -335,7 +444,7 @@ sub sae_showModalEventSelection(){
     $str .= '<button class="w3-green w3-hover-blue w3-button w3-border w3-round-large w3-card-2 w3-margin-bottom w3-margin-right w3-display-bottomright" style="width: 120px;" onclick="sae_setModalEvent(this);">Set Event</button>';
     $str .= '</div>';
     return($str);
-}
+    }
 sub sae_showSetEventLocationFromMain(){
     print $q->header();
     my $Ref = new SAE::REFERENCE();
@@ -382,7 +491,7 @@ sub sae_showSetEventLocationFromMain(){
     $str .= '</div>';
 
     return ($str);
-}
+    }
 # ***********************************************************************************************************************************
 # FILE UPLOAD UTILITIES
 # ***********************************************************************************************************************************
@@ -419,7 +528,7 @@ sub loadEventLocation(){
     $str .= '</div>';
 
     return ($str);
-}
+    }
 # ***********************************************************************************************************************************
 #  REPORT JUDGE ASSIGNMENTS
 # ***********************************************************************************************************************************

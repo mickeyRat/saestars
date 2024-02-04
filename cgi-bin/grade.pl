@@ -25,6 +25,7 @@ use SAE::USER;
 use SAE::JSONDB;
 use SAE::PAPER;
 use SAE::TABLE;
+use SAE::TEAM;
 my $Util = new SAE::Common();
 
 $q = new CGI;
@@ -33,6 +34,9 @@ $qs = new CGI($ENV{'QUERY_STRING'});
 my $path = abs_path($0);
 $path =~ s/\\[^\\]+$//;
 $path =~ s/\/[^\/]+$//;
+
+my %BTN_STATUS  = (0=>'Start', 1=>'Continue', 2=>'Completed');
+my %BTN_COLOR   = (0=>'w3-white', 1=>'w3-yellow', 2=>'w3-pale-blue');
 
 my $act = $q->param("act");
 
@@ -45,21 +49,26 @@ exit;
 # ===============2024 =====================================================
 sub grade_subimtAssessment {
     print $q->header();
-    my %BTN_STATUS = (0=>'Start', 1=>'Continue', 2=>'Completed');
-    my %BTN_COLOR  = (0=>'w3-white', 1=>'w3-yellow', 2=>'w3-pale-blue');
-    my $cardIDX    = $q->param('cardIDX');
-    my $txType    = $q->param('txType');
+    my $cardIDX     = $q->param('cardIDX');
+    my $txType      = $q->param('txType');
+    my $teamIDX     = $q->param('teamIDX');
+    my $inStatus    = $q->param('inStatus');
     my %CONDITION   = ('PK_CARD_IDX'=>$cardIDX);
     my $json_dcondition  = encode_json \%CONDITION;
-    my %DATA       = %{decode_json($q->param('jsonData'))};
+    my %DATA        = %{decode_json($q->param('jsonData'))};
     my $Table       = new SAE::TABLE();
        $Table->_save('TB_CARD', $q->param('jsonData'), $json_dcondition);
 
     my $Grade = new SAE::GRADE();
-    my $score = $Grade->_getAssessmentScore_byCard($cardIDX, $txType);
+    my $score = $Grade->_getAssessmentScore_byCard($cardIDX, $teamIDX );
     
-    my %RTN = ('LABEL'=>$BTN_STATUS{$DATA{IN_STATUS}}, 'COLOR'=>$BTN_COLOR{$DATA{IN_STATUS}}, 'SCORE'=>$score);
-    my $json = encode_json \%RTN;
+    my $Paper = new SAE::PAPER();
+    my %STATS       = %{$Paper->_getTeamAssessmentStatistics($teamIDX)};
+    $STATS{'LABEL'} = $BTN_STATUS{$inStatus};
+    $STATS{'COLOR'} = $BTN_COLOR{$inStatus};
+    $STATS{'SCORE'} = $score;
+    # my %RTN = ('LABEL'=>$BTN_STATUS{$DATA{IN_STATUS}}, 'COLOR'=>$BTN_COLOR{$DATA{IN_STATUS}}, 'SCORE'=>$score);
+    my $json = encode_json \%STATS;
     return ($json);
     # return ($json_dcondition." ".$q->param('jsonData'));
     }
@@ -69,8 +78,9 @@ sub grade_instructions(){
     my $str = '<div class="w3-container" style="height: 500px; overflow-y: auto;">';
     $str .= '<img src="../images/Assessment.png" width="500"><label>Figure 1: Grading Scale</label>';
     $str .= '<div class="w3-container">';
-    $str .= '<p>Each section is evaluated on a scale from <b>1 to 10</b> and is divided into four categories: <b>Poor, Average, Excellent, and Perfect.</b> 
-    Within each category, the score can be further specified as <b>Low, Medium, or High</b>.</p>
+    $str .= 'Each section is evaluated on a scale from <b>1 to 10</b> and is divided into four categories';
+    $str .= '<ul class="w3-margin-left"><li>Poor</li><li>Average</li><li>Excellent</li><li>Perfect</li></ul></b> 
+    <p>Under each category, you can further differenciate the points earned by selecting the appropriate assessments of either <b>Low, Medium, or High</b>.</p>
     <div class="w3-container w3-border w3-padding w3-round">
     <h4>Example</h4>
     <ul> <b class="w3-text-red">Poor (1, 2, 3)</b>
@@ -270,16 +280,24 @@ sub grade_openTemplate (){
     }
 sub grade_saveSectionScore {
     print $q->header();
-    my $paperIDX    = $q->param('paperIDX');
-    my $cardIDX    = $q->param('cardIDX');
-    my $txType    = $q->param('txType');
-    my %CONDITION   = ('PK_PAPER_IDX'=>$paperIDX);
+    my $paperIDX         = $q->param('paperIDX');
+    my $cardIDX          = $q->param('cardIDX');
+    my $txType           = $q->param('txType');
+    my $teamIDX          = $q->param('teamIDX');
+    my %CONDITION        = ('PK_PAPER_IDX'=>$paperIDX);
     my $json_dcondition  = encode_json \%CONDITION;
-    my $Table       = new SAE::TABLE();
+    my $Table            = new SAE::TABLE();
        $Table->_save('TB_PAPER', $q->param('jsonData'), $json_dcondition);
-    my $Grade = new SAE::GRADE();
-    my $score = $Grade->_getAssessmentScore_byCard($cardIDX, $txType);
-    return($score);
+    my $Grade            = new SAE::GRADE();
+    my $Paper            = new SAE::PAPER();
+    my $score            = $Grade->_getAssessmentScore_byCard($cardIDX, $teamIDX);
+    my %STATS            = %{$Paper->_getTeamAssessmentStatistics($teamIDX)};
+    $STATS{'LABEL'}      = $BTN_STATUS{1};
+    $STATS{'COLOR'}      = $BTN_COLOR{1};
+    $STATS{'SCORE'}      = $score;
+    my $json = encode_json \%STATS;
+    return ($json);
+    # return($score);
     }
 sub grade_saveSectionFeedback {
     print $q->header();
@@ -299,6 +317,8 @@ sub grade_openAssessment(){
     my %TYPE       = (1=>'Assessment',2=>'TDS',3=>'Drawing',4=>'Requirement');
     my $txType     = $TYPE{$inCardType};
     my $Report     = new SAE::GRADE();
+    my $Team       = new SAE::TEAM();
+    my %DOCS       = %{$Team->_getTeamDocuments($teamIDX)};
     my %RUBRIC     = %{$Report->_getReportRubric($txType, $classIDX)};
     my %SCORE      = %{$Report->_getReportScores($cardIDX, $txType, $classIDX)};
     my $str;
@@ -307,13 +327,15 @@ sub grade_openAssessment(){
     $str .= '<div class="w3-container w3-margin-bottom w3-light-grey">';
     $str .= '<div class="w3-bar w3-border w3-light-grey w3-border-grey w3-margin-top">';
     $str .= '<button class="w3-bar-item w3-button " onclick="grade_instructions();">Instructions</button>';
-    $str .=  sprintf '<button class="w3-bar-item w3-button ">Download</button>';
-    $str .=  sprintf '<button class="w3-bar-item w3-button " onclick="grade_subimtAssessment(this, %d, %d, \'%s\');">Save as Draft</button>', $cardIDX, 1, $txType;
-    $str .=  sprintf '<button class="w3-bar-item w3-button " onclick="grade_subimtAssessment(this, %d, %d, \'%s\');">Save as Final</button>', $cardIDX, 2, $txType;
+    if ($DOCS{$inCardType}{TX_KEYS}){
+        $str .=  sprintf '<a href="read.html?fileID=%s" target="_blank" class="w3-bar-item w3-button w3-text-black"><i class="fa fa-download" aria-hidden="true"></i> Download</a>', $DOCS{$inCardType}{TX_KEYS};
+    }
+    $str .=  sprintf '<button class="w3-bar-item w3-button " onclick="grade_subimtAssessment(this, %d, %d, %d, \'%s\');">Save as Draft</button>', $cardIDX, 1, $teamIDX, $txType;
+    $str .=  sprintf '<button class="w3-bar-item w3-button " onclick="grade_subimtAssessment(this, %d, %d, %d, \'%s\');">Save as Final</button>', $cardIDX, 2, $teamIDX, $txType;
     if ($inCardType!=1){
         $str .= '<div class="w3-display-container" >';
         $str .= '<span class="w3-right">Select All ';
-        $str .= sprintf '<input class="w3-check w3-margin-right w3-margin-left" type="checkbox" onclick="selectAllCheckBox(this, \'%s\', %d, \'%s\');"><span>', 'binary_check', $cardIDX, $txType ;
+        $str .= sprintf '<input class="w3-check w3-margin-right w3-margin-left" type="checkbox" onclick="selectAllCheckBox(this, \'%s\', %d, \'%s\', %d);"><span>', 'binary_check', $cardIDX, $txType, $teamIDX ;
         $str .= '</div>';
     }
     $str .= '</div>';
@@ -328,49 +350,48 @@ sub grade_openAssessment(){
             my $subSectionTitle = $RUBRIC{$section}{$subSection}{TX_SUB};
             my $valueType       = $RUBRIC{$section}{$subSection}{BO_BIN};
             my $sectionColor    = 'w3-teal';
-            if ($inScore==0){$sectionColor  = 'w3-light-grey'}
-            $str .= sprintf '<div ID="SECTION_%d_%d" class="%s w3-card-2 w3-border w3-round-large w3-button w3-block w3-left-align w3-hover-light-blue" style="margin-top: 7px;" >', $section, $subSection, $sectionColor;
-            $str .= '<div class="w3-cell-row">';
-            $str .= sprintf '<div class="w3-container w3-cell w3-large" onclick="grade_expandRubric(\'%d_%d\')" ><div style="white-space: pre-wrap;"><i id="arrow_'.$divName.'" class="fa fa-angle-double-right w3-margin-right w3-xxlarge" aria-hidden="true" ></i><b>%d.%d </b>- (%s) - <i>%s</i></div></div>', , $section,$subSection,$section,$subSection, $RUBRIC{$section}{$subSection}{TX_SEC}, $RUBRIC{$section}{$subSection}{TX_SUB};
-            $str .= sprintf '<div class="w3-container w3-cell w3-align-right" style="width: 200px;" >';
-                # $str .= '<div class="w3-row">';
-                if ($valueType==0){
-                    $str .= '<table class="w3-table-all">';
-                    my $bgColor = "w3-pale-red";
-                    $str .= '<tr>';
-                    for (my $x=1; $x<=10; $x++){
-                        my $selected = '';
-                        if ($inScore == $x) {$selected = 'checked'}
-                        if ($x>3){$bgColor  = "w3-khaki"}
-                        if ($x>6){$bgColor  = "w3-pale-green"}
-                        if ($x>9){$bgColor  = "w3-deep-purple"}
-                        $str .= sprintf '<td class="%s">', $bgColor;
-                        $str .= sprintf '<input class="w3-radio" type="radio" %s value="%d" name="%d" onClick="grade_breakingScoringThreshold(%d, \'%s\',this.value, %d, %d, %d, \'%s\');" > %d', $selected, $x, $pk_report_idx, $paperIDX, $divName, $section, $subSection, $cardIDX, $txType, $x;
-                        $str .= '</td>';
-                    }
-                    $str .= '</tr>';
-                    $str .= '</table>';
-                } else {
-                    $str .= '<table style="width: 100%">';
-                    $str .= '<tr>';
-                    $str .= '<td style=" text-align: right">';
-                    my $checked = '';
-                    if ($inScore == 10) {$checked = 'checked'}
-                    $str .= sprintf '<label class="w3-margin-right">Yes </label><input value="1" data-value="%d" data-number="%d" data-key="%d" type=checkbox class="binary_check w3-check" %s onchange="grade_saveCheckAssessment(this, %d, %d, %d, %d, \'%s\');">', $paperIDX, $section, $subSection, $checked, $paperIDX, $section, $subSection, $cardIDX, $txType;
-                    $str .= '</td>';
-                    $str .= '</tr>';
+            if ($inScore==0){$sectionColor  = 'w3-light-grey '}
+            my %LABEL      = (1=>'Poor: Low',2=>'Poor: Medium',3=>'Poor: High',4=>'Average: Low',5=>'Average: Medium',6=>'Average: High',7=>'Excellent: Low',8=>'Excellent: Medium',9=>'Excellent: High',10=>'Perfect');
 
-                    $str .= '</table>';
+            $str .= sprintf '<div ID="SECTION_%d_%d" class="%s w3-row w3-border w3-round-large w3-button w3-block w3-left-align w3-hover-light-blue" style="margin: 2px 0px;">', $section, $subSection, $sectionColor;;
+            $str .= sprintf '<div class="w3-col l6" onclick="grade_expandRubric(\'%d_%d\')" >', $section, $subSection; # Section Heading
+            $str .= sprintf '<i id="arrow_%s" class="fa fa-angle-double-right w3-margin-right w3-xlarge" aria-hidden="true" ></i>', $divName;
+            $str .= sprintf '<span style="white-space: pre-wrap;"><b>%d.%d </b>- (%s) - <i>%s</i></span>', $section,$subSection, $RUBRIC{$section}{$subSection}{TX_SEC}, $RUBRIC{$section}{$subSection}{TX_SUB};
+            $str .= sprintf '</div>';
+            if ($valueType==0){
+                $str .= sprintf '<div class="w3-col l6 w3-row">'; # Grading Scale
+                for ($i=10; $i>=1; $i--){
+                    my $selected = '';
+                    if ($inScore == $i) {$selected = 'checked'}
+                    my $bgColor = 'w3-pale-red';
+                    if ($i>3) {$bgColor = 'w3-yellow';}
+                    if ($i>6) {$bgColor = 'w3-pale-green';}
+                    if ($i>9) {$bgColor = 'w3-blue';}
+                    $str .= sprintf '<div class="w3-cell w3-mobile %s w3-border w3-right" style="white-space: nowrap; padding: 2px 4px;">', $bgColor;
+                    $str .= sprintf '<input %s class="w3-radio" type="radio" value="%d" name="%s" onClick="grade_breakingScoringThreshold(%d, \'%s\',this.value, %d, %d, %d, %d, \'%s\');" >', $selected, $i, $divName, $paperIDX, $divName, $section, $subSection, $cardIDX, $txType, $teamIDX;
+                    $str .= sprintf '<span> %d </span><span class="w3-small w3-hide-large w3-hide-medium"> %s</span>', $i, $LABEL{$i};
+                    $str .= sprintf '</div>';
                 }
+                $str .= sprintf '</div>'; # END grading Scale
+            } else {
+                my $checked = '';
+                if ($inScore == 10) {$checked = 'checked'}
+                $str .= '<div class="w3-row w3-col l6">';
+                $str .= sprintf '<div class="w3-rest w3-right">';
+                $str .= sprintf '<label class="w3-margin-right">Yes </label><input value="1" data-value="%d" data-number="%d" data-key="%d" type=checkbox class="binary_check w3-check" %s onchange="grade_saveCheckAssessment(this, %d, %d, %d, %d, \'%s\', %d);">', $paperIDX, $section, $subSection, $checked, $paperIDX, $section, $subSection, $cardIDX, $txType, $teamIDX;
                 $str .= '</div>';
-            
+                $str .= '</div>';
+            }
+            $str .= sprintf '</div>'; # Last Div
+            # $str .= sprintf '<div class="w3-col l12 w3-hide w3-white w3-border w3-card-4 scoringPanel %s">', $divName; 
+            $str .= sprintf '<div class="w3-row w3-border w3-white w3-hide %s">', $divName; # Expanded Area for Description and Comments
+            $str .= '<div class="w3-container w3-rest">';
+            $str .= sprintf '<div class="w3-container" style="padding: 20px 20px 5px 20px !important;">%s</div>', $RUBRIC{$section}{$subSection}{CL_DESCRIPTION};
+            if ($valueType==0){
+                $str .= '<br><lable class="w3-margin-bottom"><b>Feedback: </b>If the team scored <span class="w3-red" style="padding: 0px 10px"> 5 or lower</span> for this section, please provide constructive feedback on how the team can improve their future score.</label>';
+            }
             $str .= '</div>';
-
-            $str .= '</div>';
-            # $str .= '</div>';
-            $str .= sprintf '<div class="w3-container w3-hide w3-white w3-border w3-card-4 scoringPanel %s">', $divName;
-            $str .= sprintf '<div class="w3-panel">%s</div>', $RUBRIC{$section}{$subSection}{CL_DESCRIPTION};
-            $str .= '<div class="w3-container">';
+            $str .= '<div class="w3-panel" style="padding: 0px;">';
             $str .= '<div class="w3-bar w3-border w3-light-grey w3-border-grey w3-card-2 w3-margin-top">';
             $str .= sprintf '<label class="w3-bar-item w3-button w3-large fa fa-folder-open-o"  onclick="grade_openTemplateList(this, %d, %d);"> Load Template</label>', $section, $subSection;
             $str .= sprintf '<label class="w3-bar-item w3-button w3-large fa fa-floppy-o"       onclick="grade_openTemplate(this, %d, %d, \'%s\');"> Save as Template</label>', $section, $subSection, $subSectionTitle;
@@ -379,12 +400,10 @@ sub grade_openAssessment(){
             $str .= '</div>';
             
             $str .= sprintf '<textarea ID="CL_FEEDBACK_%s" class="w3-input w3-border w3-border-black w3-round w3-margin-bottom w3-pale-yellow" style="width: 100%; height: 75px; min-width: 100%;" onblur="grade_autosaveComments(this, %d, this.value)" onfocus="grade_autoAdjustHeight(this);">%s</textarea>', $divName, $paperIDX, $feedback;
-            if ($valueType==0){
-                $str .= '<lable class="w3-margin-bottom"><b>Feedback: </b>If the team scored <span class="w3-red" style="padding: 0px 10px"> 5 or lower</span> for this section, please provide constructive feedback on how the team can improve their future score.</label>';
-            }
-            $str .= '</div>';
             
             $str .= '</div>';
+            # $str .= sprintf '%s', $RUBRIC{$section}{$subSection}{CL_DESCRIPTION};
+            $str .= sprintf '</div>';
         }
     }
     $str .= '</div>';
@@ -396,23 +415,18 @@ sub t_teamAssessmentBar(){
     my %BTN_COLOR  = (0=>'w3-white', 1=>'w3-yellow', 2=>'w3-pale-blue');
     my %MAXSCORE = (1=>35, 2=>5, 3=>5, 4=>5);
     my $str;
-    $str = sprintf '<li ID="CARD_%d" class="w3-bar w3-border w3-round w3-hover-pale-blue bar_Assessment_%d %s" style="margin-bottom: 3px;">', $cardIDX, $cardIDX, $BTN_COLOR{$inStatus};
-    $str .= '<div class="w3-container w3-padding-small">';
-    $str .= sprintf '<div class="w3-row ">';
-    $str .= sprintf '<div class="w3-col w3-container"  style="width: 70%"><b>%03d</b> - %s</div>', $inNumber , $txSchool;
-    $str .= sprintf '<div class="w3-col w3-container " style="width: 20%"><span ID="CARD_SCORE_%d">%2.1f</span> / %2.1f</div>', $cardIDX, $inScore , $MAXSCORE{$inCardType};
-    $str .= sprintf '<div class="w3-col w3-container " style="text-align: right; width: 10%;">';
+    $str .= sprintf '<div class="w3-row w3-col l12 w3-border w3-padding w3-round w3-hover-pale-blue bar_Assessment_%d %s" style="margin: 2px 0px;" ID="CARD_%d">', $cardIDX, $BTN_COLOR{$inStatus}, $cardIDX;
+    $str .= sprintf '<div class="w3-col l7"><b>%03d</b> - %s</div>', $inNumber , $txSchool;
+    $str .= sprintf '<div class="w3-col l2" style="text-align: right; "><span ID="CARD_SCORE_%d">%2.1f</span>  / %2.1f</div>', $cardIDX, $inScore, $MAXSCORE{$inCardType};
+    $str .= sprintf '<div class="w3-col l3" style="text-align: right; ">';
     $str .= sprintf '<a class="actionStatus_%d" href="javascript:void(0);" onclick="grade_openAssessment(this, %d, %d, \'%s\', %d, %d, %d, %d);">%s</a>', $cardIDX, $cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inCardType, $userIDX, $BTN_STATUS{$inStatus};
     $str .= sprintf '</div>';
-    $str .= '</div>';
-    $str .= '</div>';
-    $str .= '</li>';
+    $str .= sprintf '</div>';
     return ($str);
     }
 sub ManageReportAssessments(){
     print $q->header();
     my $Paper = new SAE::REPORTS();
-    # my $Ref = new SAE::REFERENCE();
     my $Grade = new SAE::GRADE();
     
     my $userIDX  = $q->param('userIDX');  
@@ -424,16 +438,10 @@ sub ManageReportAssessments(){
     $str .= '<br><div class="w3-container w3-margin-top">';  
     $str .= '<div class="w3-display-container" style="display: block; z-index: 7001;">';
     $str .= '<div ID="banner_saveMessage" class="w3-display-topmiddle" ></div>';
-    # $str .= '<div ID="banner_saveMessage" class="w3-display-topmiddle w3-button w3-card-4 w3-border w3-round-large w3-green" style="display: none;"></div>';
     $str .= '</div>';
-
     $str .= sprintf '<h2>%s: <i>Assessments</i></h2>', $TITLE{$inType};
-    # if ($inType == 1) {
-    #     # $str .= '<h3><button class="w3-button w3-border w3-round w3-green w3-hover-light-green w3-small" onclick="sae_openImportDesignScores();">Upload Excel</button></h3>';
-    # }
-
     $str .= '<div class="w3-container w3-row-padding">';
-        $str .= '<ul class="w3-ul">' ;
+        $str .= '<div class="w3-row">' ;
         foreach $cardIDX (sort {$CARDS{$a}{IN_NUMBER} <=> $CARDS{$b}{IN_NUMBER}} keys %CARDS) {
             my $inNumber   = $CARDS{$cardIDX}{IN_NUMBER};
             my $txSchool   = $CARDS{$cardIDX}{TX_SCHOOL};
@@ -443,10 +451,10 @@ sub ManageReportAssessments(){
             my $inCardType = $CARDS{$cardIDX}{FK_CARDTYPE_IDX};
             my $txType     = $CARDS{$cardIDX}{TX_TYPE};
             # my $inScore    = $Paper->_calculateDesignScore($inCardType, $classIDX, $cardIDX);
-            my $inScore    = $Grade->_getAssessmentScore_byCard($cardIDX, $txType);
+            my $inScore    = $Grade->_getAssessmentScore_byCard($cardIDX, $teamIDX);
             $str .= &t_teamAssessmentBar($cardIDX, $inNumber, $txSchool, $classIDX, $teamIDX, $inStatus, $inScore, $inCardType, $userIDX);
         }
-        $str .= '</ul>';
+        $str .= '</div>';
     $str .= '</div>';
     return ($str);
     }

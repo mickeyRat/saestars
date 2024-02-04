@@ -232,3 +232,12 @@ function pad(num, size) {
     var value = s.substr(s.length-size);
     return value;
 }
+function isObjEmpty(obj) {
+  for (const prop in obj) {
+    if (Object.hasOwn(obj, prop)) {
+      return false;
+    }
+  }
+
+  return true;
+}

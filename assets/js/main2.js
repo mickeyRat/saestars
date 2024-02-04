@@ -34,22 +34,130 @@ function sae_loadHomePage(){
             if (inUserType >= 1 && inProfile == 0){ openJudgesProfile(userIDX, inUserType) } 
         }
     });
-}
+    }
 function openJudgesProfile ( userIDX, inUserType ) {
     // body...
-    console.log(userIDX);
+    // console.log(userIDX);
+    var eventIDX   = $.cookie('LOCATION');
     $.modal("Judge's Preferences" , "90%");
     $.ajax({
         type: 'POST',
         url: '../cgi-bin/home.pl',
-        data: {'do':'openJudgesProfile','act':'print','userIDX':userIDX,'inUserType':inUserType},
+        data: {'do':'openJudgesProfile','act':'print','userIDX':userIDX,'inUserType':inUserType,'eventIDX':eventIDX},
         success: function(str){
             // alert(str);
             $('#modal_content').html(str);
             // $('[tabindex=1]').focus();
         }
     });
-}
+    }
+
+// 2024 ---------------------------------------------------------------------------------------
+function main2_updateInLimit(o, profileIDX) {
+    var inLimit = $(o).val();
+    $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/main2.pl',
+            data: {'do':'main2_updateInLimit','act':'print','profileIDX':profileIDX, 'inLimit':inLimit},
+            success: function(str){
+            }
+        });
+    }
+function main2_addVolunteerPreference(o){
+    var classIDX        = $('#CLASS_LIST').find(':selected').val();
+    var eventIDX        = $('#EVENT_LIST').find(':selected').val();
+    var userIDX         = $.cookie('userIDX');
+    var inType          = $('#TYPE_LIST').find(':selected').val();
+    var inLimit         = $('#IN_LIMIT').val();
+    var row             = $(o).closest('tr');
+    var ajxData         = {}; 
+    var data            = {};
+    ajxData.do          = 'main2_addVolunteerPreference';
+    ajxData.act         = 'print';
+    ajxData.eventIDX    = eventIDX;
+    data.FK_CLASS_IDX   = classIDX;
+    data.IN_TYPE        = inType;
+    data.IN_LIMIT       = inLimit;
+    data.FK_USER_IDX    = userIDX;
+    data.FK_EVENT_IDX   = eventIDX;
+    ajxData['jsonData'] = JSON.stringify(data);
+    // // ajxData['jsonData'] = JSON.stringify(data);
+    console.log(ajxData);
+    // return;
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/main2.pl',
+        data: ajxData,
+        success: function(str){
+            console.log(str);
+            $(str).insertBefore(row);
+        },
+    });
+    }
+function main2_reloadClassList(o) {
+    var all = new Option("All", "0");
+    var Reg = new Option("Regular", "1");
+    var Adv = new Option("Advanced", "2");
+    var Mic = new Option("Micro", "3");
+    var value = $(o).val();
+    if (value > 1){ 
+        $("#CLASS_LIST").empty().append(all);
+    } else {
+        $("#CLASS_LIST").empty().append(Adv);
+        $("#CLASS_LIST").append(Reg);
+        $("#CLASS_LIST").append(Mic);
+    }
+    // console.log("value = " + value);
+    }
+function main2_updatePreference(o, userIDX) {
+    var ajxData         = {}; 
+    var data            = {};
+    ajxData.do          = 'main2_updatePreference';
+    ajxData.act         = 'print';
+    data.FK_CLASS_IDX   = $(o).data('class');
+    data.FK_EVENT_IDX   = $(o).data('event');
+    data.IN_TYPE        = $(o).data('type');
+    data.FK_USER_IDX    = userIDX;
+    data.IN_LIMIT       = $('#IN_LIMIT_'+$(o).data('event')).val();
+    ajxData.userIDX     = userIDX;
+    ajxData.eventIDX    = $(o).data('event');
+    ajxData.classIDX    = $(o).data('class');
+    ajxData.inType      = $(o).data('type');
+    if ($(o).is(':checked')){
+        ajxData.inNew       = 1;
+    } else {
+        ajxData.inNew       = 0;
+    }
+    ajxData['jsonData'] = JSON.stringify(data);
+    // ajxData['jsonData'] = JSON.stringify(data);
+    console.log(ajxData);
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/home.pl',
+        data: ajxData,
+        success: function(str){
+            console.log(str);
+        },
+    });
+    }
+function main2_delete(o, profileIDX) {
+    var jsYes = confirm("Click [ OK ] to confirm your action to DELETE this event preference item.")
+    if (!jsYes){return}
+    // $(o).close();
+    $.ajax({
+            type: 'POST',
+            url: '../cgi-bin/main2.pl',
+            data: {'do':'main2_delete','act':'print','profileIDX':profileIDX},
+            success: function(str){
+                $(o).closest('tr').remove();
+                // $('#EVENT_PROFILE_BAR_'+profileIDX).remove();
+                // $.cookie('IN_PROFILE',0);
+
+            }
+        });
+    }
+
+// 2024 ---------------------------------------------------------------------------------------
 function profile_openMyPreferences(o, profileIDX, inYear) {
     // body...
     console.log(profileIDX);
@@ -82,13 +190,14 @@ function profile_delete(o, profileIDX) {
         });
     }
 function profile_close(o, profileIDX) {
-    if ($('#BO_EAST').is(':checked') || $('#BO_WEST').is(':checked')){
-        $.cookie('IN_PROFILE',1);
-    } else {
-        $.cookie('IN_PROFILE',0);
-        $('#Profile_'+profileIDX).remove();
-        // ID="Profile_'.$profileIDX.'" 
-    }
+    // if ($('#BO_EAST').is(':checked') || $('#BO_WEST').is(':checked')){
+    //     $.cookie('IN_PROFILE',1);
+    // } else {
+    //     $.cookie('IN_PROFILE',0);
+    //     $('#Profile_'+profileIDX).remove();
+    //     // ID="Profile_'.$profileIDX.'" 
+    // }
+    $.cookie('IN_PROFILE',1);
     $(o).close();
     // body...
 }
@@ -351,6 +460,26 @@ function sae_deleteUser(){
 //     $('#mainPageContent').html("");
 // }
 
+function main2_showModalEventSelection(){
+    // $.modal("Set Event Location", "50%");
+    var eventIDX = $.cookie('LOCATION');
+    $.ajax({
+        type: 'POST',
+        url: '../cgi-bin/main2.pl',
+        data: {'do':'main2_showModalEventSelection','act':'print','eventIDX':eventIDX},
+        success: function(str){
+            // alert(str);
+            // $('#modal_content').html(str);
+            $('#mainPageContent').html(str);
+        }
+    });
+}
+function main2_updateEventLocation(o) {
+    $.cookie('LOCATION', $(o).val());
+    $.cookie('FK_EVENT_IDX', $(o).val());
+    alert("Event Location Changed.");
+    // sae_loadHomePage();
+}
 function sae_showModalEventSelection(){
     $.modal("Set Event Location", "50%");
     var location = $.cookie('LOCATION');
@@ -829,6 +958,7 @@ function sae_deleteThisCardFromJudge(cardIDX, obj, inType){
     });
 }
 // USER PROFILE
+
 function sae_showUserProfile(){
     var userIDX = $.cookie('userIDX');
     var location = $.cookie('LOCATION');

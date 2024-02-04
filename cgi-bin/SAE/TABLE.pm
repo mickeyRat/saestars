@@ -104,7 +104,21 @@ sub _save(){
    # print "\n\n$SQL\n\n";
 }
 
-
+sub _deleteRecord(){
+   my ($self, $tableName, $condition) = @_;
+   my $i         = 1;
+   my %CONDITION = %{decode_json($condition)};
+   my @WHERE     = sort {$a cmp $b} keys %CONDITION;
+   my $condition = join ("=? AND ", @WHERE)."=?";
+   my $SQL = "DELETE FROM $tableName WHERE ($condition)";
+   my $delete = $dbi->prepare($SQL);
+   # print $SQL;
+   foreach $condition (@WHERE ) {
+      # print $CONDITION{$condition}
+      $delete->bind_param($i, $CONDITION{$condition});
+   }
+      $delete->execute();
+}
 
 # ------------------------- DELETES --------------------------------------------
 # ------------------------- OTHERS  --------------------------------------------

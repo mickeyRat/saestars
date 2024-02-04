@@ -58,7 +58,7 @@ $URL = get("https://www.wunderground.com/personal-weather-station/dashboard?ID=K
 # perl /home/mysaesta/public_html/dev/cgi-bin/benbrook.pl
 
 my $dom = Mojo::DOM58->new($URL);
-# open(FH, '>./debug4.txt') or die $!;
+open(FH, '>./json.txt') or die $!;
 # print "=" x 80 ."\n";
 foreach $element ($dom->find('script[id="app-root-state"]')->each) {
     my $span = $element->at('span[class="wu-unit-pressure"]');
@@ -68,25 +68,23 @@ foreach $element ($dom->find('script[id="app-root-state"]')->each) {
     $text =~ s/\&q\;/\"/sgi;
     # print Dumper ($text);
     eval {assert_valid_json ($text)};
-    # if ($@) {
-    #     # print "Your JSON was invalid: $@\n";
-    #     print "Your JSON was invalid: \n";
-    # } else {
-    #     print "Your JSON is VALID\n\n";
-    # }
+    if ($@) {
+        # print "Your JSON was invalid: $@\n";
+        print "Your JSON was invalid: \n";
+    } else {
+        print "Your JSON is VALID\n\n";
+    }
     try {$decoded = JSON::XS::decode_json($text)} catch {warn "Caught JSON::XS decode error $_\n$@\n\n"};
-    # print FH JSON->new->ascii->pretty->encode(decode_json join '', $text);
-    # print FH $text;
+    print FH JSON->new->ascii->pretty->encode(decode_json join '', $text);
+
     my %DATA = %{$decoded};
+
+# exit;
+    # print %DATA;
     foreach $key (keys %{$DATA{'wu-next-state-key'}}){
         $url = $DATA{'wu-next-state-key'}{$key}{'url'};
-        if ($url =~ m/current/){
-            # print '=' x 80 ."\n";
-            # print "key=$key\n";
-            # print "URL: ".$DATA{'wu-next-state-key'}{$key}{'url'}."\n";
-            $OBSERVATION = $DATA{'wu-next-state-key'}{$key}{'value'}{'observations'};
-            # print "OBSERVATION: ".$OBSERVATION."\n";
-            for my $hashref (@{$OBSERVATION}) {
+        if ($url =~ m/current\?/){
+            for my $hashref (@{$DATA{'wu-next-state-key'}{$key}{'value'}{'observations'}}) {
                 $windDir   = $hashref->{imperial}->{windSpeed}.'mph '.&_getDirection($hashref->{winddir});
                 $elevation = $hashref->{imperial}->{elev};
                 $temp      = $hashref->{imperial}->{temp};
@@ -94,13 +92,13 @@ foreach $element ($dom->find('script[id="app-root-state"]')->each) {
                 $humidity  = $hashref->{humidity};
                 $station   = $hashref->{stationID};
                 $epoch     = $hashref->{epoch};
-                # printf "wind-dir: %s\n", $windDir;
-                # print 'stationID: '.$station."\n";
-                # printf "temperature: %2.2f deg F\n",$temp;
-                # printf "pressure: %2.3f\n",$pressure;
-                # printf "evevation: %2.3f\n",$elevation;
-                # printf "humidity: %2.2f%\n", $humidity;
-                # print 'epoch: '.$epoch."\n";
+                printf "wind-dir: %s\n", $windDir;
+                print 'stationID: '.$station."\n";
+                printf "temperature: %2.2f deg F\n",$temp;
+                printf "pressure: %2.3f\n",$pressure;
+                printf "evevation: %2.3f\n",$elevation;
+                printf "humidity: %2.2f%\n", $humidity;
+                print 'epoch: '.$epoch."\n";
                 # # printf "%d-%m-%Y-%H:%M:%S", ($epoch);
                 # # print strftime("%m/%d/%Y %H:%M:%S",gmtime($epoch));
                 # print strftime("%m/%d/%Y %H:%M:%S",localtime($epoch));
@@ -253,10 +251,11 @@ sub _saveData(){
     printf "-" x 111;
     printf "\n%15.2f%15.2f%15.2f%20s%15.2f%15.2f%12s\n", $temp, $press, $rh, $time, $elev, $den, $wdir;
     # print " \$temp=$temp\t\$press=$press\t  \$time=$time\t  \$elev=$elev\t \$den=$den\t";
-    my $SQL = "INSERT INTO TB_WEATHER (FK_EVENT_IDX, IN_TEMP, IN_PRES, IN_RH, IN_DENSITY, IN_ELEVATION, TS_LOCAL, TX_KEY, TX_WINDDIR, IN_EPOCH) VALUES (?,?,?,?,?,?,?, ?,?,?)";
+    my $SQL = "INSERT INTO TB_WEATHER (FK_EVENT_IDX, IN_TEMP, IN_PRES, IN_RH, IN_DENSITY, IN_ELEVATION, TS_LOCAL, TX_KEY, TX_WINDDIR) VALUES (?,?,?,?,?,?,?,?,?)";
     my $insert = $dbi->prepare($SQL);
-       $insert->execute($eventIDX, $temp, $press, $rh, $den, $elev, $time, $station, $wdir, $epoch );
-
+       $insert->execute($eventIDX, $temp, $press, $rh, $den, $elev, $time, $station, $wdir );
+    my $newIDX = $insert->{q{mysql_insertid}};
+    print "n\n NEW ID = $newIDX";
 }
 
 sub calcAs2Press(){

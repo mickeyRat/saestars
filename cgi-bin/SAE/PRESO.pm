@@ -30,6 +30,29 @@ sub _getAverage(){
 # =====================================================================================================
 #  GETTERS
 # =====================================================================================================
+sub _getListofTeamsJudgedScores (){
+    my ($self, $userIDX, $eventIDX) = @_;
+    my $SQL = "SELECT CARD.PK_CARD_IDX, TEAM.IN_NUMBER, TEAM.TX_SCHOOL, PAPER.IN_VALUE, REPORT.IN_SEC, REPORT.IN_SUB, PAPER.IN_VALUE, REPORT.IN_SUB_WEIGHT
+        FROM TB_CARD AS CARD
+        JOIN TB_TEAM AS TEAM ON CARD.FK_TEAM_IDX=TEAM.PK_TEAM_IDX
+        JOIN TB_PAPER AS PAPER ON PAPER.FK_CARD_IDX=CARD.PK_CARD_IDX
+        JOIN TB_REPORT AS REPORT ON REPORT.PK_REPORT_IDX=PAPER.FK_REPORT_IDX
+        WHERE CARD.FK_CARDTYPE_IDX=? AND CARD.FK_USER_IDX=? AND CARD.FK_EVENT_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute( 5, $userIDX, $eventIDX );
+    my %HASH = %{$select->fetchall_hashref(['PK_CARD_IDX','IN_SEC','IN_SUB'])}; 
+    return (\%HASH);
+    }
+sub _getListofTeamsJudged (){
+    my ($self, $userIDX, $eventIDX) = @_;
+    my $SQL = "SELECT CARD.PK_CARD_IDX, TEAM.IN_NUMBER, TEAM.TX_SCHOOL FROM TB_CARD AS CARD
+        JOIN TB_TEAM AS TEAM ON CARD.FK_TEAM_IDX=TEAM.PK_TEAM_IDX
+        WHERE CARD.FK_CARDTYPE_IDX=? AND CARD.FK_USER_IDX=? AND CARD.FK_EVENT_IDX=?";;
+    my $select = $dbi->prepare($SQL);
+        $select->execute( 5, $userIDX, $eventIDX );
+    my %HASH = %{$select->fetchall_hashref('PK_CARD_IDX')}; 
+    return (\%HASH);
+    }
 sub _getTeamPresoStatistics(){
     my ($self, $teamIDX) = @_;
     my @SCORES = ();
@@ -41,18 +64,57 @@ sub _getTeamPresoStatistics(){
     my $select  = $dbi->prepare($SQL);
        $select  -> execute($teamIDX, 5);
     while (my ($cardIDX) = $select->fetchrow_array()) {
-        my $score = $Grade->_getAssessmentScore_byCard($cardIDX, 'Presentation');
+        # my $score = $Grade->_getAssessmentScore_byCard($cardIDX, 'Presentation');
+        my $score = $Grade->_getAssessmentScore_byCard($cardIDX, $teamIDX);
         push(@SCORES, $score);
     }
     my %STAT;
+    # my $std = sprintf "%2.15f", stddev(@SCORES);
+    # my $mean = sprintf "%2.15f", mean(@SCORES);
+    # $STAT{IN_STD}  = $std;
+    # $STAT{IN_MEAN}  = $mean;
+    # $STAT{IN_MIN}  = min(@SCORES);
+    # $STAT{IN_MAX}  = max(@SCORES);
     my $std = sprintf "%2.15f", stddev(@SCORES);
     my $mean = sprintf "%2.15f", mean(@SCORES);
+    my $min  = sprintf "%2.2f", min(@SCORES);
+    my $max  = sprintf "%2.2f", max(@SCORES);
     $STAT{IN_STD}  = $std;
     $STAT{IN_MEAN}  = $mean;
-    $STAT{IN_MIN}  = min(@SCORES);
-    $STAT{IN_MAX}  = max(@SCORES);
+    $STAT{IN_MIN}  = $min ;
+    $STAT{IN_MAX}  = $max;
     return (\%STAT);
 }
+sub _getPresoRubric (){
+    my ($self, $txType, $classIDX) = @_;
+    # my $txType = 'Presentation';
+    my $SQL = "SELECT * FROM TB_REPORT WHERE (TX_TYPE=? AND FK_CLASS_IDX=?)";
+    my $select = $dbi->prepare($SQL);
+        $select->execute( $txType, $classIDX );
+    my %HASH = %{$select->fetchall_hashref(['IN_SEC','IN_SUB'])}; 
+    return (\%HASH);
+    }
+sub _getPresentationJudges (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT CARD.PK_CARD_IDX, USER.TX_FIRST_NAME, USER.TX_LAST_NAME, USER.PK_USER_IDX FROM TB_CARD AS CARD 
+        JOIN TB_USER AS USER ON CARD.FK_USER_IDX=USER.PK_USER_IDX
+        WHERE CARD.FK_TEAM_IDX=? AND CARD.FK_CARDTYPE_IDX=?";
+        my $select = $dbi->prepare($SQL);
+        $select->execute($teamIDX, 5);
+    my %HASH = %{$select->fetchall_hashref('PK_CARD_IDX')}; 
+    return (\%HASH);
+    }
+sub _getTeamPresoScores (){
+    my ($self, $teamIDX) = @_;
+    my $SQL = "SELECT CARD.PK_CARD_IDX, PAPER.PK_PAPER_IDX, REPORT.PK_REPORT_IDX, REPORT.IN_SEC, REPORT.TX_SEC, REPORT.IN_SUB, REPORT.TX_SUB, REPORT.CL_DESCRIPTION, REPORT.BO_BIN, PAPER.IN_VALUE, REPORT.IN_SUB_WEIGHT, PAPER.CL_FEEDBACK FROM TB_PAPER AS PAPER 
+        JOIN TB_REPORT AS REPORT ON PAPER.FK_REPORT_IDX=REPORT.PK_REPORT_IDX
+        JOIN TB_CARD AS CARD ON PAPER.FK_CARD_IDX=CARD.PK_CARD_IDX
+        WHERE CARD.FK_TEAM_IDX=? AND CARD.FK_CARDTYPE_IDX=?";
+    my $select = $dbi->prepare($SQL);
+        $select->execute($teamIDX, 5);
+    my %HASH = %{$select->fetchall_hashref(['PK_CARD_IDX','IN_SEC','IN_SUB'])}; 
+    return (\%HASH);
+    }
 sub _getPresoCardDetails {
     my ($self, $cardIDX) = @_;
     my $SQL = "SELECT PAPER.PK_PAPER_IDX, REPORT.PK_REPORT_IDX, REPORT.IN_SEC, REPORT.TX_SEC, REPORT.IN_SUB, REPORT.TX_SUB, REPORT.CL_DESCRIPTION, REPORT.BO_BIN, PAPER.IN_VALUE, PAPER.CL_FEEDBACK FROM TB_PAPER AS PAPER 
@@ -84,12 +146,13 @@ sub _getBatchPresoScore() {
     my %HASH;
 
     my %INIT     = %{&getInitials()};
-    my $TEAM_SQL = "SELECT FK_TEAM_IDX, PK_CARD_IDX, FK_USER_IDX FROM TB_CARD AS CARD JOIN TB_TEAM AS TEAM ON TEAM.PK_TEAM_IDX=CARD.FK_TEAM_IDX WHERE (TEAM.FK_EVENT_IDX=? AND CARD.FK_CARDTYPE_IDX=?);";
+    my $TEAM_SQL = "SELECT FK_TEAM_IDX, PK_CARD_IDX, FK_USER_IDX FROM TB_CARD AS CARD JOIN TB_TEAM AS TEAM ON TEAM.PK_TEAM_IDX=CARD.FK_TEAM_IDX WHERE (TEAM.FK_EVENT_IDX=? AND CARD.FK_CARDTYPE_IDX=?)";
     my $select   = $dbi->prepare( $TEAM_SQL );
        $select->execute($eventIDX, 5);
     while (my ($teamIDX, $cardIDX, $userIDX) = $select->fetchrow_array())  {
         my $score = 0;
-           $score = $Grade->_getAssessmentScore_byCard($cardIDX,'Presentation'); 
+           $score = $Grade->_getAssessmentScore_byCard($cardIDX,$teamIDX); 
+           # $score = $Grade->_getAssessmentScore_byCard($cardIDX,'Presentation'); 
         $HASH{$teamIDX}{$cardIDX}{IN_SCORE}    = $score;
         $HASH{$teamIDX}{$cardIDX}{TX_INIT}     = $INIT{$userIDX};
         $HASH{$teamIDX}{$cardIDX}{FK_USER_IDX} = $userIDX;

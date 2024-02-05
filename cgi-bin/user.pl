@@ -29,6 +29,7 @@ use SAE::TEAM;
 use SAE::JSONDB;
 use SAE::PROFILE;
 use SAE::MAIL;
+use SAE::PAPER;
 
 
 $q = new CGI;
@@ -49,6 +50,37 @@ if ($act eq "print"){
 }
 exit;
 # ================== 2024 =========================================
+sub user_VolunteerOptionSelected (){
+        print $q->header();
+        my $User       = new SAE::USER();
+        my $eventIDX   = $q->param('eventIDX');
+        # my $classIDX   = $q->param('classIDX');
+        # my $teamIDX    = $q->param('teamIDX');
+        # my $inType     = $q->param('inType');
+        my $Paper      = new SAE::PAPER();
+        my $str;
+        # my %VOL        = %{$Paper->_getVolunteerJudges($eventIDX, $classIDX)};
+        my %VOLUNTEERS = %{$User->_getAllVolunteers()};
+        my %VOL        = %{$User->_getEventVolunteer($eventIDX)};
+        # my %ASSIGNED   = %{$Paper->_getAssignedToTeam($teamIDX, $inType)}; #1 = Design Papers
+        # my %INIT       = %{$User->_getUserFirstInitialAndLastName()};
+        $str .= '<div class="w3-container" style="height: 600px; overflow-y: auto;">';
+        $str .= '<div class="w3-column-4">';
+        foreach $volIDX (sort {lc($VOLUNTEERS{$a}{TX_LAST_NAME}) cmp lc($VOLUNTEERS{$b}{TX_LAST_NAME})} keys %VOLUNTEERS) {
+            if (exists $VOL{$volIDX}){next}
+            my $volFullName = sprintf '%s, %s', $VOLUNTEERS{$volIDX}{TX_LAST_NAME}, $VOLUNTEERS{$volIDX}{TX_FIRST_NAME};
+            $str .= sprintf '<div class="list_item">';
+            $str .= sprintf '<input ID="%d" type="checkbox" class="w3-check" value="%d" onclick="user_addMultipleVollunteers(this);">', $volIDX, $volIDX;
+            $str .= sprintf '<label for="%d" class="w3-margin-left">%s</label>', $volIDX, $volFullName;
+            $str .= sprintf '</div>';
+        }
+        $str .= '</div>';
+        $str .= '</div>';
+        $str .= '<div class="w3-container w3-margin" style="text-align: center;">';
+        $str .= sprintf '<button class="w3-center w3-button w3-round w3-border w3-pale-green w3-hover-green" onclick="$(this).close();">Close</button>', $classIDX, $inType;
+        $str .= '</div>';
+        return ($str);
+        }
 sub user_dropAll (){
     print $q->header();
     my $eventIDX     = $q->param('eventIDX');
@@ -83,7 +115,6 @@ sub user_addNewVolunteer (){
     $str .= '</tr>';
     return ($str);
     }
-
 sub user_addRemoveVolunteer (){
     print $q->header();
     my $JsonDB = new SAE::JSONDB();
@@ -438,10 +469,11 @@ sub openManageJudges(){
         $str .= '<th style="text-align: center; width: 10%; ">Drawing</th>';
         $str .= '<th style="text-align: center; width: 10%; ">Requirements</th>';
         $str .= '</tr>';
-        $str .= '<tr>';
+        $str .= '<tr ID="row_control">';
         $str .= '<td>';
-        $str .= '<select class="w3-input w3-border w3-round">';
+        $str .= '<select ID="selectControl" class="w3-input w3-border w3-round" onchange="user_VolunteerOptionSelected(this);">';
         $str .= '<option value="0">-Select-</option>';
+        $str .= sprintf '<option value="-1">-- Select Multiple Names -- </option>';
         foreach $userIDX (sort {lc($VOLUNTEERS{$a}{TX_LAST_NAME}) cmp lc($VOLUNTEERS{$b}{TX_LAST_NAME})} keys %VOLUNTEERS) {
             if (exists $VOLLIST{$userIDX}){next}
             $str .= sprintf '<option value="%d">%s, %s</option>', $userIDX, $VOLUNTEERS{$userIDX}{TX_LAST_NAME}, $VOLUNTEERS{$userIDX}{TX_FIRST_NAME};

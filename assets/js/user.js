@@ -4,6 +4,58 @@
 
 
 // ===============2024 ==========================================
+function user_addMultipleVollunteers(o){
+    var userIDX = $(o).val();
+    var row = $('#row_control');
+    // var str = "<tr><td>"+userIDX+"</td></tr>";
+    var ajxData          = {};
+    // var data             = {}; 
+    ajxData.do           = 'user_addNewVolunteer';
+    ajxData.act          = 'print';
+    ajxData.userIDX      = userIDX;
+    ajxData.eventIDX     = $.cookie('LOCATION');
+    // console.log(ajxData);
+    $(o).closest('tr').find('select option:selected').remove();
+    $.ajax({
+        type: 'GET',
+        url: '../cgi-bin/user.pl',
+        data: ajxData,
+        success: function(str){
+            // console.log(str);
+            $(str).insertAfter(row);
+            // $(str).insertAfter(row);
+            $("#selectControl option[value='"+userIDX+"']").remove();
+        }
+    });
+}
+function user_VolunteerOptionSelected(o) {
+    var value = $(o).val();
+    if (value < 0){
+        // $(o)
+        $.modal("Add Volunteer Judges", "75%");
+        $(o)[0].selectedIndex = 0;
+        var ajxData           = {};
+        var data              = {};
+        ajxData.do            = 'user_VolunteerOptionSelected';
+        ajxData.act           = 'print';
+        // ajxData.userIDX       = userIDX;
+        ajxData.eventIDX      = $.cookie('LOCATION');
+        // ajxData.row           = o;
+        console.log(ajxData);
+        // return;  
+        $.ajax({
+            type: 'GET',
+            url: '../cgi-bin/user.pl',
+            data: ajxData,
+            success: function(str){
+            $('#modal_content').html(str);
+                // row_control
+                // console.log(str);
+                // $(str).insertAfter(row);
+            }
+        });
+    }
+}
 function user_addNewVolunteer(o, userIDX) {
     var userIDX          = $(o).closest('tr').find('select option:selected').val();
     if (userIDX==0){return}
